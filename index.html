@@ -492,4 +492,7 @@
         else { const sellAmt = amount / price; const owned = wallet.stocks[selectedStock] || 0; if (sellAmt > owned) { playError(); return alert("Không đủ cổ phiếu!"); } wallet.stocks[selectedStock] -= sellAmt; wallet.cash += amount; playSuccess(); }
         const btn = document.activeElement; btn.style.transform = "scale(0.95)"; setTimeout(()=>btn.style.transform="scale(1)", 150); saveWallet();
     }
-    function updateHeaderUI() { document.getElementById("cash-
+    function updateHeaderUI() { document.getElementById("cash-display").innerText = wallet.cash.toFixed(2); }
+</script>
+</body>
+</html>
