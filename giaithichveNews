@@ -1,0 +1,21 @@
+- t (Title/Text):
+  +Nội dung tin tức hiển thị.
+
+- b (Bias - Xu hướng):
+  + Tác động lên giá.
+  + Số dương (ví dụ 10): Giá tăng (Tin tốt).
+  + Số âm (ví dụ -10): Giá giảm (Tin xấu).
+  + Số 0: Đi ngang.
+
+- v (Volatility - Biến động):
+  + Độ giật của nến.
+  + Thấp (5-8): Nến ngắn, thị trường êm.
+  + Cao (15-30): Nến rất dài, râu nến quét mạnh (Bão).
+
+- r (Rate/Ratio - Tỷ lệ xuất hiện): Độ phổ biến.
+  + Số càng to (100): Rất hay gặp (Tin thường).
+  + Số càng nhỏ (1-5): Cực hiếm (Thiên nga đen, Sập sàn...).
+
+- d (Duration - Thời gian): Tin này tồn tại bao lâu (tính bằng số cây nến).
+  + Mỗi cây nến là 2 giây.
+  + Ví dụ d: 5 nghĩa là tin này sẽ ảnh hưởng trong 10 giây (5 nến) rồi mới đổi tin khác.
