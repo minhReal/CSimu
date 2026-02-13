@@ -3,12 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pro Trade Terminal</title>
+    <title>Terminal X - Pro Trading</title>
+    
+    <script>
+        // 1. Chặn menu chuột phải
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        // 2. Chặn phím tắt xem source
+        document.onkeydown = function(e) {
+            if (e.keyCode == 123) return false; // F12
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; // Ctrl+Shift+I
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; // Ctrl+Shift+C
+            if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; // Ctrl+Shift+J
+            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // Ctrl+U
+        }
+
+        // 3. Bẫy Debugger (Chống soi code)
+        // setInterval(() => { debugger; }, 200); 
+        // (Tôi đã comment dòng trên để bạn test cho dễ, khi nào public thì bỏ comment ra nhé!)
+    </script>
+
     <style>
         /* --- CORE STYLES --- */
         :root { 
             --bg: #050505; --panel: #121212; --border: #2a2a2a; 
-            --green: #00ff88; --red: #ff3b3b; --yellow: #ffcc00; --blue: #3399ff; --gold: #ffd700;
+            --green: #00ff88; --red: #ff3b3b; --yellow: #ffcc00; --gold: #ffd700;
             --text-main: #e0e0e0; --text-dim: #888;
         }
         body { margin: 0; background: var(--bg); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; height: 100dvh; }
@@ -17,54 +36,62 @@
         /* --- LAYOUT --- */
         #app { display: none; height: 100dvh; flex-direction: column; }
         
-        /* --- LOGIN --- */
-        #login-screen {
-            position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.95);
-            display: flex; flex-direction: column; justify-content: center; align-items: center;
-        }
-        .login-box {
-            background: var(--panel); border: 1px solid var(--border); padding: 30px; border-radius: 16px;
-            width: 85%; max-width: 350px; text-align: center; box-shadow: 0 0 50px rgba(0,255,136,0.1);
-        }
-        .inp-auth {
-            width: 100%; padding: 15px; margin: 10px 0; background: #1a1a1a; border: 1px solid #333;
-            color: white; border-radius: 8px; font-size: 16px; outline: none; text-align: center;
-        }
-        .btn-auth {
-            width: 100%; padding: 15px; margin-top: 15px; border: none; border-radius: 8px;
-            font-weight: bold; cursor: pointer; font-size: 16px; color: white; transition: 0.2s;
-        }
-        .btn-login { background: #1f6feb; }
-        .btn-reg { background: #238636; }
-
-        /* --- HEADER --- */
-        .header {
-            padding: 12px 15px; background: var(--panel); border-bottom: 1px solid var(--border);
-            display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;
-        }
-        .header-left { display: flex; align-items: center; gap: 10px; }
-        .btn-icon {
-            background: #333; color: #fff; border: 1px solid #555; 
-            width: 32px; height: 32px; border-radius: 6px; 
-            display: flex; align-items: center; justify-content: center;
-            font-size: 16px; cursor: pointer;
-        }
-
-        /* --- SETTINGS MODAL --- */
-        #settings-modal {
-            position: fixed; inset: 0; z-index: 5000; background: rgba(0,0,0,0.8);
-            display: none; align-items: center; justify-content: center;
-        }
-        .settings-box {
-            background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px;
-            width: 80%; max-width: 300px;
-        }
-        .setting-row {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 15px 0; border-bottom: 1px solid #333;
-        }
+        /* LOGIN */
+        #login-screen { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .login-box { background: var(--panel); border: 1px solid var(--border); padding: 30px; border-radius: 16px; width: 85%; max-width: 350px; text-align: center; box-shadow: 0 0 50px rgba(0,255,136,0.1); }
+        .inp-auth { width: 100%; padding: 15px; margin: 10px 0; background: #1a1a1a; border: 1px solid #333; color: white; border-radius: 8px; font-size: 16px; outline: none; text-align: center; }
+        .btn-auth { width: 100%; padding: 15px; margin-top: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; color: white; transition: 0.2s; }
+        .btn-auth:active { transform: scale(0.95); }
         
-        /* Switch Toggle */
+        /* HEADER */
+        .header { padding: 12px 15px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .btn-icon { background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; }
+
+        /* TABS */
+        .tab-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--panel); }
+        .tab-btn { flex: 1; padding: 12px; text-align: center; font-size: 12px; font-weight: bold; color: var(--text-dim); cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: var(--green); border-bottom-color: var(--green); background: #1a1a1a; }
+
+        /* VIEWS */
+        .view-content { flex: 1; overflow-y: auto; position: relative; }
+        .hidden { display: none !important; }
+
+        /* STOCK LIST */
+        .stock-item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 16px; margin: 10px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: background 0.2s; }
+        .stock-item:active { background: #252525; }
+
+        /* LEADERBOARD */
+        .rank-item { display: flex; align-items: center; background: #161616; padding: 12px; margin: 8px 10px; border-radius: 8px; border: 1px solid var(--border); }
+        .rank-num { width: 30px; font-weight: 900; font-size: 16px; color: #666; text-align: center; }
+        .rank-1 { color: var(--gold); text-shadow: 0 0 10px rgba(255,215,0,0.5); }
+        .rank-2 { color: #c0c0c0; } 
+        .rank-3 { color: #cd7f32; }
+        .rank-me { border: 1px solid var(--green); background: #0f3318; }
+        .rank-avatar { width: 30px; height: 30px; border-radius: 50%; background: #333; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 14px; }
+
+        /* NEWS */
+        .news-card { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; margin: 10px; border-left: 4px solid #555; }
+        .news-title { font-size: 13px; font-weight: 500; }
+        .news-meta { display: flex; justify-content: space-between; font-size: 10px; color: #666; margin-bottom: 5px; }
+
+        /* DETAIL VIEW */
+        #detail-view { display: none; flex: 1; flex-direction: column; background: #000; z-index: 100; position: fixed; inset: 0; }
+        .chart-header { padding: 10px 15px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 15px; }
+        .back-btn { padding: 8px 16px; background: #333; color: white; border: none; border-radius: 6px; font-weight: bold; }
+        .chart-container { flex: 1; width: 100%; min-height: 200px; }
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        .controls { padding: 15px; background: var(--panel); border-top: 1px solid var(--border); padding-bottom: 30px; }
+        .trade-actions { display: flex; gap: 10px; }
+        .btn-trade { flex: 1; border: none; border-radius: 8px; color: white; font-weight: bold; padding: 16px; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+        .btn-trade:active { transform: translateY(2px); }
+        .bg-up { background: linear-gradient(to bottom, #2ea043, #238636); } 
+        .bg-down { background: linear-gradient(to bottom, #ff4d4d, #da3633); }
+
+        /* SETTINGS MODAL */
+        #settings-modal { position: fixed; inset: 0; z-index: 5000; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; }
+        .settings-box { background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px; width: 80%; max-width: 300px; }
+        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #333; }
         .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 34px; }
@@ -72,100 +99,7 @@
         input:checked + .slider { background-color: var(--green); }
         input:checked + .slider:before { transform: translateX(26px); }
 
-        /* --- TABS --- */
-        .tab-bar {
-            display: flex; border-bottom: 1px solid var(--border); background: var(--panel);
-        }
-        .tab-btn {
-            flex: 1; padding: 12px; text-align: center; font-size: 12px; font-weight: bold;
-            color: var(--text-dim); cursor: pointer; border-bottom: 3px solid transparent;
-        }
-        .tab-btn.active { color: var(--green); border-bottom-color: var(--green); background: #1a1a1a; }
-
-        /* --- CONTENT AREAS --- */
-        .view-content { flex: 1; overflow-y: auto; position: relative; }
-        
-        /* STOCK LIST */
-        .stock-item {
-            display: flex; justify-content: space-between; align-items: center;
-            background: #1a1a1a; padding: 16px; margin: 10px;
-            border-radius: 10px; border: 1px solid var(--border); cursor: pointer;
-        }
-        .stock-item:active { background: #252525; }
-
-        /* LEADERBOARD (NEW) */
-        .rank-item {
-            display: flex; align-items: center; background: #1a1a1a; padding: 12px;
-            margin: 8px 10px; border-radius: 8px; border: 1px solid var(--border);
-        }
-        .rank-num {
-            width: 30px; font-weight: 900; font-size: 18px; color: #666; text-align: center;
-        }
-        .rank-1 { color: var(--gold); text-shadow: 0 0 10px rgba(255, 215, 0, 0.5); }
-        .rank-2 { color: #c0c0c0; }
-        .rank-3 { color: #cd7f32; }
-        
-        .rank-info { flex: 1; padding-left: 10px; }
-        .rank-name { font-weight: bold; font-size: 14px; color: #fff; }
-        .rank-asset { font-size: 12px; color: var(--green); margin-top: 2px; }
-        
-        .rank-me { border: 1px solid var(--green); background: #0f3318; }
-
-        /* NEWS FEED */
-        .news-feed { padding: 10px; }
-        .news-card {
-            background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 10px;
-            border-left: 4px solid #555;
-        }
-        .news-meta { display: flex; justify-content: space-between; font-size: 10px; color: #666; margin-bottom: 5px; }
-        .news-title { font-size: 13px; font-weight: 500; line-height: 1.4; }
-        .news-tag { padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-
-        /* --- DETAIL VIEW --- */
-        #detail-view { display: none; flex: 1; flex-direction: column; background: #000; z-index: 100; height: 100%; }
-        
-        .chart-header {
-            padding: 10px 15px; background: var(--panel); border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; gap: 15px;
-        }
-        .back-btn { padding: 8px 16px; background: #333; color: white; border: none; border-radius: 6px; font-weight: bold; }
-        
-        /* ANALYSIS BOX */
-        .analysis-box {
-            background: #0d0d0d; border-bottom: 1px solid var(--border); padding: 15px;
-            font-size: 12px; line-height: 1.5;
-        }
-        .company-name { font-size: 16px; font-weight: bold; color: white; margin-bottom: 8px; }
-        .pro-row { color: var(--green); margin-bottom: 4px; display: flex; gap: 6px; }
-        .con-row { color: var(--red); display: flex; gap: 6px; }
-        .icon { width: 14px; text-align: center; font-weight: bold; }
-
-        /* CHART */
-        .chart-container { flex: 1; position: relative; width: 100%; min-height: 200px; overflow: hidden; }
-        canvas { display: block; width: 100%; height: 100%; }
-
-        /* CONTROLS */
-        .controls { padding: 15px; background: var(--panel); border-top: 1px solid var(--border); padding-bottom: 30px; }
-        .inp-amount { 
-            width: 100%; padding: 14px; background: #222; border: 1px solid #444; 
-            color: white; border-radius: 8px; text-align: center; font-size: 18px; font-weight: bold; margin-bottom: 10px;
-        }
-        .trade-actions { display: flex; gap: 10px; }
-        .btn-trade { 
-            flex: 1; border: none; border-radius: 8px; color: white; 
-            font-weight: bold; padding: 16px; font-size: 16px; 
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            transition: transform 0.1s;
-        }
-        .btn-trade:active { transform: translateY(2px); }
-        
-        .bg-up { background: linear-gradient(to bottom, #2ea043, #238636); } 
-        .bg-down { background: linear-gradient(to bottom, #ff4d4d, #da3633); }
-
-        /* UTILS */
         .up { color: var(--green); } .down { color: var(--red); }
-        .hidden { display: none !important; }
-        
     </style>
 </head>
 <body>
@@ -176,38 +110,18 @@
 
 <div id="login-screen">
     <div class="login-box">
-        <h2 style="margin:0 0 20px 0; color:var(--green); font-size: 24px;">TERMINAL X</h2>
+        <h2 style="margin:0 0 20px 0; color:var(--green); letter-spacing: 2px;">TERMINAL X</h2>
         <input type="text" id="user" class="inp-auth" placeholder="Tên đăng nhập">
         <input type="password" id="pass" class="inp-auth" placeholder="Mật khẩu">
-        <button onclick="handleAuth('login')" class="btn-auth btn-login">ĐĂNG NHẬP</button>
-        <button onclick="handleAuth('register')" class="btn-auth btn-reg">ĐĂNG KÝ MỚI</button>
-        <div id="msg" style="color:var(--red); font-size:13px; margin-top:15px; min-height:15px;"></div>
-    </div>
-</div>
-
-<div id="settings-modal" onclick="closeSettings(event)">
-    <div class="settings-box">
-        <h3 style="margin-top:0; text-align:center;">CÀI ĐẶT</h3>
-        <div class="setting-row">
-            <span>Nhạc nền (BGM)</span>
-            <label class="switch"><input type="checkbox" id="toggle-bgm" checked onchange="toggleAudio('bgm')"><span class="slider"></span></label>
-        </div>
-        <div class="setting-row">
-            <span>Âm thanh (SFX)</span>
-            <label class="switch"><input type="checkbox" id="toggle-sfx" checked onchange="toggleAudio('sfx')"><span class="slider"></span></label>
-        </div>
-        <div class="setting-row" style="justify-content: center; border:none; padding-top:20px;">
-             <button onclick="logout()" class="btn-logout" style="width:100%; background:#da3633; border:none; padding:12px;">ĐĂNG XUẤT</button>
-        </div>
-        <button onclick="closeSettings(null, true)" style="width:100%; padding:10px; background:#333; border:none; color:white; border-radius:6px; margin-top:10px;">Đóng</button>
+        <button onclick="handleAuth('login')" class="btn-auth" style="background: #1f6feb;">ĐĂNG NHẬP</button>
+        <button onclick="handleAuth('register')" class="btn-auth" style="background: #238636;">ĐĂNG KÝ MỚI</button>
+        <div id="msg" style="color:var(--red); font-size:12px; margin-top:15px; min-height:15px;"></div>
     </div>
 </div>
 
 <div id="app">
     <div class="header">
-        <div class="header-left">
-            <div style="font-weight:bold; font-size: 14px;">👤 <span id="u-name" style="color:#ccc">...</span></div>
-        </div>
+        <div style="font-weight:bold; font-size: 14px;">👤 <span id="u-name" style="color:#ccc">...</span></div>
         <div style="display:flex; align-items:center; gap:10px;">
              <div style="font-size: 16px; color: var(--green); font-weight: bold; background: rgba(0,255,136,0.1); padding: 5px 10px; border-radius: 6px;">
                 $<span id="cash-display">0.00</span>
@@ -222,124 +136,122 @@
         <div class="tab-btn" onclick="switchTab('news'); playClick()">TIN TỨC</div>
     </div>
 
-    <div id="tab-market" class="view-content">
-        <div id="stock-list-container" style="padding-bottom: 20px;">
-            <div style="text-align:center; padding:40px; color:#444;">Đang kết nối vệ tinh...</div>
+    <div id="tab-market" class="view-content"><div id="stock-list-container" style="padding-bottom:20px;"></div></div>
+    <div id="tab-rank" class="view-content hidden"><div id="leaderboard-list"></div></div>
+    <div id="tab-news" class="view-content hidden"><div id="news-feed-container" style="padding:10px;"></div></div>
+
+    <div id="settings-modal" onclick="closeSettings(event)">
+        <div class="settings-box">
+            <h3 style="margin-top:0; text-align:center;">CÀI ĐẶT</h3>
+            <div class="setting-row">
+                <span>Nhạc nền (BGM)</span>
+                <label class="switch"><input type="checkbox" id="toggle-bgm" checked onchange="toggleAudio('bgm')"><span class="slider"></span></label>
+            </div>
+            <div class="setting-row">
+                <span>Âm thanh (SFX)</span>
+                <label class="switch"><input type="checkbox" id="toggle-sfx" checked onchange="toggleAudio('sfx')"><span class="slider"></span></label>
+            </div>
+            <button onclick="logout()" style="width:100%; padding:12px; background:#da3633; border:none; color:white; border-radius:6px; margin-top:20px; font-weight:bold;">ĐĂNG XUẤT</button>
+            <button onclick="closeSettings(null, true)" style="width:100%; padding:10px; background:#333; border:none; color:white; border-radius:6px; margin-top:10px;">Đóng</button>
         </div>
     </div>
+</div>
 
-    <div id="tab-rank" class="view-content hidden">
-        <div id="leaderboard-container" style="padding-bottom: 20px;"></div>
+<div id="detail-view">
+    <div class="chart-header">
+        <button class="back-btn" onclick="closeDetail(); playClick()">◀ BACK</button>
+        <div style="flex:1;">
+            <div id="d-code" style="font-weight:900; font-size:20px; letter-spacing: 1px;">CODE</div>
+            <div style="font-size:11px; color:#888;">Sở hữu: <span id="d-owned" style="color:#fff">0</span></div>
+        </div>
+        <div style="text-align: right;">
+            <div id="d-price" style="font-size:24px; font-weight: bold;">0.00</div>
+        </div>
+    </div>
+    
+    <div style="padding:10px; background:#0d0d0d; border-bottom:1px solid #333; font-size:12px;">
+        <div id="info-name" style="font-weight:bold; color:white; margin-bottom:5px;">...</div>
+        <div style="color:var(--green)">✚ <span id="info-pros">...</span></div>
+        <div style="color:var(--red)">✖ <span id="info-cons">...</span></div>
     </div>
 
-    <div id="tab-news" class="view-content hidden">
-        <div id="news-feed-container" class="news-feed"></div>
-    </div>
+    <div class="chart-container"><canvas id="chart"></canvas></div>
 
-    <div id="detail-view">
-        <div class="chart-header">
-            <button class="back-btn" onclick="closeDetail(); playClick()">◀ BACK</button>
-            <div style="flex:1;">
-                <div id="d-code" style="font-weight:900; font-size:20px; letter-spacing: 1px;">CODE</div>
-                <div style="font-size:11px; color:#888;">Sở hữu: <span id="d-owned" style="color:#fff">0</span></div>
-            </div>
-            <div style="text-align: right;">
-                <div id="d-price" style="font-size:24px; font-weight: bold;">0.00</div>
-            </div>
-        </div>
-        <div class="analysis-box">
-            <div id="info-name" class="company-name">Tên Công Ty</div>
-            <div class="pro-row"><span class="icon">✚</span><span id="info-pros">...</span></div>
-            <div class="con-row"><span class="icon">✖</span><span id="info-cons">...</span></div>
-        </div>
-        <div class="chart-container"><canvas id="chart"></canvas></div>
-        <div class="controls">
-            <input type="number" id="trade-amount" class="inp-amount" placeholder="Nhập số tiền ($)">
-            <div class="trade-actions">
-                <button class="btn-trade bg-up" onclick="trade('buy')">MUA</button>
-                <button class="btn-trade bg-down" onclick="trade('sell')">BÁN</button>
-            </div>
+    <div class="controls">
+        <input type="number" id="trade-amount" class="inp-auth" placeholder="Nhập số tiền ($)" style="margin-bottom:15px; font-size:20px; font-weight:bold;">
+        <div class="trade-actions">
+            <button class="btn-trade bg-up" onclick="trade('buy')">MUA</button>
+            <button class="btn-trade bg-down" onclick="trade('sell')">BÁN</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- AUDIO SYSTEM ---
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    let allowBGM = true, allowSFX = true;
-    const bgm = document.getElementById("bgm");
-    bgm.volume = 0.3;
-
-    function playTone(freq, type, duration) {
-        if(!allowSFX) return;
-        if(audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
-        osc.connect(gain); gain.connect(audioCtx.destination);
-        osc.start(); osc.stop(audioCtx.currentTime + duration);
-    }
-    function playClick() { playTone(800, 'sine', 0.05); }
-    function playSuccess() { playTone(600, 'sine', 0.1); setTimeout(() => playTone(1200, 'sine', 0.3), 100); }
-    function playError() { playTone(150, 'sawtooth', 0.3); }
-
-    document.addEventListener("visibilitychange", () => {
-        if (document.hidden) bgm.pause();
-        else if(allowBGM && currentUser) bgm.play();
-    });
-
-    // --- SETTINGS ---
-    function openSettings() { document.getElementById("settings-modal").style.display = "flex"; }
-    function closeSettings(e, force = false) { if (force || e.target.id === "settings-modal") document.getElementById("settings-modal").style.display = "none"; }
-    function toggleAudio(type) {
-        if (type === 'bgm') { allowBGM = document.getElementById("toggle-bgm").checked; allowBGM ? bgm.play() : bgm.pause(); }
-        if (type === 'sfx') { allowSFX = document.getElementById("toggle-sfx").checked; }
-        localStorage.setItem("settings_audio", JSON.stringify({ bgm: allowBGM, sfx: allowSFX }));
-    }
-    (function loadSettings() {
-        const set = JSON.parse(localStorage.getItem("settings_audio"));
-        if (set) { allowBGM = set.bgm; allowSFX = set.sfx; document.getElementById("toggle-bgm").checked = allowBGM; document.getElementById("toggle-sfx").checked = allowSFX; }
-    })();
-
-    // --- CẤU HÌNH ---
+    // --- CONFIG ---
     const SERVER_URL = "https://oia.duongminhminh46.workers.dev/"; 
     const NEWS_URL = "https://raw.githubusercontent.com/minhReal/CSimu/refs/heads/main/news.json";
 
+    // --- DATA ---
     const STOCK_INFO = {
         "VN-INDEX": { name: "Chỉ số VN-Index", pros: "An toàn, đại diện nền kinh tế.", cons: "Biến động thấp." },
-        "VIN": { name: "Vingroup", pros: "Hệ sinh thái lớn, giá đáy.", cons: "Nợ vay cao." },
-        "FPT": { name: "FPT Corp", pros: "Công nghệ AI/Chip, tăng trưởng đều.", cons: "Giá cao, khó đột biến." },
-        "HPG": { name: "Thép Hòa Phát", pros: "Vua thép, cổ tức đều.", cons: "Phụ thuộc chu kỳ kinh tế." },
-        "VTB": { name: "VietinBank", pros: "Ngân hàng nhà nước, an toàn.", cons: "Nợ xấu tiềm ẩn." },
-        "DIG": { name: "DIC Corp", pros: "Penny giá rẻ, dễ tăng sốc.", cons: "Rủi ro cực cao." }
+        "VIN": { name: "Vingroup", pros: "Hệ sinh thái lớn.", cons: "Nợ vay cao." },
+        "FPT": { name: "FPT Corp", pros: "Công nghệ, tăng trưởng đều.", cons: "Giá cao." },
+        "HPG": { name: "Thép Hòa Phát", pros: "Vua thép.", cons: "Theo chu kỳ kinh tế." },
+        "VTB": { name: "VietinBank", pros: "Bank nhà nước.", cons: "Nợ xấu." },
+        "DIG": { name: "DIC Corp", pros: "Dễ tăng sốc.", cons: "Rủi ro cực cao." }
     };
 
-    // --- LEADERBOARD BOTS ---
+    // Bots giả lập để đua top
     const BOTS = [
-        { name: "Elon Musk", baseAsset: 50000 },
-        { name: "Warren Buffett", baseAsset: 42000 },
-        { name: "Shark Bình", baseAsset: 15000 },
-        { name: "Cá Mập Phố Wall", baseAsset: 8000 },
-        { name: "F0 Đu Đỉnh", baseAsset: 200 }
+        { name: "Elon Musk", base: 100000, stocks: {"VIN": 2000} },
+        { name: "Warren Buffett", base: 50000, stocks: {"HPG": 1500} },
+        { name: "Shark Bình", base: 20000, stocks: {"FPT": 500} },
+        { name: "Cá Mập", base: 5000, stocks: {"DIG": 1000} }
     ];
 
+    // --- STATE ---
     let currentUser = null;
     let wallet = { cash: 250, stocks: {} };
     let marketData = [];
-    let newsList = []; 
+    let candlesCache = {};
     let selectedStock = null;
-    let candlesCache = {}; 
-    let chartCtx = null;
-    let fetchInterval = null, newsTimer = null, rankTimer = null;
+    let newsList = [];
 
-    // --- INIT ---
+    // --- AUDIO ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let allowBGM = true, allowSFX = true;
+    const bgm = document.getElementById("bgm"); bgm.volume = 0.3;
+
+    function playTone(f, t, d) {
+        if(!allowSFX) return;
+        if(audioCtx.state==='suspended') audioCtx.resume();
+        const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+        o.type=t; o.frequency.value=f; g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+d);
+        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+d);
+    }
+    const playClick = () => playTone(800,'sine',0.05);
+    const playSuccess = () => { playTone(600,'sine',0.1); setTimeout(()=>playTone(1200,'sine',0.3),100); };
+    const playError = () => playTone(150,'sawtooth',0.3);
+
+    document.addEventListener("visibilitychange", () => {
+        if(document.hidden) bgm.pause();
+        else if(allowBGM && currentUser) bgm.play();
+    });
+
+    // --- AUTH ---
     (function init() {
-        const sessionUser = localStorage.getItem("current_session");
-        if (sessionUser) {
-            const userData = localStorage.getItem(`user_db_${sessionUser}`);
-            if (userData) { currentUser = sessionUser; wallet = JSON.parse(userData); enterApp(); }
+        const s = localStorage.getItem("current_session");
+        if(s) {
+            const d = localStorage.getItem(`user_db_${s}`);
+            if(d) { currentUser = s; wallet = JSON.parse(d); enterApp(); }
+        }
+        // Load settings
+        const set = JSON.parse(localStorage.getItem("settings_audio"));
+        if(set) { 
+            allowBGM = set.bgm; allowSFX = set.sfx;
+            document.getElementById("toggle-bgm").checked = allowBGM;
+            document.getElementById("toggle-sfx").checked = allowSFX;
         }
     })();
 
@@ -348,151 +260,241 @@
         const u = document.getElementById("user").value.trim();
         const p = document.getElementById("pass").value.trim();
         const msg = document.getElementById("msg");
-        if (!u || !p) { playError(); msg.innerText = "Thiếu thông tin!"; return; }
+        if(!u || !p) { playError(); msg.innerText="Thiếu thông tin"; return; }
         const key = `user_db_${u}`;
-        const stored = localStorage.getItem(key);
-
-        if (type === 'register') {
-            if (stored) { playError(); msg.innerText = "Tên đã tồn tại!"; return; }
-            localStorage.setItem(key, JSON.stringify({ pass: p, cash: 250, stocks: {} }));
-            playSuccess(); msg.innerText = "Đăng ký thành công!"; msg.style.color = "#00ff88";
+        
+        if(type === 'register') {
+            if(localStorage.getItem(key)) { playError(); msg.innerText="Tên đã tồn tại"; return; }
+            localStorage.setItem(key, JSON.stringify({pass:p, cash:250, stocks:{}}));
+            playSuccess(); msg.innerText="Đăng ký thành công ($250)"; msg.style.color="var(--green)";
         } else {
-            if (!stored || JSON.parse(stored).pass !== p) { playError(); msg.innerText = "Sai thông tin!"; return; }
-            currentUser = u; wallet = JSON.parse(stored); localStorage.setItem("current_session", u); enterApp();
+            const d = JSON.parse(localStorage.getItem(key));
+            if(!d || d.pass!==p) { playError(); msg.innerText="Sai mật khẩu"; return; }
+            currentUser = u; wallet = d; localStorage.setItem("current_session", u);
+            enterApp();
         }
     }
 
-    function logout() { playClick(); if(confirm("Đăng xuất?")) { localStorage.removeItem("current_session"); location.reload(); } }
-    function saveWallet() { if (!currentUser) return; const key = `user_db_${currentUser}`; const oldData = JSON.parse(localStorage.getItem(key)); localStorage.setItem(key, JSON.stringify({ ...oldData, cash: wallet.cash, stocks: wallet.stocks })); updateHeaderUI(); }
-
     function enterApp() {
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("app").style.display = "flex";
+        document.getElementById("login-screen").style.display="none";
+        document.getElementById("app").style.display="flex";
         document.getElementById("u-name").innerText = currentUser;
-        if(allowBGM) bgm.play().catch(() => {});
-        fetchData(); fetchNewsSource(); updateLeaderboard();
-        if(!fetchInterval) fetchInterval = setInterval(fetchData, 1500);
-        if(!newsTimer) newsTimer = setInterval(generateLiveNews, 4000); 
-        if(!rankTimer) rankTimer = setInterval(updateLeaderboard, 3000);
+        if(allowBGM) bgm.play().catch(()=>{});
+        
+        setInterval(fetchData, 1500);
+        fetchNewsSource();
+        setInterval(generateLiveNews, 5000);
+        setInterval(updateLeaderboard, 3000);
     }
 
-    function switchTab(tabName) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.view-content').forEach(c => c.classList.add('hidden'));
-        if(tabName === 'market') { document.querySelector('.tab-btn:nth-child(1)').classList.add('active'); document.getElementById('tab-market').classList.remove('hidden'); }
-        else if(tabName === 'rank') { document.querySelector('.tab-btn:nth-child(2)').classList.add('active'); document.getElementById('tab-rank').classList.remove('hidden'); updateLeaderboard(); }
-        else { document.querySelector('.tab-btn:nth-child(3)').classList.add('active'); document.getElementById('tab-news').classList.remove('hidden'); }
-    }
+    function logout() { playClick(); if(confirm("Đăng xuất?")) { localStorage.removeItem("current_session"); location.reload(); } }
 
-    // --- LEADERBOARD SYSTEM ---
-    function updateLeaderboard() {
-        if(document.getElementById('tab-rank').classList.contains('hidden')) return;
-
-        // 1. Calculate User Net Worth
-        let userNetWorth = wallet.cash;
-        marketData.forEach(s => {
-            if(wallet.stocks[s.code]) userNetWorth += wallet.stocks[s.code] * s.price;
-        });
-
-        // 2. Simulate Bot Fluctuations
-        const leaderboardData = BOTS.map(bot => {
-            const fluctuation = 1 + (Math.random() - 0.5) * 0.02; // +/- 1%
-            return { name: bot.name, asset: bot.baseAsset * fluctuation };
-        });
-
-        // 3. Add User
-        leaderboardData.push({ name: currentUser + " (Bạn)", asset: userNetWorth, isMe: true });
-
-        // 4. Sort
-        leaderboardData.sort((a, b) => b.asset - a.asset);
-
-        // 5. Render
-        const container = document.getElementById("leaderboard-container");
-        container.innerHTML = "";
-        leaderboardData.forEach((p, idx) => {
-            const rank = idx + 1;
-            let rankClass = "";
-            if(rank === 1) rankClass = "rank-1";
-            else if(rank === 2) rankClass = "rank-2";
-            else if(rank === 3) rankClass = "rank-3";
-
-            const div = document.createElement("div");
-            div.className = `rank-item ${p.isMe ? 'rank-me' : ''}`;
-            div.innerHTML = `
-                <div class="rank-num ${rankClass}">#${rank}</div>
-                <div class="rank-info">
-                    <div class="rank-name">${p.name}</div>
-                    <div class="rank-asset">$${p.asset.toFixed(2)}</div>
-                </div>
-                ${rank === 1 ? '👑' : ''}
-            `;
-            container.appendChild(div);
-        });
-    }
-
-    // --- EXISTING LOGIC ---
-    async function fetchNewsSource() { try { const res = await fetch(NEWS_URL); const data = await res.json(); if(Array.isArray(data)) newsList = data; } catch(e) {} }
-    function generateLiveNews() {
-        if(newsList.length === 0) return;
-        const raw = newsList[Math.floor(Math.random() * newsList.length)];
-        const time = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute:'2-digit', second:'2-digit' });
-        let styleColor = "#888", tag = "TT";
-        if(raw.b >= 5) { styleColor = "#00ff88"; tag = "TỐT"; } else if(raw.b <= -5) { styleColor = "#ff3b3b"; tag = "XẤU"; }
-        const div = document.createElement("div"); div.className = "news-card"; div.style.borderLeftColor = styleColor;
-        div.innerHTML = `<div class="news-meta"><span>${time}</span><span class="news-tag" style="background:${styleColor}20; color:${styleColor}">${tag}</span></div><div class="news-title" style="color:${raw.b !== 0 ? '#fff' : '#ccc'}">${raw.t}</div>`;
-        const container = document.getElementById("news-feed-container"); container.insertBefore(div, container.firstChild);
-        if(container.children.length > 20) container.removeChild(container.lastChild);
-    }
-
+    // --- CORE LOGIC ---
     async function fetchData() {
         try {
             const res = await fetch(SERVER_URL);
             const data = await res.json();
             marketData = data.stocks;
-            marketData.forEach(item => {
-                if (!candlesCache[item.code]) candlesCache[item.code] = [];
-                const list = candlesCache[item.code]; const nc = item.candle;
-                if (list.length === 0 || list[list.length-1].time !== nc.time) { list.push(nc); if (list.length > 50) list.shift(); } else list[list.length-1] = nc;
+            
+            marketData.forEach(s => {
+                if(!candlesCache[s.code]) candlesCache[s.code] = [];
+                const list = candlesCache[s.code];
+                if(list.length===0 || list.at(-1).time !== s.candle.time) {
+                    list.push(s.candle);
+                    if(list.length>50) list.shift();
+                } else list[list.length-1] = s.candle;
             });
-            if(!selectedStock) renderMarketList(); else { updateDetailUI(); drawChart(); }
-            updateHeaderUI();
+
+            if(!selectedStock) renderMarket();
+            else { updateDetailHeader(); drawChart(); }
+            document.getElementById("cash-display").innerText = wallet.cash.toFixed(2);
         } catch(e) {}
     }
 
-    function renderMarketList() {
-        const container = document.getElementById("stock-list-container"); container.innerHTML = "";
-        marketData.forEach(stock => {
-            const div = document.createElement("div"); div.className = "stock-item"; div.onclick = () => openDetail(stock.code);
-            const last = candlesCache[stock.code]?.at(-1); const isUp = last && last.close >= last.open;
-            div.innerHTML = `<div style="display:flex; align-items:center; gap:12px;"><div style="font-weight:900; font-size:18px; color:#fff; width:50px;">${stock.code}</div><div style="font-size:12px; color:#666;">${STOCK_INFO[stock.code] ? STOCK_INFO[stock.code].name : 'Công ty...'}<br><span style="color:#888">Sở hữu: ${wallet.stocks[stock.code]?.toFixed(1) || 0}</span></div></div><div style="text-align:right;"><div style="font-size:18px; font-weight:bold; color:${isUp ? 'var(--green)' : 'var(--red)'}">${stock.price.toFixed(2)}</div><div style="font-size:10px; color:#666;">${isUp ? '+Tăng' : '-Giảm'}</div></div>`;
-            container.appendChild(div);
-        });
+    function renderMarket() {
+        const div = document.getElementById("stock-list-container");
+        div.innerHTML = marketData.map(s => {
+            const isUp = s.candle.close >= s.candle.open;
+            return `
+            <div class="stock-item" onclick="openDetail('${s.code}')">
+                <div>
+                    <div style="font-weight:900; font-size:16px;">${s.code}</div>
+                    <div style="font-size:11px; color:#888">${wallet.stocks[s.code]?.toFixed(1)||0} CP</div>
+                </div>
+                <div style="text-align:right">
+                    <div style="font-size:16px; font-weight:bold; color:${isUp?'var(--green)':'var(--red)'}">${s.price.toFixed(2)}</div>
+                    <div style="font-size:10px; color:#666">${isUp?'+':'-'}</div>
+                </div>
+            </div>`;
+        }).join('');
     }
 
-    function openDetail(code) { playClick(); selectedStock = code; document.getElementById("detail-view").style.display = "flex"; const info = STOCK_INFO[code] || { name: code, pros: "---", cons: "---" }; document.getElementById("info-name").innerText = info.name; document.getElementById("info-pros").innerText = info.pros; document.getElementById("info-cons").innerText = info.cons; setTimeout(() => { const cvs = document.getElementById("chart"); const box = document.querySelector(".chart-container"); cvs.width = box.clientWidth * window.devicePixelRatio; cvs.height = box.clientHeight * window.devicePixelRatio; chartCtx = cvs.getContext("2d"); chartCtx.scale(window.devicePixelRatio, window.devicePixelRatio); updateDetailUI(); drawChart(); }, 50); }
-    function closeDetail() { selectedStock = null; document.getElementById("detail-view").style.display = "none"; renderMarketList(); }
-    function updateDetailUI() { const stock = marketData.find(s => s.code === selectedStock); if(stock) { document.getElementById("d-code").innerText = selectedStock; document.getElementById("d-price").innerText = stock.price.toFixed(2); document.getElementById("d-owned").innerText = wallet.stocks[selectedStock]?.toFixed(2) || 0; const last = candlesCache[selectedStock]?.at(-1); document.getElementById("d-price").style.color = (last && last.close >= last.open) ? "var(--green)" : "var(--red)"; } }
+    // --- LEADERBOARD ---
+    function getNetWorth(cash, stocks) {
+        let total = cash;
+        for(let code in stocks) {
+            const s = marketData.find(x => x.code === code);
+            if(s) total += stocks[code] * s.price;
+        }
+        return total;
+    }
+
+    function updateLeaderboard() {
+        if(marketData.length === 0) return;
+        const myNet = getNetWorth(wallet.cash, wallet.stocks);
+        
+        let list = BOTS.map(b => ({
+            name: b.name,
+            total: getNetWorth(b.base, b.stocks) * (1 + (Math.random()-0.5)*0.05), // Bot dao động
+            avatar: "🤖"
+        }));
+        
+        list.push({ name: currentUser, total: myNet, avatar: "🔥", isMe: true });
+        list.sort((a,b) => b.total - a.total);
+
+        document.getElementById("leaderboard-list").innerHTML = list.map((p, i) => `
+            <div class="rank-item ${p.isMe?'rank-me':''}">
+                <div class="rank-num ${i<3?'rank-'+(i+1):''}">${i+1}</div>
+                <div class="rank-avatar">${p.avatar}</div>
+                <div class="rank-info">
+                    <div class="rank-name">${p.name}</div>
+                    <div class="rank-asset">$${p.total.toLocaleString(undefined, {maximumFractionDigits:0})}</div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // --- NEWS ---
+    async function fetchNewsSource() { try { const r = await fetch(NEWS_URL); const d = await r.json(); if(Array.isArray(d)) newsList = d; } catch(e){} }
+    function generateLiveNews() {
+        if(newsList.length===0) return;
+        const n = newsList[Math.floor(Math.random()*newsList.length)];
+        const t = new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
+        const color = n.b > 0 ? "var(--green)" : n.b < 0 ? "var(--red)" : "#888";
+        
+        const el = document.createElement("div");
+        el.className = "news-card";
+        el.style.borderLeftColor = color;
+        el.innerHTML = `
+            <div class="news-meta"><span>${t}</span><span style="color:${color}; font-weight:bold">${n.b>0?'TỐT':n.b<0?'XẤU':'TT'}</span></div>
+            <div class="news-title" style="color:#ccc">${n.t}</div>
+        `;
+        const c = document.getElementById("news-feed-container");
+        c.insertBefore(el, c.firstChild);
+        if(c.children.length > 20) c.removeChild(c.lastChild);
+    }
+
+    // --- DETAIL & TRADE ---
+    function openDetail(code) {
+        playClick(); selectedStock = code;
+        document.getElementById("detail-view").style.display = "flex";
+        const info = STOCK_INFO[code] || {name:code, pros:"...", cons:"..."};
+        document.getElementById("info-name").innerText = info.name;
+        document.getElementById("info-pros").innerText = info.pros;
+        document.getElementById("info-cons").innerText = info.cons;
+        
+        setTimeout(() => {
+            const cvs = document.getElementById("chart");
+            const box = document.querySelector(".chart-container");
+            cvs.width = box.clientWidth * window.devicePixelRatio;
+            cvs.height = box.clientHeight * window.devicePixelRatio;
+            chartCtx = cvs.getContext("2d");
+            chartCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            updateDetailHeader(); drawChart();
+        }, 50);
+    }
     
-    function drawChart() {
-        if (!selectedStock || !chartCtx) return; const candles = candlesCache[selectedStock]; if (!candles || candles.length === 0) return;
-        const W = document.querySelector(".chart-container").clientWidth; const H = document.querySelector(".chart-container").clientHeight; chartCtx.clearRect(0, 0, W, H);
-        let min = Infinity, max = -Infinity; candles.forEach(c => { if(c.low<min) min=c.low; if(c.high>max) max=c.high; });
-        const range = max - min || 1; const paddingY = 40; const paddingRight = 50; const getY = (val) => H - paddingY - ((val - min) / range) * (H - paddingY*2);
-        chartCtx.font = "11px Arial"; chartCtx.textAlign = "right"; let step = range > 10 ? 10 : (range > 1 ? 1 : 0.1); let start = Math.floor(min/step)*step;
-        for(let p=start; p<=max+step; p+=step) { const y = getY(p); if(y<0 || y>H) continue; chartCtx.strokeStyle = "#222"; chartCtx.beginPath(); chartCtx.moveTo(0,y); chartCtx.lineTo(W-paddingRight,y); chartCtx.stroke(); chartCtx.fillStyle = "#666"; chartCtx.fillText(p.toFixed(step<1?2:1), W-5, y+4); }
-        const cw = (W - paddingRight - 10) / 50;
-        candles.forEach((c, i) => { const x = i * cw + 5; const oY = getY(c.open); const cY = getY(c.close); const hY = getY(c.high); const lY = getY(c.low); const isUp = c.close >= c.open; const color = isUp ? "#00ff88" : "#ff3b3b"; chartCtx.strokeStyle = color; chartCtx.beginPath(); chartCtx.moveTo(x+cw/2, hY); chartCtx.lineTo(x+cw/2, lY); chartCtx.stroke(); chartCtx.fillStyle = color; chartCtx.fillRect(x+1, Math.min(oY, cY), cw-2, Math.max(1, Math.abs(cY-oY))); });
-        const lastY = getY(candles[candles.length-1].close); chartCtx.strokeStyle = "#fff"; chartCtx.setLineDash([4,4]); chartCtx.beginPath(); chartCtx.moveTo(0, lastY); chartCtx.lineTo(W, lastY); chartCtx.stroke(); chartCtx.setLineDash([]);
+    function closeDetail() { selectedStock = null; document.getElementById("detail-view").style.display = "none"; renderMarket(); }
+    
+    function updateDetailHeader() {
+        const s = marketData.find(x => x.code === selectedStock);
+        if(s) {
+            document.getElementById("d-code").innerText = selectedStock;
+            document.getElementById("d-price").innerText = s.price.toFixed(2);
+            document.getElementById("d-owned").innerText = wallet.stocks[selectedStock]?.toFixed(2)||0;
+            const l = candlesCache[selectedStock]?.at(-1);
+            document.getElementById("d-price").style.color = (l && l.close>=l.open) ? "var(--green)" : "var(--red)";
+        }
     }
 
     function trade(type) {
-        if (!selectedStock) return; const input = document.getElementById("trade-amount"); const amount = parseFloat(input.value); if (!amount || amount <= 0) { playError(); return alert("Nhập số tiền hợp lệ!"); }
-        const stock = marketData.find(s => s.code === selectedStock); const price = stock.price;
-        if (type === 'buy') { if (amount > wallet.cash) { playError(); return alert("Không đủ tiền mặt!"); } wallet.cash -= amount; wallet.stocks[selectedStock] = (wallet.stocks[selectedStock] || 0) + (amount / price); playSuccess(); } 
-        else { const sellAmt = amount / price; const owned = wallet.stocks[selectedStock] || 0; if (sellAmt > owned) { playError(); return alert("Không đủ cổ phiếu!"); } wallet.stocks[selectedStock] -= sellAmt; wallet.cash += amount; playSuccess(); }
-        const btn = document.activeElement; btn.style.transform = "scale(0.95)"; setTimeout(()=>btn.style.transform="scale(1)", 150); saveWallet();
+        if(!selectedStock) return;
+        const inp = document.getElementById("trade-amount");
+        const amt = parseFloat(inp.value);
+        if(!amt || amt<=0) { playError(); return alert("Số tiền không hợp lệ"); }
+        
+        const s = marketData.find(x => x.code===selectedStock);
+        if(type==='buy') {
+            if(amt > wallet.cash) { playError(); return alert("Không đủ tiền"); }
+            wallet.cash -= amt;
+            wallet.stocks[selectedStock] = (wallet.stocks[selectedStock]||0) + (amt/s.price);
+            playSuccess();
+        } else {
+            const canSell = (wallet.stocks[selectedStock]||0) * s.price;
+            if(amt > canSell) { playError(); return alert("Không đủ cổ phiếu"); }
+            wallet.stocks[selectedStock] -= (amt/s.price);
+            wallet.cash += amt;
+            playSuccess();
+        }
+        
+        // Không xóa input value để spam lệnh
+        const btn = document.activeElement;
+        btn.style.transform = "scale(0.95)"; setTimeout(()=>btn.style.transform="scale(1)", 150);
+        localStorage.setItem(`user_db_${currentUser}`, JSON.stringify(wallet));
     }
-    function updateHeaderUI() { document.getElementById("cash-display").innerText = wallet.cash.toFixed(2); }
+
+    // --- CHART ---
+    function drawChart() {
+        if(!selectedStock || !chartCtx) return;
+        const data = candlesCache[selectedStock];
+        if(!data || data.length===0) return;
+
+        const W = document.querySelector(".chart-container").clientWidth;
+        const H = document.querySelector(".chart-container").clientHeight;
+        chartCtx.clearRect(0,0,W,H);
+
+        let min=Infinity, max=-Infinity;
+        data.forEach(d=>{ if(d.low<min)min=d.low; if(d.high>max)max=d.high; });
+        const range = max-min || 1;
+        const padding = 40;
+        const getY = v => H - padding - ((v-min)/range)*(H-padding*2);
+
+        // Grid
+        chartCtx.strokeStyle = "#222"; chartCtx.beginPath();
+        for(let i=0; i<=5; i++) { let y=H-padding-(i/5)*(H-padding*2); chartCtx.moveTo(0,y); chartCtx.lineTo(W,y); }
+        chartCtx.stroke();
+
+        // Candle
+        const cw = (W-60)/50;
+        data.forEach((d,i) => {
+            const x = i*cw + 10;
+            const color = d.close >= d.open ? "#00ff88" : "#ff3b3b";
+            chartCtx.strokeStyle = color; chartCtx.fillStyle = color;
+            chartCtx.beginPath(); chartCtx.moveTo(x+cw/2, getY(d.high)); chartCtx.lineTo(x+cw/2, getY(d.low)); chartCtx.stroke();
+            chartCtx.fillRect(x+1, Math.min(getY(d.open), getY(d.close)), cw-2, Math.abs(getY(d.open)-getY(d.close))||1);
+        });
+        
+        // Price Line
+        const ly = getY(data.at(-1).close);
+        chartCtx.strokeStyle="white"; chartCtx.setLineDash([5,5]); 
+        chartCtx.beginPath(); chartCtx.moveTo(0,ly); chartCtx.lineTo(W,ly); chartCtx.stroke(); chartCtx.setLineDash([]);
+    }
+
+    // --- SETTINGS ---
+    function openSettings() { document.getElementById("settings-modal").style.display='flex'; }
+    function closeSettings(e,f) { if(f || e.target.id==='settings-modal') document.getElementById("settings-modal").style.display='none'; }
+    function toggleAudio(t) {
+        if(t==='bgm') { allowBGM = document.getElementById("toggle-bgm").checked; allowBGM ? bgm.play() : bgm.pause(); }
+        if(t==='sfx') { allowSFX = document.getElementById("toggle-sfx").checked; }
+        localStorage.setItem("settings_audio", JSON.stringify({bgm:allowBGM, sfx:allowSFX}));
+    }
+    function switchTab(t) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.view-content').forEach(c => c.classList.add('hidden'));
+        if(t==='market') { document.querySelector('.tab-btn:nth-child(1)').classList.add('active'); document.getElementById('tab-market').classList.remove('hidden'); }
+        if(t==='rank') { document.querySelector('.tab-btn:nth-child(2)').classList.add('active'); document.getElementById('tab-rank').classList.remove('hidden'); }
+        if(t==='news') { document.querySelector('.tab-btn:nth-child(3)').classList.add('active'); document.getElementById('tab-news').classList.remove('hidden'); }
+    }
 </script>
 </body>
 </html>
