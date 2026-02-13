@@ -34,17 +34,28 @@
         .btn-login { background: #1f6feb; }
         .btn-reg { background: #238636; }
 
-        /* --- HEADER & NEWS --- */
+        /* --- HEADER --- */
         .header {
             padding: 12px 15px; background: var(--panel); border-bottom: 1px solid var(--border);
             display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; z-index: 10;
         }
-        
-        /* THANH TIN TỨC (NEWS) - Nổi bật hơn */
-        .news-ticker {
-            background: #1a1a00; border-bottom: 1px solid #4d4d00;
-            padding: 8px 0; color: var(--yellow); font-size: 13px;
-            white-space: nowrap; overflow: hidden; flex-shrink: 0;
+        .btn-logout {
+            background: #333; color: #fff; border: 1px solid #555; 
+            padding: 5px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; margin-left: 10px;
+        }
+
+        /* --- TIN TỨC (NEWS) FIXED --- */
+        .news-box {
+            background: #0a0a0a; border-bottom: 1px solid var(--border);
+            padding: 10px 15px; display: flex; align-items: center; gap: 10px;
+            height: 50px; flex-shrink: 0;
+        }
+        .news-label {
+            background: #222; color: #888; font-size: 10px; padding: 3px 6px; border-radius: 4px; font-weight: bold;
+        }
+        .news-content {
+            font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
+            transition: opacity 0.3s;
         }
 
         /* --- LIST VIEW --- */
@@ -68,7 +79,6 @@
             padding: 10px 20px; background: #333; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 14px;
         }
         
-        /* Khu vực hiển thị thêm chi tiết (High/Low) */
         .stats-row {
             display: flex; justify-content: space-around; background: #080808; 
             padding: 8px; font-size: 11px; color: #888; border-bottom: 1px solid #222; flex-shrink: 0;
@@ -81,10 +91,10 @@
         }
         canvas { display: block; width: 100%; height: 100%; }
 
-        /* --- CONTROLS (NÚT BẤM TO HƠN) --- */
+        /* --- CONTROLS --- */
         .controls { 
             padding: 20px 15px; background: var(--panel); border-top: 1px solid var(--border); 
-            flex-shrink: 0; padding-bottom: 30px; /* Safe area cho iPhone */
+            flex-shrink: 0; padding-bottom: 30px; 
         }
         .trade-row { display: flex; gap: 12px; margin-top: 12px; }
         
@@ -93,7 +103,6 @@
             color: white; border-radius: 10px; text-align: center; font-size: 18px; font-weight: bold;
         }
         
-        /* BUTTON TO HƠN */
         .btn-trade { 
             flex: 1; border: none; border-radius: 10px; color: white; 
             font-weight: bold; padding: 18px; font-size: 16px; 
@@ -113,7 +122,7 @@
 <div id="login-screen">
     <div class="login-box">
         <h2 style="margin:0 0 5px 0; color:var(--green); font-size: 24px;">TRADER PRO</h2>
-        <p style="color:#666; font-size: 12px; margin-bottom: 20px;">Hệ thống giao dịch giả lập</p>
+        <p style="color:#666; font-size: 12px; margin-bottom: 20px;">Kết nối máy chủ toàn cầu</p>
         
         <input type="text" id="user" class="inp-auth" placeholder="Tên đăng nhập">
         <input type="password" id="pass" class="inp-auth" placeholder="Mật khẩu">
@@ -126,14 +135,18 @@
 
 <div id="app">
     <div class="header">
-        <div style="font-weight:bold; font-size: 14px;">👤 <span id="u-name" style="color:#ccc">...</span></div>
+        <div style="display:flex; align-items:center;">
+            <div style="font-weight:bold; font-size: 14px;">👤 <span id="u-name" style="color:#ccc">...</span></div>
+            <button onclick="logout()" class="btn-logout">Đăng xuất</button>
+        </div>
         <div style="font-size: 16px; color: var(--green); font-weight: bold; background: rgba(0,255,136,0.1); padding: 5px 10px; border-radius: 6px;">
             $<span id="cash-display">0.00</span>
         </div>
     </div>
 
-    <div class="news-ticker">
-        <marquee scrollamount="5" id="news-text">📰 Đang kết nối vệ tinh...</marquee>
+    <div class="news-box">
+        <div class="news-label">TIN TỨC</div>
+        <div id="news-content" class="news-content" style="color: #666;">Đang tải dữ liệu tin tức...</div>
     </div>
 
     <div id="stock-list-view">
@@ -179,15 +192,18 @@
 <script>
     // --- CẤU HÌNH SERVER ---
     const SERVER_URL = "https://oia.duongminhminh46.workers.dev/"; 
+    const NEWS_URL = "https://raw.githubusercontent.com/minhReal/CSimu/refs/heads/main/news.json";
     // -----------------------
 
     let currentUser = null;
     let wallet = { cash: 1000, stocks: {} };
     let marketData = [];
+    let newsList = [];
     let selectedStock = null;
     let candlesCache = {}; 
     let chartCtx = null;
     let fetchInterval = null;
+    let newsInterval = null;
 
     // --- AUTO LOGIN ---
     (function checkAutoLogin() {
@@ -202,7 +218,7 @@
         }
     })();
 
-    // --- AUTH ---
+    // --- AUTH & LOGOUT ---
     function handleAuth(type) {
         const u = document.getElementById("user").value.trim();
         const p = document.getElementById("pass").value.trim();
@@ -232,6 +248,13 @@
         }
     }
 
+    function logout() {
+        if(confirm("Bạn có chắc muốn đăng xuất?")) {
+            localStorage.removeItem("current_session");
+            location.reload();
+        }
+    }
+
     function saveWallet() {
         if (!currentUser) return;
         const key = `user_db_${currentUser}`;
@@ -246,8 +269,42 @@
         document.getElementById("app").style.display = "flex";
         document.getElementById("u-name").innerText = currentUser;
         
-        fetchData();
+        fetchData(); // Fetch Price
+        fetchNews(); // Fetch News from Github
+        
         if(!fetchInterval) fetchInterval = setInterval(fetchData, 1500);
+        if(!newsInterval) newsInterval = setInterval(updateNewsDisplay, 5000); // Đổi tin mỗi 5s
+    }
+
+    // --- NEWS SYSTEM ---
+    async function fetchNews() {
+        try {
+            const res = await fetch(NEWS_URL);
+            const data = await res.json();
+            if(Array.isArray(data)) {
+                newsList = data;
+                updateNewsDisplay();
+            }
+        } catch(e) { console.error("News error"); }
+    }
+
+    function updateNewsDisplay() {
+        if(newsList.length === 0) return;
+        const randomNews = newsList[Math.floor(Math.random() * newsList.length)];
+        const el = document.getElementById("news-content");
+        
+        // Hiệu ứng Fade
+        el.style.opacity = 0;
+        setTimeout(() => {
+            el.innerText = randomNews.t;
+            
+            // Màu sắc dựa trên Bias (b) trong JSON
+            if (randomNews.b > 0) el.style.color = "#00ff88"; // Tốt
+            else if (randomNews.b < 0) el.style.color = "#ff3b3b"; // Xấu
+            else el.style.color = "#e0e0e0"; // Bình thường
+            
+            el.style.opacity = 1;
+        }, 300);
     }
 
     // --- DATA ---
@@ -256,13 +313,6 @@
             const res = await fetch(SERVER_URL);
             const data = await res.json();
             marketData = data.stocks;
-            
-            // Xử lý Tin tức (News)
-            // Nếu server chưa trả về tin, ta tự tạo tin giả lập để test giao diện
-            const newsContent = data.news ? data.news : 
-                `VN-INDEX: ${marketData[0]?.price.toFixed(2)} | VIN: ${marketData[1]?.price.toFixed(2)} | THỊ TRƯỜNG ĐANG SÔI ĐỘNG...`;
-            document.getElementById("news-text").innerText = "📰 " + newsContent;
-
             processMarketData();
             
             if(!selectedStock) renderList();
@@ -324,7 +374,6 @@
         document.getElementById("stock-list-view").style.display = "none";
         document.getElementById("detail-view").style.display = "flex";
         
-        // Wait UI render
         setTimeout(() => {
              const cvs = document.getElementById("chart");
              const box = document.querySelector(".chart-container");
@@ -358,7 +407,6 @@
             }
             document.getElementById("d-code").innerText = selectedStock;
             
-            // Update Stats Info
             if(candles && candles.length > 0) {
                 let maxH = -Infinity, minL = Infinity;
                 candles.forEach(c => {
@@ -372,7 +420,7 @@
         }
     }
 
-    // --- CHART ENGINE (CÓ GRID LINE & SỐ BÊN CẠNH) ---
+    // --- CHART ENGINE ---
     function drawChart() {
         if (!selectedStock || !chartCtx) return;
         const candles = candlesCache[selectedStock];
@@ -387,43 +435,28 @@
         let min = Infinity, max = -Infinity;
         candles.forEach(c => { if(c.low<min) min=c.low; if(c.high>max) max=c.high; });
         
-        // Padding rộng hơn chút để vẽ số
         const range = max - min || 1;
         const paddingY = 30;
-        const paddingRight = 40; // Chừa chỗ bên phải để vẽ số giá
-
+        const paddingRight = 40; 
         const getY = (val) => H - paddingY - ((val - min) / range) * (H - paddingY*2);
 
-        // --- 1. VẼ GRID LINES (CÁC DÒNG KẺ NGANG) ---
+        // GRID LINES
         chartCtx.font = "10px Arial";
         chartCtx.textAlign = "right";
-        
-        // Tính bước nhảy cho dòng kẻ (Ví dụ: 50, 100...)
-        // Nếu giá ~1000 thì bước nhảy 100, giá ~50 thì bước nhảy 5
         let step = Math.pow(10, Math.floor(Math.log10(range))); 
-        if (range / step < 3) step /= 2; // Nếu ít dòng quá thì chia nhỏ ra
-
-        // Làm tròn min lên để bắt đầu vẽ
+        if (range / step < 3) step /= 2; 
         let startGrid = Math.floor(min / step) * step;
 
         for (let p = startGrid; p <= max + step; p += step) {
             const y = getY(p);
-            
-            // Vẽ dòng kẻ mờ
             chartCtx.strokeStyle = "#222"; 
             chartCtx.lineWidth = 1;
-            chartCtx.beginPath();
-            chartCtx.moveTo(0, y);
-            chartCtx.lineTo(W - paddingRight, y); // Không vẽ đè lên chỗ số
-            chartCtx.stroke();
-
-            // Vẽ số bên phải
-            chartCtx.fillStyle = "#666";
-            chartCtx.fillText(p.toFixed(0), W - 5, y + 3);
+            chartCtx.beginPath(); chartCtx.moveTo(0, y); chartCtx.lineTo(W - paddingRight, y); chartCtx.stroke();
+            chartCtx.fillStyle = "#666"; chartCtx.fillText(p.toFixed(0), W - 5, y + 3);
         }
 
-        // --- 2. VẼ NẾN ---
-        const candleW = (W - paddingRight - 10) / 45; // Chia cho 45 nến
+        // CANDLES
+        const candleW = (W - paddingRight - 10) / 45;
         
         candles.forEach((c, i) => {
             const x = i * candleW + 5;
@@ -431,24 +464,15 @@
             const closeY = getY(c.close);
             const highY = getY(c.high);
             const lowY = getY(c.low);
-            
             const isUp = c.close >= c.open;
             chartCtx.fillStyle = isUp ? "#00ff88" : "#ff3b3b";
             chartCtx.strokeStyle = isUp ? "#00ff88" : "#ff3b3b";
-
-            // Wick
             chartCtx.lineWidth = 1;
-            chartCtx.beginPath();
-            chartCtx.moveTo(x + candleW/2, highY);
-            chartCtx.lineTo(x + candleW/2, lowY);
-            chartCtx.stroke();
-
-            // Body
+            chartCtx.beginPath(); chartCtx.moveTo(x + candleW/2, highY); chartCtx.lineTo(x + candleW/2, lowY); chartCtx.stroke();
             const hBody = Math.abs(closeY - openY) < 1 ? 1 : Math.abs(closeY - openY);
             chartCtx.fillRect(x + 1, Math.min(openY, closeY), candleW - 2, hBody);
         });
         
-        // --- 3. DÒNG GIÁ HIỆN TẠI (ĐỨT ĐOẠN) ---
         const last = candles[candles.length-1];
         const lastY = getY(last.close);
         chartCtx.strokeStyle = "#fff";
@@ -479,14 +503,15 @@
             wallet.cash += amount;
         }
 
-        // Hiệu ứng nút bấm
         const btn = document.activeElement;
         if(btn) {
             btn.style.transform = "scale(0.95)";
             setTimeout(()=>btn.style.transform="scale(1)", 100);
         }
 
-        input.value = "";
+        // KHÔNG XÓA INPUT VALUE ĐỂ TIỆN SPAM
+        // input.value = ""; 
+        
         saveWallet();
     }
 
