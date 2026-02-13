@@ -3,498 +3,403 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X - Pro Trading</title>
+    <title>Terminal X - Admin Edition</title>
     
     <script>
-        // 1. Chặn menu chuột phải
-        document.addEventListener('contextmenu', event => event.preventDefault());
-
-        // 2. Chặn phím tắt xem source
+        document.addEventListener('contextmenu', e => e.preventDefault());
         document.onkeydown = function(e) {
-            if (e.keyCode == 123) return false; // F12
-            if (e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false; // Ctrl+Shift+I
-            if (e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false; // Ctrl+Shift+C
-            if (e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false; // Ctrl+Shift+J
-            if (e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false; // Ctrl+U
+            // Chặn F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J
+            if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) || (e.ctrlKey && e.keyCode == 85)) return false;
         }
-
-        // 3. Bẫy Debugger (Chống soi code)
-        // setInterval(() => { debugger; }, 200); 
-        // (Tôi đã comment dòng trên để bạn test cho dễ, khi nào public thì bỏ comment ra nhé!)
     </script>
 
     <style>
         /* --- CORE STYLES --- */
-        :root { 
-            --bg: #050505; --panel: #121212; --border: #2a2a2a; 
-            --green: #00ff88; --red: #ff3b3b; --yellow: #ffcc00; --gold: #ffd700;
-            --text-main: #e0e0e0; --text-dim: #888;
-        }
-        body { margin: 0; background: var(--bg); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; height: 100dvh; }
-        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        :root { --bg:#050505; --panel:#121212; --border:#2a2a2a; --green:#00ff88; --red:#ff3b3b; --gold:#ffd700; --text:#e0e0e0; }
+        body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow:hidden; height:100dvh; }
+        * { box-sizing:border-box; user-select:none; -webkit-tap-highlight-color:transparent; }
+        button { cursor: pointer; }
         
-        /* --- LAYOUT --- */
-        #app { display: none; height: 100dvh; flex-direction: column; }
+        #app { display:none; height:100dvh; flex-direction:column; }
         
         /* LOGIN */
-        #login-screen { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .login-box { background: var(--panel); border: 1px solid var(--border); padding: 30px; border-radius: 16px; width: 85%; max-width: 350px; text-align: center; box-shadow: 0 0 50px rgba(0,255,136,0.1); }
-        .inp-auth { width: 100%; padding: 15px; margin: 10px 0; background: #1a1a1a; border: 1px solid #333; color: white; border-radius: 8px; font-size: 16px; outline: none; text-align: center; }
-        .btn-auth { width: 100%; padding: 15px; margin-top: 15px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 16px; color: white; transition: 0.2s; }
-        .btn-auth:active { transform: scale(0.95); }
+        #login-screen { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:center; align-items:center; }
+        .login-box { background:var(--panel); border:1px solid var(--border); padding:30px; border-radius:16px; width:85%; max-width:350px; text-align:center; box-shadow: 0 0 50px rgba(0,255,136,0.1); }
+        .inp-auth { width:100%; padding:15px; margin:10px 0; background:#1a1a1a; border:1px solid #333; color:white; border-radius:8px; font-size:16px; text-align:center; outline:none; }
+        .btn-auth { width:100%; padding:15px; margin-top:10px; border:none; border-radius:8px; font-weight:bold; font-size:16px; color:white; transition:0.2s; }
+        .btn-auth:active { transform:scale(0.95); }
         
-        /* HEADER */
-        .header { padding: 12px 15px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .btn-icon { background: none; border: none; font-size: 20px; cursor: pointer; padding: 5px; }
+        /* HEADER & TABS */
+        .header { padding:12px 15px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
+        .tab-bar { display:flex; border-bottom:1px solid var(--border); background:var(--panel); flex-shrink:0; }
+        .tab-btn { flex:1; padding:12px; text-align:center; font-size:12px; font-weight:bold; color:#888; border-bottom:3px solid transparent; }
+        .tab-btn.active { color:var(--green); border-bottom-color:var(--green); background:#1a1a1a; }
+        .view-content { flex:1; overflow-y:auto; position:relative; }
+        .hidden { display:none!important; }
 
-        /* TABS */
-        .tab-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--panel); }
-        .tab-btn { flex: 1; padding: 12px; text-align: center; font-size: 12px; font-weight: bold; color: var(--text-dim); cursor: pointer; border-bottom: 3px solid transparent; }
-        .tab-btn.active { color: var(--green); border-bottom-color: var(--green); background: #1a1a1a; }
-
-        /* VIEWS */
-        .view-content { flex: 1; overflow-y: auto; position: relative; }
-        .hidden { display: none !important; }
-
-        /* STOCK LIST */
-        .stock-item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 16px; margin: 10px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; transition: background 0.2s; }
-        .stock-item:active { background: #252525; }
-
-        /* LEADERBOARD */
-        .rank-item { display: flex; align-items: center; background: #161616; padding: 12px; margin: 8px 10px; border-radius: 8px; border: 1px solid var(--border); }
-        .rank-num { width: 30px; font-weight: 900; font-size: 16px; color: #666; text-align: center; }
-        .rank-1 { color: var(--gold); text-shadow: 0 0 10px rgba(255,215,0,0.5); }
-        .rank-2 { color: #c0c0c0; } 
-        .rank-3 { color: #cd7f32; }
-        .rank-me { border: 1px solid var(--green); background: #0f3318; }
-        .rank-avatar { width: 30px; height: 30px; border-radius: 50%; background: #333; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 14px; }
-
-        /* NEWS */
-        .news-card { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; margin: 10px; border-left: 4px solid #555; }
-        .news-title { font-size: 13px; font-weight: 500; }
-        .news-meta { display: flex; justify-content: space-between; font-size: 10px; color: #666; margin-bottom: 5px; }
+        /* LIST ITEMS */
+        .stock-item { display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:16px; margin:10px; border-radius:10px; border:1px solid var(--border); }
+        .rank-item { display:flex; align-items:center; background:#161616; padding:12px; margin:8px 10px; border-radius:8px; border:1px solid var(--border); }
+        .rank-me { border:1px solid var(--green); background:#0f3318; }
+        .rank-num { width:30px; font-weight:900; color:#666; text-align:center; }
+        .rank-1 { color:var(--gold); text-shadow:0 0 10px rgba(255,215,0,0.5); }
+        
+        /* ADMIN PANEL STYLES */
+        #admin-view { position:fixed; inset:0; background:#000; z-index:5000; display:none; flex-direction:column; }
+        .admin-header { padding:15px; background:#2a0505; color:var(--red); font-weight:bold; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--red); }
+        .admin-section { padding:15px; border-bottom:1px solid #333; }
+        .user-row { display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #222; }
+        .btn-del { background:var(--red); color:white; border:none; padding:5px 10px; border-radius:4px; font-size:10px; }
 
         /* DETAIL VIEW */
-        #detail-view { display: none; flex: 1; flex-direction: column; background: #000; z-index: 100; position: fixed; inset: 0; }
-        .chart-header { padding: 10px 15px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 15px; }
-        .back-btn { padding: 8px 16px; background: #333; color: white; border: none; border-radius: 6px; font-weight: bold; }
-        .chart-container { flex: 1; width: 100%; min-height: 200px; }
-        canvas { display: block; width: 100%; height: 100%; }
+        #detail-view { display:none; flex:1; flex-direction:column; background:#000; z-index:100; position:fixed; inset:0; }
+        .chart-container { flex:1; width:100%; min-height:200px; }
+        canvas { display:block; width:100%; height:100%; }
+        .mini-news { background: #0a0a0a; border-bottom: 1px solid #333; padding: 8px; font-size: 12px; color: #aaa; white-space: nowrap; overflow: hidden; border-left: 3px solid var(--green); }
         
-        .controls { padding: 15px; background: var(--panel); border-top: 1px solid var(--border); padding-bottom: 30px; }
-        .trade-actions { display: flex; gap: 10px; }
-        .btn-trade { flex: 1; border: none; border-radius: 8px; color: white; font-weight: bold; padding: 16px; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
-        .btn-trade:active { transform: translateY(2px); }
-        .bg-up { background: linear-gradient(to bottom, #2ea043, #238636); } 
-        .bg-down { background: linear-gradient(to bottom, #ff4d4d, #da3633); }
-
-        /* SETTINGS MODAL */
-        #settings-modal { position: fixed; inset: 0; z-index: 5000; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; }
-        .settings-box { background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px; width: 80%; max-width: 300px; }
-        .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #333; }
-        .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 34px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
-        input:checked + .slider { background-color: var(--green); }
-        input:checked + .slider:before { transform: translateX(26px); }
-
-        .up { color: var(--green); } .down { color: var(--red); }
+        /* NEWS CARD */
+        .news-card { background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin:10px; border-left:4px solid #555; }
+        
+        /* SETTINGS */
+        #settings-modal { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; }
+        .settings-box { background:var(--panel); border:1px solid var(--border); padding:20px; border-radius:12px; width:80%; max-width:300px; }
+        .up{color:var(--green)} .down{color:var(--red)}
     </style>
 </head>
 <body>
 
-<audio id="bgm" loop>
-    <source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg">
-</audio>
+<audio id="bgm" loop><source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg"></audio>
 
 <div id="login-screen">
     <div class="login-box">
-        <h2 style="margin:0 0 20px 0; color:var(--green); letter-spacing: 2px;">TERMINAL X</h2>
-        <input type="text" id="user" class="inp-auth" placeholder="Tên đăng nhập">
-        <input type="password" id="pass" class="inp-auth" placeholder="Mật khẩu">
-        <button onclick="handleAuth('login')" class="btn-auth" style="background: #1f6feb;">ĐĂNG NHẬP</button>
-        <button onclick="handleAuth('register')" class="btn-auth" style="background: #238636;">ĐĂNG KÝ MỚI</button>
-        <div id="msg" style="color:var(--red); font-size:12px; margin-top:15px; min-height:15px;"></div>
+        <h2 style="margin:0 0 20px 0; color:var(--green); letter-spacing:1px;">TERMINAL X</h2>
+        <input type="text" id="user" class="inp-auth" placeholder="Tên hiển thị (minh = admin)">
+        <input type="password" id="pass" class="inp-auth" placeholder="Mật mã bí mật">
+        <button onclick="auth('login')" class="btn-auth" style="background:#1f6feb;">ĐĂNG NHẬP</button>
+        <button onclick="auth('reg')" class="btn-auth" style="background:#238636;">ĐĂNG KÝ</button>
+        <div id="msg" style="color:var(--red); font-size:12px; margin-top:15px;"></div>
     </div>
 </div>
 
 <div id="app">
     <div class="header">
-        <div style="font-weight:bold; font-size: 14px;">👤 <span id="u-name" style="color:#ccc">...</span></div>
-        <div style="display:flex; align-items:center; gap:10px;">
-             <div style="font-size: 16px; color: var(--green); font-weight: bold; background: rgba(0,255,136,0.1); padding: 5px 10px; border-radius: 6px;">
-                $<span id="cash-display">0.00</span>
-            </div>
-            <button onclick="openSettings()" class="btn-icon">⚙️</button>
+        <div style="font-weight:bold;">👤 <span id="u-name">...</span></div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:5px 8px; border-radius:4px; font-size:10px; font-weight:bold;">ADMIN</button>
+            
+            <div style="font-weight:bold; color:var(--green);">$<span id="cash">0.00</span></div>
+            <button onclick="openSettings()" style="background:none; border:none; font-size:18px;">⚙️</button>
         </div>
     </div>
 
     <div class="tab-bar">
-        <div class="tab-btn active" onclick="switchTab('market'); playClick()">THỊ TRƯỜNG</div>
-        <div class="tab-btn" onclick="switchTab('rank'); playClick()">XẾP HẠNG</div>
-        <div class="tab-btn" onclick="switchTab('news'); playClick()">TIN TỨC</div>
+        <div class="tab-btn active" onclick="tab('market')">THỊ TRƯỜNG</div>
+        <div class="tab-btn" onclick="tab('rank')">XẾP HẠNG</div>
+        <div class="tab-btn" onclick="tab('news')">TIN TỨC</div>
     </div>
 
-    <div id="tab-market" class="view-content"><div id="stock-list-container" style="padding-bottom:20px;"></div></div>
-    <div id="tab-rank" class="view-content hidden"><div id="leaderboard-list"></div></div>
-    <div id="tab-news" class="view-content hidden"><div id="news-feed-container" style="padding:10px;"></div></div>
+    <div id="tab-market" class="view-content"><div id="list"></div></div>
+    <div id="tab-rank" class="view-content hidden"><div id="rank-list" style="padding:10px;"></div></div>
+    <div id="tab-news" class="view-content hidden"><div id="news-list" style="padding:10px;"></div></div>
+</div>
 
-    <div id="settings-modal" onclick="closeSettings(event)">
-        <div class="settings-box">
-            <h3 style="margin-top:0; text-align:center;">CÀI ĐẶT</h3>
-            <div class="setting-row">
-                <span>Nhạc nền (BGM)</span>
-                <label class="switch"><input type="checkbox" id="toggle-bgm" checked onchange="toggleAudio('bgm')"><span class="slider"></span></label>
+<div id="admin-view">
+    <div class="admin-header">
+        <span>QUẢN TRỊ VIÊN (MINH)</span>
+        <button onclick="document.getElementById('admin-view').style.display='none'" style="background:#440000; color:#ffaaaa; border:1px solid var(--red); padding:5px 10px; border-radius:4px;">ĐÓNG</button>
+    </div>
+    <div class="view-content" style="padding-bottom:50px;">
+        <div class="admin-section">
+            <h4 style="margin:0 0 10px 0; color:#aaa;">QUẢN LÝ NGƯỜI DÙNG</h4>
+            <button onclick="loadAdminUsers()" style="background:#333; color:white; border:none; padding:8px; width:100%; border-radius:4px; margin-bottom:10px;">🔄 Làm mới danh sách</button>
+            <div id="admin-user-list">Đang tải...</div>
+        </div>
+        
+        <div class="admin-section">
+            <h4 style="margin:0 0 10px 0; color:#aaa;">THAO TÚNG THỊ TRƯỜNG</h4>
+            <div style="display:flex; gap:5px; margin-bottom:10px;">
+                <select id="adm-stock" class="inp-auth" style="padding:8px; margin:0; flex:1;">
+                    <option value="VN-INDEX">VN-INDEX</option>
+                    <option value="VIN">VIN</option>
+                    <option value="FPT">FPT</option>
+                    <option value="DIG">DIG</option>
+                </select>
+                <select id="adm-action" class="inp-auth" style="padding:8px; margin:0; flex:1;">
+                    <option value="pump">ĐẨY GIÁ (PUMP)</option>
+                    <option value="dump">ĐẠP GIÁ (DUMP)</option>
+                </select>
             </div>
-            <div class="setting-row">
-                <span>Âm thanh (SFX)</span>
-                <label class="switch"><input type="checkbox" id="toggle-sfx" checked onchange="toggleAudio('sfx')"><span class="slider"></span></label>
-            </div>
-            <button onclick="logout()" style="width:100%; padding:12px; background:#da3633; border:none; color:white; border-radius:6px; margin-top:20px; font-weight:bold;">ĐĂNG XUẤT</button>
-            <button onclick="closeSettings(null, true)" style="width:100%; padding:10px; background:#333; border:none; color:white; border-radius:6px; margin-top:10px;">Đóng</button>
+            <button onclick="adminAction()" style="width:100%; background:var(--gold); color:black; border:none; padding:12px; font-weight:bold; border-radius:4px;">THỰC THI LỆNH</button>
         </div>
     </div>
 </div>
 
+<div id="settings-modal" onclick="if(event.target.id==='settings-modal') this.style.display='none'">
+    <div class="settings-box">
+        <h3 style="text-align:center; margin-top:0;">CÀI ĐẶT</h3>
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+            <span>Nhạc nền</span><input type="checkbox" id="toggle-bgm" checked onchange="toggleAudio()">
+        </div>
+        <button onclick="logout()" style="width:100%; padding:10px; background:#da3633; color:white; border:none; border-radius:5px;">Đăng xuất</button>
+    </div>
+</div>
+
 <div id="detail-view">
-    <div class="chart-header">
-        <button class="back-btn" onclick="closeDetail(); playClick()">◀ BACK</button>
-        <div style="flex:1;">
-            <div id="d-code" style="font-weight:900; font-size:20px; letter-spacing: 1px;">CODE</div>
-            <div style="font-size:11px; color:#888;">Sở hữu: <span id="d-owned" style="color:#fff">0</span></div>
-        </div>
-        <div style="text-align: right;">
-            <div id="d-price" style="font-size:24px; font-weight: bold;">0.00</div>
-        </div>
+    <div class="header">
+        <button onclick="closeDetail()" style="background:#333; color:white; border:none; padding:5px 15px; border-radius:4px;">◀</button>
+        <div id="d-code" style="font-weight:900; font-size:18px;"></div>
+        <div id="d-price" style="font-size:18px; font-weight:bold;"></div>
     </div>
     
-    <div style="padding:10px; background:#0d0d0d; border-bottom:1px solid #333; font-size:12px;">
-        <div id="info-name" style="font-weight:bold; color:white; margin-bottom:5px;">...</div>
-        <div style="color:var(--green)">✚ <span id="info-pros">...</span></div>
-        <div style="color:var(--red)">✖ <span id="info-cons">...</span></div>
-    </div>
-
+    <div class="mini-news" id="mini-news-ticker">📰 Đang tải tin tức...</div>
     <div class="chart-container"><canvas id="chart"></canvas></div>
-
-    <div class="controls">
-        <input type="number" id="trade-amount" class="inp-auth" placeholder="Nhập số tiền ($)" style="margin-bottom:15px; font-size:20px; font-weight:bold;">
-        <div class="trade-actions">
-            <button class="btn-trade bg-up" onclick="trade('buy')">MUA</button>
-            <button class="btn-trade bg-down" onclick="trade('sell')">BÁN</button>
+    
+    <div style="padding:20px; background:#111; border-top:1px solid #333;">
+        <input type="number" id="amt" class="inp-auth" placeholder="Số tiền ($)" style="margin-bottom:10px;">
+        <div style="display:flex; gap:10px;">
+            <button onclick="trade('buy')" class="btn-auth" style="margin:0; background:#238636;">MUA</button>
+            <button onclick="trade('sell')" class="btn-auth" style="margin:0; background:#da3633;">BÁN</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- CONFIG ---
-    const SERVER_URL = "https://oia.duongminhminh46.workers.dev/"; 
-    const NEWS_URL = "https://raw.githubusercontent.com/minhReal/CSimu/refs/heads/main/news.json";
+    // --- CẤU HÌNH ---
+    const SERVER = "https://oia.duongminhminh46.workers.dev/"; 
+    const NEWS_SRC = "https://raw.githubusercontent.com/minhReal/CSimu/refs/heads/main/news.json";
 
-    // --- DATA ---
-    const STOCK_INFO = {
-        "VN-INDEX": { name: "Chỉ số VN-Index", pros: "An toàn, đại diện nền kinh tế.", cons: "Biến động thấp." },
-        "VIN": { name: "Vingroup", pros: "Hệ sinh thái lớn.", cons: "Nợ vay cao." },
-        "FPT": { name: "FPT Corp", pros: "Công nghệ, tăng trưởng đều.", cons: "Giá cao." },
-        "HPG": { name: "Thép Hòa Phát", pros: "Vua thép.", cons: "Theo chu kỳ kinh tế." },
-        "VTB": { name: "VietinBank", pros: "Bank nhà nước.", cons: "Nợ xấu." },
-        "DIG": { name: "DIC Corp", pros: "Dễ tăng sốc.", cons: "Rủi ro cực cao." }
-    };
-
-    // Bots giả lập để đua top
-    const BOTS = [
-        { name: "Elon Musk", base: 100000, stocks: {"VIN": 2000} },
-        { name: "Warren Buffett", base: 50000, stocks: {"HPG": 1500} },
-        { name: "Shark Bình", base: 20000, stocks: {"FPT": 500} },
-        { name: "Cá Mập", base: 5000, stocks: {"DIG": 1000} }
-    ];
-
-    // --- STATE ---
-    let currentUser = null;
-    let wallet = { cash: 250, stocks: {} };
-    let marketData = [];
-    let candlesCache = {};
-    let selectedStock = null;
-    let newsList = [];
-
-    // --- AUDIO ---
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    let allowBGM = true, allowSFX = true;
+    let me = null, wallet = {cash:250, stocks:{}}, data = [], candles = {}, sel = null, news = [];
     const bgm = document.getElementById("bgm"); bgm.volume = 0.3;
 
-    function playTone(f, t, d) {
-        if(!allowSFX) return;
-        if(audioCtx.state==='suspended') audioCtx.resume();
-        const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-        o.type=t; o.frequency.value=f; g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime+d);
-        o.connect(g); g.connect(audioCtx.destination); o.start(); o.stop(audioCtx.currentTime+d);
-    }
-    const playClick = () => playTone(800,'sine',0.05);
-    const playSuccess = () => { playTone(600,'sine',0.1); setTimeout(()=>playTone(1200,'sine',0.3),100); };
-    const playError = () => playTone(150,'sawtooth',0.3);
-
-    document.addEventListener("visibilitychange", () => {
-        if(document.hidden) bgm.pause();
-        else if(allowBGM && currentUser) bgm.play();
-    });
-
-    // --- AUTH ---
-    (function init() {
-        const s = localStorage.getItem("current_session");
-        if(s) {
-            const d = localStorage.getItem(`user_db_${s}`);
-            if(d) { currentUser = s; wallet = JSON.parse(d); enterApp(); }
-        }
-        // Load settings
-        const set = JSON.parse(localStorage.getItem("settings_audio"));
-        if(set) { 
-            allowBGM = set.bgm; allowSFX = set.sfx;
-            document.getElementById("toggle-bgm").checked = allowBGM;
-            document.getElementById("toggle-sfx").checked = allowSFX;
-        }
+    // --- KHỞI TẠO ---
+    (function(){
+        const s = localStorage.getItem("sess");
+        if(s && localStorage.getItem(`u_${s}`)) { me = s; wallet = JSON.parse(localStorage.getItem(`u_${s}`)); enter(); }
     })();
 
-    function handleAuth(type) {
-        playClick();
+    // --- AUTHENTICATION ---
+    async function auth(type) {
         const u = document.getElementById("user").value.trim();
         const p = document.getElementById("pass").value.trim();
-        const msg = document.getElementById("msg");
-        if(!u || !p) { playError(); msg.innerText="Thiếu thông tin"; return; }
-        const key = `user_db_${u}`;
-        
-        if(type === 'register') {
-            if(localStorage.getItem(key)) { playError(); msg.innerText="Tên đã tồn tại"; return; }
-            localStorage.setItem(key, JSON.stringify({pass:p, cash:250, stocks:{}}));
-            playSuccess(); msg.innerText="Đăng ký thành công ($250)"; msg.style.color="var(--green)";
+        if(!u || !p) return;
+        const k = `u_${u}`;
+
+        // Đăng ký: Check server xem tên tồn tại chưa
+        if(type==='reg') {
+            try {
+                const check = await fetch(SERVER + "check-user?u=" + u).then(r=>r.json());
+                if(check.exists || localStorage.getItem(k)) return alert("Tên này đã có người dùng!");
+                
+                localStorage.setItem(k, JSON.stringify({pass:p, cash:250, stocks:{}}));
+                alert("Đăng ký thành công ($250)!");
+            } catch(e) { alert("Lỗi kết nối Server"); }
         } else {
-            const d = JSON.parse(localStorage.getItem(key));
-            if(!d || d.pass!==p) { playError(); msg.innerText="Sai mật khẩu"; return; }
-            currentUser = u; wallet = d; localStorage.setItem("current_session", u);
-            enterApp();
+            // Đăng nhập
+            const d = JSON.parse(localStorage.getItem(k));
+            if(!d || d.pass!==p) return alert("Sai mật khẩu hoặc tài khoản không tồn tại trên máy này");
+            me = u; wallet = d; localStorage.setItem("sess", u); enter();
         }
     }
 
-    function enterApp() {
+    function enter() {
         document.getElementById("login-screen").style.display="none";
         document.getElementById("app").style.display="flex";
-        document.getElementById("u-name").innerText = currentUser;
-        if(allowBGM) bgm.play().catch(()=>{});
+        document.getElementById("u-name").innerText = me;
         
-        setInterval(fetchData, 1500);
-        fetchNewsSource();
-        setInterval(generateLiveNews, 5000);
-        setInterval(updateLeaderboard, 3000);
+        // CHECK ADMIN
+        if(me.toLowerCase() === 'minh') {
+            document.getElementById("btn-admin").style.display = 'block';
+        }
+
+        if(document.getElementById("toggle-bgm").checked) bgm.play().catch(()=>{});
+        
+        setInterval(loop, 1500);
+        setInterval(syncRank, 3000); // Tự động lưu điểm lên server
+        setInterval(fetchRank, 5000);
+        setInterval(updateTicker, 4000);
+        loadNews();
     }
 
-    function logout() { playClick(); if(confirm("Đăng xuất?")) { localStorage.removeItem("current_session"); location.reload(); } }
+    // --- ADMIN FUNCTIONS ---
+    function openAdmin() {
+        document.getElementById("admin-view").style.display = "flex";
+        loadAdminUsers();
+    }
+
+    async function loadAdminUsers() {
+        try {
+            const res = await fetch(SERVER + "admin/users");
+            const users = await res.json();
+            const div = document.getElementById("admin-user-list");
+            if(users.length === 0) { div.innerHTML = "Chưa có người chơi nào."; return; }
+            
+            div.innerHTML = users.map(u => `
+                <div class="user-row">
+                    <div>
+                        <div style="font-weight:bold; color:white">${u.name}</div>
+                        <div style="font-size:11px; color:#888">$${parseFloat(u.asset).toLocaleString()}</div>
+                    </div>
+                    ${u.name.toLowerCase() !== 'minh' ? 
+                      `<button class="btn-del" onclick="deleteUser('${u.name}')">XÓA</button>` : 
+                      '<span style="font-size:10px; color:gold">ADMIN</span>'}
+                </div>
+            `).join('');
+        } catch(e) { alert("Lỗi tải danh sách users"); }
+    }
+
+    async function deleteUser(name) {
+        if(!confirm(`Xóa tài khoản: ${name}?`)) return;
+        await fetch(SERVER + "admin/delete-user", { 
+            method: "POST", 
+            body: JSON.stringify({user: name}) 
+        });
+        loadAdminUsers(); // Reload list
+    }
+
+    function adminAction() {
+        const stock = document.getElementById("adm-stock").value;
+        const action = document.getElementById("adm-action").value;
+        const msg = action==='pump' ? "TIN TỐT: Cá mập gom hàng!" : "TIN XẤU: Chủ tịch bán chui!";
+        // Push fake news to local client immediately
+        news.unshift({ t: `ADMIN LEAK: ${stock} - ${msg}`, b: action==='pump'?50:-50 });
+        alert(`Đã tung lệnh ${action.toUpperCase()} cho mã ${stock}`);
+    }
 
     // --- CORE LOGIC ---
-    async function fetchData() {
+    async function loop() {
         try {
-            const res = await fetch(SERVER_URL);
-            const data = await res.json();
-            marketData = data.stocks;
+            const res = await fetch(SERVER);
+            const json = await res.json();
+            data = json.stocks;
             
-            marketData.forEach(s => {
-                if(!candlesCache[s.code]) candlesCache[s.code] = [];
-                const list = candlesCache[s.code];
-                if(list.length===0 || list.at(-1).time !== s.candle.time) {
+            data.forEach(s => {
+                if(!candles[s.code]) candles[s.code] = [];
+                const list = candles[s.code];
+                if(!list.length || list.at(-1).time !== s.candle.time) {
                     list.push(s.candle);
-                    if(list.length>50) list.shift();
+                    if(list.length>40) list.shift();
                 } else list[list.length-1] = s.candle;
             });
 
-            if(!selectedStock) renderMarket();
-            else { updateDetailHeader(); drawChart(); }
-            document.getElementById("cash-display").innerText = wallet.cash.toFixed(2);
-        } catch(e) {}
+            if(!sel) renderList(); else updateDetail();
+            document.getElementById("cash").innerText = wallet.cash.toFixed(2);
+        } catch(e){}
     }
 
-    function renderMarket() {
-        const div = document.getElementById("stock-list-container");
-        div.innerHTML = marketData.map(s => {
-            const isUp = s.candle.close >= s.candle.open;
-            return `
-            <div class="stock-item" onclick="openDetail('${s.code}')">
-                <div>
-                    <div style="font-weight:900; font-size:16px;">${s.code}</div>
-                    <div style="font-size:11px; color:#888">${wallet.stocks[s.code]?.toFixed(1)||0} CP</div>
+    async function syncRank() {
+        let total = wallet.cash;
+        data.forEach(s => { if(wallet.stocks[s.code]) total += wallet.stocks[s.code] * s.price; });
+        await fetch(SERVER + "update-rank", { method: "POST", body: JSON.stringify({ user: me, asset: total }) });
+    }
+
+    async function fetchRank() {
+        if(document.getElementById("tab-rank").classList.contains("hidden")) return;
+        try {
+            const res = await fetch(SERVER + "get-rank");
+            const list = await res.json();
+            document.getElementById("rank-list").innerHTML = list.map((p, i) => `
+                <div class="rank-item ${p.name===me?'rank-me':''}">
+                    <div class="rank-num ${i==0?'rank-1':''}">${i+1}</div>
+                    <div style="flex:1; margin-left:10px;">
+                        <div style="font-weight:bold; color:white;">${p.name}</div>
+                        <div style="font-size:12px; color:#888;">$${p.total.toLocaleString(undefined, {maximumFractionDigits:0})}</div>
+                    </div>
                 </div>
-                <div style="text-align:right">
-                    <div style="font-size:16px; font-weight:bold; color:${isUp?'var(--green)':'var(--red)'}">${s.price.toFixed(2)}</div>
-                    <div style="font-size:10px; color:#666">${isUp?'+':'-'}</div>
-                </div>
-            </div>`;
+            `).join('');
+        } catch(e){}
+    }
+
+    // --- UI HELPERS ---
+    function renderList() {
+        document.getElementById("list").innerHTML = data.map(s => {
+            const up = s.candle.close >= s.candle.open;
+            return `<div class="stock-item" onclick="openD('${s.code}')">
+                <div><div style="font-weight:900">${s.code}</div><div style="font-size:11px;color:#888">${wallet.stocks[s.code]?.toFixed(1)||0} CP</div></div>
+                <div style="text-align:right"><div style="font-weight:bold; color:${up?'var(--green)':'var(--red)'}">${s.price.toFixed(2)}</div></div>
+            </div>`
         }).join('');
     }
 
-    // --- LEADERBOARD ---
-    function getNetWorth(cash, stocks) {
-        let total = cash;
-        for(let code in stocks) {
-            const s = marketData.find(x => x.code === code);
-            if(s) total += stocks[code] * s.price;
-        }
-        return total;
+    function updateTicker() {
+        if(news.length===0) return;
+        const n = news[Math.floor(Math.random()*news.length)];
+        const el = document.getElementById("mini-news-ticker");
+        el.innerText = `📰 ${n.t}`;
+        el.style.borderLeftColor = n.b>0?"var(--green)":n.b<0?"var(--red)":"#888";
     }
 
-    function updateLeaderboard() {
-        if(marketData.length === 0) return;
-        const myNet = getNetWorth(wallet.cash, wallet.stocks);
-        
-        let list = BOTS.map(b => ({
-            name: b.name,
-            total: getNetWorth(b.base, b.stocks) * (1 + (Math.random()-0.5)*0.05), // Bot dao động
-            avatar: "🤖"
-        }));
-        
-        list.push({ name: currentUser, total: myNet, avatar: "🔥", isMe: true });
-        list.sort((a,b) => b.total - a.total);
-
-        document.getElementById("leaderboard-list").innerHTML = list.map((p, i) => `
-            <div class="rank-item ${p.isMe?'rank-me':''}">
-                <div class="rank-num ${i<3?'rank-'+(i+1):''}">${i+1}</div>
-                <div class="rank-avatar">${p.avatar}</div>
-                <div class="rank-info">
-                    <div class="rank-name">${p.name}</div>
-                    <div class="rank-asset">$${p.total.toLocaleString(undefined, {maximumFractionDigits:0})}</div>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    // --- NEWS ---
-    async function fetchNewsSource() { try { const r = await fetch(NEWS_URL); const d = await r.json(); if(Array.isArray(d)) newsList = d; } catch(e){} }
-    function generateLiveNews() {
-        if(newsList.length===0) return;
-        const n = newsList[Math.floor(Math.random()*newsList.length)];
-        const t = new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
-        const color = n.b > 0 ? "var(--green)" : n.b < 0 ? "var(--red)" : "#888";
-        
-        const el = document.createElement("div");
-        el.className = "news-card";
-        el.style.borderLeftColor = color;
-        el.innerHTML = `
-            <div class="news-meta"><span>${t}</span><span style="color:${color}; font-weight:bold">${n.b>0?'TỐT':n.b<0?'XẤU':'TT'}</span></div>
-            <div class="news-title" style="color:#ccc">${n.t}</div>
-        `;
-        const c = document.getElementById("news-feed-container");
-        c.insertBefore(el, c.firstChild);
-        if(c.children.length > 20) c.removeChild(c.lastChild);
-    }
-
-    // --- DETAIL & TRADE ---
-    function openDetail(code) {
-        playClick(); selectedStock = code;
-        document.getElementById("detail-view").style.display = "flex";
-        const info = STOCK_INFO[code] || {name:code, pros:"...", cons:"..."};
-        document.getElementById("info-name").innerText = info.name;
-        document.getElementById("info-pros").innerText = info.pros;
-        document.getElementById("info-cons").innerText = info.cons;
-        
-        setTimeout(() => {
-            const cvs = document.getElementById("chart");
-            const box = document.querySelector(".chart-container");
-            cvs.width = box.clientWidth * window.devicePixelRatio;
-            cvs.height = box.clientHeight * window.devicePixelRatio;
-            chartCtx = cvs.getContext("2d");
-            chartCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
-            updateDetailHeader(); drawChart();
-        }, 50);
-    }
+    function openD(c) { sel=c; document.getElementById("detail-view").style.display="flex"; initChart(); updateTicker(); }
+    function closeDetail() { sel=null; document.getElementById("detail-view").style.display="none"; renderList(); }
     
-    function closeDetail() { selectedStock = null; document.getElementById("detail-view").style.display = "none"; renderMarket(); }
-    
-    function updateDetailHeader() {
-        const s = marketData.find(x => x.code === selectedStock);
-        if(s) {
-            document.getElementById("d-code").innerText = selectedStock;
-            document.getElementById("d-price").innerText = s.price.toFixed(2);
-            document.getElementById("d-owned").innerText = wallet.stocks[selectedStock]?.toFixed(2)||0;
-            const l = candlesCache[selectedStock]?.at(-1);
-            document.getElementById("d-price").style.color = (l && l.close>=l.open) ? "var(--green)" : "var(--red)";
-        }
-    }
-
-    function trade(type) {
-        if(!selectedStock) return;
-        const inp = document.getElementById("trade-amount");
-        const amt = parseFloat(inp.value);
-        if(!amt || amt<=0) { playError(); return alert("Số tiền không hợp lệ"); }
-        
-        const s = marketData.find(x => x.code===selectedStock);
-        if(type==='buy') {
-            if(amt > wallet.cash) { playError(); return alert("Không đủ tiền"); }
-            wallet.cash -= amt;
-            wallet.stocks[selectedStock] = (wallet.stocks[selectedStock]||0) + (amt/s.price);
-            playSuccess();
+    function trade(t) {
+        const amt = parseFloat(document.getElementById("amt").value);
+        if(!amt || amt<=0) return;
+        const s = data.find(x=>x.code===sel);
+        if(t==='buy') {
+            if(amt>wallet.cash) return alert("Thiếu tiền");
+            wallet.cash -= amt; wallet.stocks[sel] = (wallet.stocks[sel]||0) + (amt/s.price);
         } else {
-            const canSell = (wallet.stocks[selectedStock]||0) * s.price;
-            if(amt > canSell) { playError(); return alert("Không đủ cổ phiếu"); }
-            wallet.stocks[selectedStock] -= (amt/s.price);
-            wallet.cash += amt;
-            playSuccess();
+            if(amt > (wallet.stocks[sel]||0)*s.price) return alert("Thiếu CP");
+            wallet.stocks[sel] -= (amt/s.price); wallet.cash += amt;
         }
-        
-        // Không xóa input value để spam lệnh
-        const btn = document.activeElement;
-        btn.style.transform = "scale(0.95)"; setTimeout(()=>btn.style.transform="scale(1)", 150);
-        localStorage.setItem(`user_db_${currentUser}`, JSON.stringify(wallet));
+        localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
+        syncRank(); 
     }
 
-    // --- CHART ---
-    function drawChart() {
-        if(!selectedStock || !chartCtx) return;
-        const data = candlesCache[selectedStock];
-        if(!data || data.length===0) return;
+    function tab(id) {
+        document.querySelectorAll('.view-content').forEach(x=>x.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
+        document.getElementById(`tab-${id}`).classList.remove('hidden');
+        event.target.classList.add('active');
+        if(id==='rank') fetchRank();
+    }
 
-        const W = document.querySelector(".chart-container").clientWidth;
-        const H = document.querySelector(".chart-container").clientHeight;
-        chartCtx.clearRect(0,0,W,H);
-
+    // --- CHART DRAWING ---
+    let ctx;
+    function initChart() {
+        const cvs = document.getElementById("chart");
+        cvs.width = cvs.parentElement.clientWidth*2; cvs.height = cvs.parentElement.clientHeight*2;
+        ctx = cvs.getContext("2d"); ctx.scale(2,2);
+    }
+    function updateDetail() {
+        const s = data.find(x=>x.code===sel);
+        document.getElementById("d-code").innerText = s.code;
+        document.getElementById("d-price").innerText = s.price.toFixed(2);
+        
+        const arr = candles[sel];
+        if(!arr) return;
+        const W=ctx.canvas.width/2, H=ctx.canvas.height/2;
+        ctx.clearRect(0,0,W,H);
+        
         let min=Infinity, max=-Infinity;
-        data.forEach(d=>{ if(d.low<min)min=d.low; if(d.high>max)max=d.high; });
+        arr.forEach(d=>{if(d.low<min)min=d.low; if(d.high>max)max=d.high});
         const range = max-min || 1;
-        const padding = 40;
-        const getY = v => H - padding - ((v-min)/range)*(H-padding*2);
-
-        // Grid
-        chartCtx.strokeStyle = "#222"; chartCtx.beginPath();
-        for(let i=0; i<=5; i++) { let y=H-padding-(i/5)*(H-padding*2); chartCtx.moveTo(0,y); chartCtx.lineTo(W,y); }
-        chartCtx.stroke();
-
-        // Candle
-        const cw = (W-60)/50;
-        data.forEach((d,i) => {
-            const x = i*cw + 10;
-            const color = d.close >= d.open ? "#00ff88" : "#ff3b3b";
-            chartCtx.strokeStyle = color; chartCtx.fillStyle = color;
-            chartCtx.beginPath(); chartCtx.moveTo(x+cw/2, getY(d.high)); chartCtx.lineTo(x+cw/2, getY(d.low)); chartCtx.stroke();
-            chartCtx.fillRect(x+1, Math.min(getY(d.open), getY(d.close)), cw-2, Math.abs(getY(d.open)-getY(d.close))||1);
-        });
+        const w = (W-20)/40;
         
-        // Price Line
-        const ly = getY(data.at(-1).close);
-        chartCtx.strokeStyle="white"; chartCtx.setLineDash([5,5]); 
-        chartCtx.beginPath(); chartCtx.moveTo(0,ly); chartCtx.lineTo(W,ly); chartCtx.stroke(); chartCtx.setLineDash([]);
+        arr.forEach((d,i)=>{
+            const x = i*w + 10;
+            const yH = H-((d.high-min)/range)*H, yL = H-((d.low-min)/range)*H;
+            const yO = H-((d.open-min)/range)*H, yC = H-((d.close-min)/range)*H;
+            ctx.fillStyle = d.close>=d.open ? "#00ff88":"#ff3b3b";
+            ctx.fillRect(x, Math.min(yO,yC), w-2, Math.abs(yO-yC)||1);
+            ctx.fillRect(x+w/2-0.5, yH, 1, yL-yH);
+        });
     }
 
-    // --- SETTINGS ---
+    async function loadNews() {
+        try{ 
+            const r=await fetch(NEWS_SRC); const d=await r.json(); news = d;
+            document.getElementById("news-list").innerHTML = d.map(n=>`
+                <div class="news-card" style="border-left-color:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#666'}">
+                    <div style="font-size:10px;color:#888">${n.b>0?'TÍCH CỰC':n.b<0?'TIÊU CỰC':'TIN TỨC'}</div>
+                    <div style="color:#ddd">${n.t}</div>
+                </div>`).join('');
+        }catch(e){}
+    }
+
+    function logout() { localStorage.removeItem("sess"); location.reload(); }
     function openSettings() { document.getElementById("settings-modal").style.display='flex'; }
-    function closeSettings(e,f) { if(f || e.target.id==='settings-modal') document.getElementById("settings-modal").style.display='none'; }
-    function toggleAudio(t) {
-        if(t==='bgm') { allowBGM = document.getElementById("toggle-bgm").checked; allowBGM ? bgm.play() : bgm.pause(); }
-        if(t==='sfx') { allowSFX = document.getElementById("toggle-sfx").checked; }
-        localStorage.setItem("settings_audio", JSON.stringify({bgm:allowBGM, sfx:allowSFX}));
-    }
-    function switchTab(t) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.view-content').forEach(c => c.classList.add('hidden'));
-        if(t==='market') { document.querySelector('.tab-btn:nth-child(1)').classList.add('active'); document.getElementById('tab-market').classList.remove('hidden'); }
-        if(t==='rank') { document.querySelector('.tab-btn:nth-child(2)').classList.add('active'); document.getElementById('tab-rank').classList.remove('hidden'); }
-        if(t==='news') { document.querySelector('.tab-btn:nth-child(3)').classList.add('active'); document.getElementById('tab-news').classList.remove('hidden'); }
-    }
+    function toggleAudio() { if(document.getElementById("toggle-bgm").checked) bgm.play(); else bgm.pause(); }
 </script>
 </body>
 </html>
