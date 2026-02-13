@@ -1,0 +1,22 @@
+[
+  {"t": "Thị trường đi ngang, volume thấp", "b": 0, "v": 4, "r": 100, "d": 3},
+  {"t": "Cá con đang FOMO nhẹ", "b": 3, "v": 8, "r": 80, "d": 2},
+  {"t": "Lực bán chốt lời xuất hiện", "b": -3, "v": 8, "r": 80, "d": 2},
+  {"t": "Elon Musk đăng ảnh chó Shiba", "b": 15, "v": 25, "r": 10, "d": 5},
+  {"t": "Trung Quốc cấm Bitcoin lần thứ N", "b": -12, "v": 20, "r": 15, "d": 5},
+  {"t": "FED giữ nguyên lãi suất", "b": 5, "v": 10, "r": 30, "d": 4},
+  {"t": "Sàn Binance bảo trì rút tiền", "b": -8, "v": 15, "r": 20, "d": 3},
+  {"t": "ETH nâng cấp mạng lưới thành công", "b": 10, "v": 12, "r": 25, "d": 4},
+  {"t": "Cá voi ẩn danh gom 10,000 BTC", "b": 20, "v": 18, "r": 5, "d": 6},
+  {"t": "Hacker tấn công cầu nối Cross-chain", "b": -25, "v": 30, "r": 3, "d": 5},
+  {"t": "SEC phê duyệt ETF Spot", "b": 30, "v": 40, "r": 2, "d": 8},
+  {"t": "Stablecoin UST mất peg", "b": -40, "v": 50, "r": 1, "d": 10},
+  {"t": "Tin đồn Apple tích hợp ví Crypto", "b": 18, "v": 22, "r": 5, "d": 5},
+  {"t": "Thợ đào bán xả coin trả tiền điện", "b": -6, "v": 10, "r": 40, "d": 3},
+  {"t": "KOLs shill coin rác", "b": 2, "v": 35, "r": 20, "d": 2},
+  {"t": "Tâm lý sợ hãi bao trùm", "b": -5, "v": 12, "r": 50, "d": 4},
+  {"t": "Dòng tiền đổ vào GameFi", "b": 8, "v": 15, "r": 25, "d": 4},
+  {"t": "Web3 trend bùng nổ", "b": 12, "v": 18, "r": 20, "d": 5},
+  {"t": "Sàn FTX sụp đổ (Flash Crash)", "b": -50, "v": 60, "r": 1, "d": 5},
+  {"t": "Bitcoin Halving diễn ra", "b": 25, "v": 20, "r": 2, "d": 10}
+]
