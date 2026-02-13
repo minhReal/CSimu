@@ -1,22 +1,33 @@
 [
-  {"t": "Thị trường đi ngang, volume thấp", "b": 0, "v": 4, "r": 100, "d": 3},
-  {"t": "Cá con đang FOMO nhẹ", "b": 3, "v": 8, "r": 80, "d": 2},
-  {"t": "Lực bán chốt lời xuất hiện", "b": -3, "v": 8, "r": 80, "d": 2},
-  {"t": "Elon Musk đăng ảnh chó Shiba", "b": 15, "v": 25, "r": 10, "d": 5},
-  {"t": "Trung Quốc cấm Bitcoin lần thứ N", "b": -12, "v": 20, "r": 15, "d": 5},
-  {"t": "FED giữ nguyên lãi suất", "b": 5, "v": 10, "r": 30, "d": 4},
-  {"t": "Sàn Binance bảo trì rút tiền", "b": -8, "v": 15, "r": 20, "d": 3},
-  {"t": "ETH nâng cấp mạng lưới thành công", "b": 10, "v": 12, "r": 25, "d": 4},
-  {"t": "Cá voi ẩn danh gom 10,000 BTC", "b": 20, "v": 18, "r": 5, "d": 6},
-  {"t": "Hacker tấn công cầu nối Cross-chain", "b": -25, "v": 30, "r": 3, "d": 5},
-  {"t": "SEC phê duyệt ETF Spot", "b": 30, "v": 40, "r": 2, "d": 8},
-  {"t": "Stablecoin UST mất peg", "b": -40, "v": 50, "r": 1, "d": 10},
-  {"t": "Tin đồn Apple tích hợp ví Crypto", "b": 18, "v": 22, "r": 5, "d": 5},
-  {"t": "Thợ đào bán xả coin trả tiền điện", "b": -6, "v": 10, "r": 40, "d": 3},
-  {"t": "KOLs shill coin rác", "b": 2, "v": 35, "r": 20, "d": 2},
-  {"t": "Tâm lý sợ hãi bao trùm", "b": -5, "v": 12, "r": 50, "d": 4},
-  {"t": "Dòng tiền đổ vào GameFi", "b": 8, "v": 15, "r": 25, "d": 4},
-  {"t": "Web3 trend bùng nổ", "b": 12, "v": 18, "r": 20, "d": 5},
-  {"t": "Sàn FTX sụp đổ (Flash Crash)", "b": -50, "v": 60, "r": 1, "d": 5},
-  {"t": "Bitcoin Halving diễn ra", "b": 25, "v": 20, "r": 2, "d": 10}
+  { "t": "Thị trường đi ngang", "b": 0, "v": 2, "r": 100, "d": 3 },
+  { "t": "Anh em trader đang ngóng tin FED", "b": 0, "v": 3, "r": 90, "d": 2 },
+  { "t": "Lực mua bắt đáy xuất hiện nhẹ", "b": 3, "v": 5, "r": 80, "d": 2 },
+  { "t": "Áp lực chốt lời T+ về", "b": -3, "v": 5, "r": 80, "d": 2 },
+  { "t": "Cá con đang fomo mua đuổi", "b": 4, "v": 8, "r": 70, "d": 2 },
+  { "t": "Chim lợn hô sập khắp các group", "b": -4, "v": 8, "r": 70, "d": 3 },
+  
+  { "t": "Giá Thép thế giới tăng mạnh (Tốt cho HPG)", "b": 8, "v": 10, "r": 40, "d": 4 },
+  { "t": "Xe điện Việt Nam xuất khẩu Mỹ (Tốt cho VIN)", "b": 9, "v": 12, "r": 35, "d": 4 },
+  { "t": "Cổ phiếu Công nghệ hút tiền (Tốt cho FPT)", "b": 7, "v": 8, "r": 40, "d": 4 },
+  { "t": "Ngân hàng nới room tín dụng (Tốt cho VTB)", "b": 8, "v": 10, "r": 35, "d": 4 },
+  { "t": "Đất đai sốt nóng trở lại (Tốt cho DIG)", "b": 12, "v": 25, "r": 30, "d": 5 },
+  
+  { "t": "Tin đồn: Một chủ tịch bị cấm xuất cảnh", "b": -15, "v": 20, "r": 20, "d": 5 },
+  { "t": "Tỷ giá USD tăng chóng mặt", "b": -8, "v": 12, "r": 30, "d": 4 },
+  { "t": "Khối ngoại bán ròng liên tục 10 phiên", "b": -10, "v": 15, "r": 25, "d": 5 },
+  { "t": "Lãi suất tiết kiệm giảm sâu, tiền đổ vào chứng khoán", "b": 12, "v": 15, "r": 25, "d": 6 },
+  
+  { "t": "Elon Musk đổi avatar Bitcoin", "b": 18, "v": 30, "r": 10, "d": 5 },
+  { "t": "Sàn Binance bị SEC kiện", "b": -15, "v": 25, "r": 10, "d": 4 },
+  { "t": "Hacker tấn công cầu nối Blockchain", "b": -12, "v": 20, "r": 15, "d": 4 },
+  { "t": "Bitcoin Halving: Chu kỳ tăng giá bắt đầu", "b": 25, "v": 25, "r": 5, "d": 10 },
+  
+  { "t": "SỰ KIỆN: Chiến tranh thương mại leo thang", "b": -30, "v": 40, "r": 2, "d": 8 },
+  { "t": "SỰ KIỆN: Khủng hoảng tài chính toàn cầu", "b": -45, "v": 50, "r": 1, "d": 8 },
+  { "t": "UPTREND ĐẠI SÓNG: Vượt đỉnh lịch sử", "b": 40, "v": 40, "r": 1, "d": 10 },
+  
+  { "t": "Admin Group hô 'Múc, Xúc, Húc'", "b": 5, "v": 10, "r": 50, "d": 2 },
+  { "t": "Vợ chủ tịch đăng ký bán chui cổ phiếu", "b": -7, "v": 12, "r": 30, "d": 3 },
+  { "t": "App giao dịch bị lag, không thể hủy lệnh", "b": -2, "v": 5, "r": 60, "d": 2 },
+  { "t": "Tây lông quay xe mua ròng", "b": 6, "v": 8, "r": 40, "d": 3 }
 ]
