@@ -3,659 +3,464 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X - Admin Edition</title>
+    <title>Investing Pro Terminal</title>
     
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
     <script>
-        // 1. Chặn Menu Chuột Phải
-        document.addEventListener('contextmenu', event => event.preventDefault());
-
-        // 2. Chặn Phím Tắt (F12, Ctrl+U, Ctrl+Shift+I...)
+        document.addEventListener('contextmenu', e => e.preventDefault());
         document.onkeydown = function(e) {
-            // F12
-            if(e.keyCode == 123) return false;
-            // Ctrl+Shift+I (DevTools)
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
-            // Ctrl+Shift+J (Console)
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
-            // Ctrl+Shift+C (Inspect)
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
-            // Ctrl+U (View Source)
-            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
+            if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) || (e.ctrlKey && e.keyCode == 85)) return false;
         }
-
-        // 3. Bẫy Debugger (Treo trình duyệt nếu cố tình mở DevTool)
-        // setInterval(() => { debugger; }, 200); 
-        // (Lưu ý: Đã tạm tắt dòng trên để bạn test. Khi nào chạy thật hãy bỏ comment // ra)
     </script>
 
     <style>
-        /* --- GIAO DIỆN CHÍNH (THEME) --- */
+        /* --- INVESTING.COM THEME --- */
         :root { 
-            --bg: #050505; 
-            --panel: #121212; 
-            --border: #2a2a2a; 
-            --green: #00ff88; 
-            --red: #ff3b3b; 
-            --gold: #ffd700;
-            --text-main: #e0e0e0; 
-            --text-dim: #888;
+            --bg: #121212; 
+            --panel: #1e1e1e; 
+            --border: #333; 
+            --green: #00e676; 
+            --red: #ff3d00; 
+            --blue: #2962ff;
+            --text-main: #eceff1; 
+            --text-dim: #b0bec5;
         }
 
-        body { margin: 0; background: var(--bg); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; height: 100dvh; }
-        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
-        button { cursor: pointer; transition: 0.2s; }
-        button:active { transform: scale(0.95); }
+        body { margin: 0; background: var(--bg); color: var(--text-main); font-family: 'Roboto', 'Segoe UI', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; scrollbar-width: thin; }
         
-        /* Layout Container */
-        #app { display: none; height: 100dvh; flex-direction: column; }
-        
-        /* --- MÀN HÌNH ĐĂNG NHẬP --- */
-        #login-screen { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; }
-        .login-box { background: var(--panel); border: 1px solid var(--border); padding: 30px; border-radius: 16px; width: 85%; max-width: 350px; text-align: center; box-shadow: 0 0 50px rgba(0,255,136,0.1); }
-        .inp-auth { width: 100%; padding: 15px; margin: 10px 0; background: #1a1a1a; border: 1px solid #333; color: white; border-radius: 8px; font-size: 16px; text-align: center; outline: none; }
-        .btn-auth { width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; color: white; }
-        
-        /* --- HEADER & NAVIGATION --- */
-        .header { padding: 12px 15px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .tab-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--panel); flex-shrink: 0; }
-        .tab-btn { flex: 1; padding: 12px; text-align: center; font-size: 12px; font-weight: bold; color: var(--text-dim); cursor: pointer; border-bottom: 3px solid transparent; }
-        .tab-btn.active { color: var(--green); border-bottom-color: var(--green); background: #1a1a1a; color: white; }
-        
-        /* --- KHUNG HIỂN THỊ NỘI DUNG --- */
-        .view-content { flex: 1; overflow-y: auto; position: relative; }
-        .hidden { display: none !important; }
+        /* SCROLLBAR */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--bg); }
+        ::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
 
-        /* --- DANH SÁCH CỔ PHIẾU --- */
-        .stock-item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 16px; margin: 10px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; }
-        .stock-item:hover { background: #222; }
+        /* --- LAYOUT & LOGIN --- */
+        #login-screen { position: fixed; inset: 0; z-index: 9999; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .login-box { background: var(--panel); border: 1px solid var(--border); padding: 40px; border-radius: 4px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        .inp-auth { width: 100%; padding: 12px; margin: 10px 0; background: #2c2c2c; border: 1px solid #444; color: white; border-radius: 2px; font-size: 16px; outline: none; transition: 0.3s; }
+        .inp-auth:focus { border-color: var(--blue); }
+        .btn-auth { width: 100%; padding: 12px; margin-top: 15px; border: none; border-radius: 2px; font-weight: bold; font-size: 14px; color: white; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* --- BẢNG XẾP HẠNG --- */
-        .rank-item { display: flex; align-items: center; background: #161616; padding: 12px; margin: 8px 10px; border-radius: 8px; border: 1px solid var(--border); }
-        .rank-me { border: 1px solid var(--green); background: #0f3318; }
-        .rank-num { width: 30px; font-weight: 900; font-size: 16px; color: #666; text-align: center; }
-        .rank-1 { color: var(--gold); text-shadow: 0 0 10px rgba(255,215,0,0.5); font-size: 18px; }
+        /* --- HEADER & TICKER --- */
+        header { background: #000; border-bottom: 1px solid var(--border); padding: 0 15px; height: 50px; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .logo { font-weight: 900; font-size: 20px; letter-spacing: -1px; }
+        .logo span { color: var(--blue); }
         
-        /* --- ADMIN PANEL STYLE --- */
-        #admin-view { position: fixed; inset: 0; background: #000; z-index: 5000; display: none; flex-direction: column; }
-        .admin-header { padding: 15px; background: #2a0505; color: var(--red); font-weight: bold; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--red); }
-        .admin-section { padding: 15px; border-bottom: 1px solid #333; }
-        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; }
-        .btn-del { background: var(--red); color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .ticker-wrap { width: 100%; background: #0a0a0a; overflow: hidden; height: 30px; border-bottom: 1px solid var(--border); white-space: nowrap; flex-shrink: 0; }
+        .ticker { display: inline-block; animation: ticker 30s linear infinite; line-height: 30px; font-size: 12px; font-weight: bold; }
+        .ticker-item { display: inline-block; margin-right: 30px; }
+        @keyframes ticker { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-        /* --- CHI TIẾT CỔ PHIẾU (CHART) --- */
-        #detail-view { display: none; flex: 1; flex-direction: column; background: #000; z-index: 100; position: fixed; inset: 0; }
-        .chart-header { padding: 10px 15px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 15px; }
-        .chart-container { flex: 1; width: 100%; min-height: 200px; position: relative; }
-        canvas { display: block; width: 100%; height: 100%; }
+        /* --- MAIN DASHBOARD (GRID LAYOUT) --- */
+        #app { display: none; flex: 1; overflow: hidden; }
+        .dashboard { display: grid; grid-template-columns: 280px 1fr 300px; height: 100%; }
         
-        /* Dòng tin tức chạy trong Chart */
-        .mini-news { background: #0a0a0a; border-bottom: 1px solid #333; padding: 8px; font-size: 12px; color: #aaa; white-space: nowrap; overflow: hidden; border-left: 3px solid var(--green); }
-        
-        /* News Card */
-        .news-card { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; margin: 10px; border-left: 4px solid #555; }
-        
-        /* Settings Modal */
-        #settings-modal { position: fixed; inset: 0; z-index: 5000; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; }
-        .settings-box { background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px; width: 80%; max-width: 300px; }
+        @media (max-width: 1024px) { .dashboard { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr; overflow-y: auto; } }
 
-        /* Màu sắc tiện ích */
-        .up { color: var(--green); } 
-        .down { color: var(--red); }
+        .panel { border-right: 1px solid var(--border); display: flex; flex-direction: column; background: var(--panel); }
+        .panel-header { padding: 10px; background: #252525; font-size: 12px; font-weight: bold; text-transform: uppercase; color: var(--text-dim); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+        
+        /* LEFT: WATCHLIST */
+        .watchlist-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; border-bottom: 1px solid var(--border); cursor: pointer; transition: 0.2s; }
+        .watchlist-item:hover, .watchlist-item.active { background: #2c2c2c; border-left: 3px solid var(--blue); }
+        .wl-symbol { font-weight: bold; font-size: 14px; }
+        .wl-name { font-size: 11px; color: var(--text-dim); }
+        .wl-price { font-weight: bold; font-size: 14px; }
+        .wl-change { font-size: 11px; padding: 2px 6px; border-radius: 2px; color: white; }
+
+        /* CENTER: CHART & NEWS */
+        .chart-area { flex: 2; position: relative; min-height: 400px; background: #161616; display: flex; flex-direction: column; }
+        .chart-overlay-info { position: absolute; top: 10px; left: 10px; z-index: 10; pointer-events: none; }
+        .big-price { font-size: 32px; font-weight: bold; }
+        
+        /* RIGHT: ORDER & RANK */
+        .order-box { padding: 15px; border-bottom: 1px solid var(--border); }
+        .gauge-container { text-align: center; margin: 15px 0; }
+        .gauge-label { font-size: 12px; color: var(--text-dim); margin-bottom: 5px; }
+        .gauge-bar { height: 6px; width: 100%; background: #333; border-radius: 3px; position: relative; overflow: hidden; }
+        .gauge-fill { height: 100%; background: linear-gradient(90deg, var(--red), var(--green)); width: 100%; }
+        .gauge-needle { position: absolute; top: -2px; width: 4px; height: 10px; background: white; border: 1px solid black; transition: 0.5s; }
+        
+        .rank-list { flex: 1; overflow-y: auto; }
+        .rank-row { display: flex; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--border); font-size: 13px; }
+        .rank-idx { width: 25px; color: var(--text-dim); font-weight: bold; }
+
+        /* UTILS */
+        .up { color: var(--green); } .bg-up { background: var(--green); }
+        .down { color: var(--red); } .bg-down { background: var(--red); }
+        .btn-trade { flex: 1; border: none; padding: 12px; font-weight: bold; color: white; cursor: pointer; border-radius: 4px; }
+        
+        /* ADMIN PANEL */
+        #admin-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 5000; align-items: center; justify-content: center; }
+        .admin-content { background: var(--panel); width: 400px; padding: 20px; border: 1px solid var(--red); }
+
     </style>
 </head>
 <body>
 
-<audio id="bgm" loop>
-    <source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg">
-</audio>
+<audio id="bgm" loop><source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg"></audio>
 
 <div id="login-screen">
     <div class="login-box">
-        <h2 style="margin:0 0 20px 0; color:var(--green); letter-spacing:1px;">TERMINAL X</h2>
-        <input type="text" id="user" class="inp-auth" placeholder="Tên hiển thị (minh = admin)">
-        <input type="password" id="pass" class="inp-auth" placeholder="Mật mã bí mật">
-        <button onclick="handleAuth('login')" class="btn-auth" style="background:#1f6feb;">ĐĂNG NHẬP</button>
-        <button onclick="handleAuth('register')" class="btn-auth" style="background:#238636;">ĐĂNG KÝ MỚI</button>
-        <div id="msg" style="color:var(--red); font-size:12px; margin-top:15px; min-height:20px;"></div>
+        <h1 class="logo" style="font-size: 32px; margin-bottom: 20px;">Investing<span>.com</span></h1>
+        <div style="color: #888; margin-bottom: 20px;">Terminal Mô phỏng Giao dịch Chuyên nghiệp</div>
+        <input type="text" id="user" class="inp-auth" placeholder="Email hoặc Tên đăng nhập (minh = admin)">
+        <input type="password" id="pass" class="inp-auth" placeholder="Mật khẩu">
+        <button onclick="auth('login')" class="btn-auth" style="background: var(--blue);">Đăng Nhập</button>
+        <button onclick="auth('reg')" class="btn-auth" style="background: #444;">Đăng Ký Miễn Phí</button>
+        <div id="msg" style="margin-top: 15px; font-size: 12px; color: var(--red);"></div>
     </div>
 </div>
 
 <div id="app">
-    <div class="header">
-        <div style="font-weight:bold; display:flex; align-items:center; gap:5px;">
-            👤 <span id="u-name" style="color:#ccc">...</span>
-        </div>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:6px 10px; border-radius:4px; font-size:10px; font-weight:bold; letter-spacing:1px;">ADMIN PANEL</button>
-            
-            <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;">
-                $<span id="cash-display">0.00</span>
+    <header>
+        <div class="logo">Investing<span>.com</span> <small style="font-size:10px; color:#666; font-weight:normal">VN EDITION</small></div>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <div id="btn-admin" style="display:none; cursor:pointer; color:var(--red); font-weight:bold; font-size:12px;" onclick="openAdmin()">
+                <i class="fas fa-user-shield"></i> ADMIN
             </div>
-            <button onclick="openSettings()" style="background:none; border:none; font-size:20px; color:#888;">⚙️</button>
+            <div style="text-align: right;">
+                <div style="font-size: 12px; color: var(--text-dim);">Số dư khả dụng</div>
+                <div style="font-weight: bold; color: var(--green); font-size: 16px;">$<span id="cash">0.00</span></div>
+            </div>
+            <div style="width: 32px; height: 32px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                <span id="avatar">U</span>
+            </div>
+            <i class="fas fa-cog" style="cursor: pointer; color: #888;" onclick="toggleSettings()"></i>
         </div>
+    </header>
+
+    <div class="ticker-wrap">
+        <div class="ticker" id="ticker-tape">Đang tải dữ liệu thị trường toàn cầu...</div>
     </div>
 
-    <div class="tab-bar">
-        <div class="tab-btn active" onclick="switchTab('market')">THỊ TRƯỜNG</div>
-        <div class="tab-btn" onclick="switchTab('rank')">XẾP HẠNG</div>
-        <div class="tab-btn" onclick="switchTab('news')">TIN TỨC</div>
-    </div>
-
-    <div id="tab-market" class="view-content">
-        <div id="stock-list-container" style="padding-bottom:20px;">
-            <div style="text-align:center; padding:20px; color:#666;">Đang tải dữ liệu vệ tinh...</div>
+    <div class="dashboard">
+        <div class="panel">
+            <div class="panel-header">
+                <span>Thị trường</span>
+                <i class="fas fa-search"></i>
+            </div>
+            <div id="watchlist-container" style="flex: 1; overflow-y: auto;"></div>
         </div>
-    </div>
 
-    <div id="tab-rank" class="view-content hidden">
-        <div style="text-align:center; padding:10px; font-size:11px; color:#666; border-bottom:1px solid #222;">BẢNG XẾP HẠNG REAL-TIME (SERVER)</div>
-        <div id="rank-list-container" style="padding:10px;"></div>
-    </div>
-
-    <div id="tab-news" class="view-content hidden">
-        <div id="news-list-container" style="padding:10px;"></div>
-    </div>
-</div>
-
-<div id="admin-view">
-    <div class="admin-header">
-        <span>QUẢN TRỊ VIÊN (MASTER)</span>
-        <button onclick="document.getElementById('admin-view').style.display='none'" style="background:#440000; color:#ffaaaa; border:1px solid var(--red); padding:5px 12px; border-radius:4px; font-weight:bold;">ĐÓNG</button>
-    </div>
-    
-    <div class="view-content" style="padding-bottom:50px;">
-        <div class="admin-section">
-            <h4 style="margin:0 0 10px 0; color:#aaa;">QUẢN LÝ NGƯỜI DÙNG</h4>
-            <button onclick="loadAdminUsers()" style="background:#333; color:white; border:none; padding:10px; width:100%; border-radius:4px; margin-bottom:10px; font-weight:bold;">🔄 LÀM MỚI DANH SÁCH</button>
-            <div id="admin-user-list" style="max-height: 200px; overflow-y: auto; background: #111; border-radius: 8px;">Đang tải...</div>
-        </div>
-        
-        <div class="admin-section">
-            <h4 style="margin:0 0 10px 0; color:#aaa;">THAO TÚNG THỊ TRƯỜNG (MARKET MAKER)</h4>
-            <div style="background: #111; padding:15px; border-radius:8px;">
-                <div style="display:flex; gap:5px; margin-bottom:10px;">
-                    <select id="adm-stock" class="inp-auth" style="padding:8px; margin:0; flex:1; text-align:left;">
-                        <option value="VN-INDEX">VN-INDEX</option>
-                        <option value="VIN">VIN (Vingroup)</option>
-                        <option value="FPT">FPT Corp</option>
-                        <option value="DIG">DIG Corp</option>
-                        <option value="HPG">Hòa Phát</option>
-                    </select>
-                    <select id="adm-action" class="inp-auth" style="padding:8px; margin:0; flex:1; text-align:left;">
-                        <option value="pump">PUMP (Đẩy giá)</option>
-                        <option value="dump">DUMP (Đạp giá)</option>
-                    </select>
+        <div class="panel" style="border-right: 1px solid var(--border);">
+            <div class="panel-header">
+                <span id="chart-symbol">VN-INDEX</span>
+                <span>Khung thời gian: <b>Real-time</b></span>
+            </div>
+            <div class="chart-area">
+                <div class="chart-overlay-info">
+                    <div class="big-price" id="big-price">---</div>
+                    <div style="font-size: 14px;" id="price-change">---</div>
                 </div>
-                <button onclick="adminAction()" style="width:100%; background:var(--gold); color:black; border:none; padding:12px; font-weight:bold; border-radius:4px; font-size:14px;">THỰC THI LỆNH</button>
-                <p style="font-size:10px; color:#666; margin-top:5px; text-align:center;">*Hành động này sẽ tung tin đồn giả lập để tác động tâm lý.</p>
+                <canvas id="chart"></canvas>
+            </div>
+            <div style="height: 200px; border-top: 1px solid var(--border); display: flex; flex-direction: column;">
+                <div class="panel-header">Tin tức mới nhất</div>
+                <div id="news-container" style="flex: 1; overflow-y: auto; padding: 10px;"></div>
             </div>
         </div>
+
+        <div class="panel" style="border: none;">
+            <div class="panel-header">Đặt lệnh</div>
+            <div class="order-box">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span style="font-size: 12px; color: #888;">Mã: <b id="order-symbol" style="color:white">---</b></span>
+                    <span style="font-size: 12px; color: #888;">Sở hữu: <b id="order-owned" style="color:white">0</b></span>
+                </div>
+
+                <div class="gauge-container">
+                    <div class="gauge-label">PHÂN TÍCH KỸ THUẬT: <span id="gauge-text" style="font-weight:bold">TRUNG LẬP</span></div>
+                    <div class="gauge-bar"><div class="gauge-needle" id="gauge-needle" style="left: 50%;"></div></div>
+                    <div style="display: flex; justify-content: space-between; font-size: 9px; color: #666; margin-top: 4px;">
+                        <span>BÁN MẠNH</span><span>TRUNG LẬP</span><span>MUA MẠNH</span>
+                    </div>
+                </div>
+
+                <input type="number" id="amt" class="inp-auth" placeholder="Khối lượng / Số tiền ($)">
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-trade" style="background: var(--green);" onclick="trade('buy')">MUA</button>
+                    <button class="btn-trade" style="background: var(--red);" onclick="trade('sell')">BÁN</button>
+                </div>
+            </div>
+
+            <div class="panel-header">Bảng Xếp Hạng (Live)</div>
+            <div class="rank-list" id="rank-container"></div>
+        </div>
     </div>
 </div>
 
-<div id="settings-modal" onclick="if(event.target.id==='settings-modal') this.style.display='none'">
-    <div class="settings-box">
-        <h3 style="text-align:center; margin-top:0;">CÀI ĐẶT</h3>
-        
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:15px;">
-            <span>Nhạc nền (BGM)</span>
-            <input type="checkbox" id="toggle-bgm" checked onchange="toggleAudio()">
+<div id="admin-modal">
+    <div class="admin-content">
+        <h3 style="color: var(--red); border-bottom: 1px solid var(--red); padding-bottom: 10px;">ADMIN CONSOLE</h3>
+        <div style="margin-bottom: 15px;">
+            <label>Thao túng mã:</label>
+            <select id="adm-stock" class="inp-auth"><option value="VN-INDEX">VN-INDEX</option><option value="DIG">DIG</option><option value="FPT">FPT</option></select>
+            <div style="display:flex; gap: 10px;">
+                <button class="btn-auth" onclick="adminAction('pump')" style="background: var(--green);">PUMP 🚀</button>
+                <button class="btn-auth" onclick="adminAction('dump')" style="background: var(--red);">DUMP 📉</button>
+            </div>
         </div>
-        
-        <button onclick="logout()" style="width:100%; padding:12px; background:#da3633; color:white; border:none; border-radius:6px; font-weight:bold;">ĐĂNG XUẤT</button>
-        <div style="text-align:center; margin-top:10px; font-size:11px; color:#666;">Version 2.5 - Admin Edition</div>
-    </div>
-</div>
-
-<div id="detail-view">
-    <div class="chart-header">
-        <button onclick="closeDetail()" style="background:#333; color:white; border:none; padding:6px 16px; border-radius:6px; font-weight:bold;">◀ TRỞ VỀ</button>
-        <div style="flex:1; text-align:center;">
-            <div id="d-code" style="font-weight:900; font-size:18px;">CODE</div>
-            <div style="font-size:11px; color:#888;">Đang sở hữu: <span id="d-owned" style="color:white; font-weight:bold;">0</span></div>
-        </div>
-        <div style="text-align: right;">
-            <div id="d-price" style="font-size:20px; font-weight: bold;">0.00</div>
-        </div>
-    </div>
-    
-    <div class="mini-news" id="mini-news-ticker">📰 Đang cập nhật tin tức thị trường...</div>
-
-    <div class="chart-container">
-        <canvas id="chart"></canvas>
-    </div>
-    
-    <div style="padding:20px; background:#111; border-top:1px solid #333;">
-        <input type="number" id="trade-amount" class="inp-auth" placeholder="Nhập số tiền ($)" style="margin-bottom:15px; font-size:20px; font-weight:bold;">
-        <div style="display:flex; gap:10px;">
-            <button onclick="trade('buy')" class="btn-auth" style="margin:0; background:#238636; height:50px;">MUA</button>
-            <button onclick="trade('sell')" class="btn-auth" style="margin:0; background:#da3633; height:50px;">BÁN</button>
-        </div>
+        <hr style="border-color:#333">
+        <button class="btn-auth" onclick="loadUsers()" style="background: #333;">Quản lý Users</button>
+        <div id="admin-user-list" style="max-height: 150px; overflow-y: auto; margin-top: 10px;"></div>
+        <button onclick="document.getElementById('admin-modal').style.display='none'" style="margin-top:10px; width:100%; padding:10px; background:none; border:1px solid #444; color:#888;">Đóng</button>
     </div>
 </div>
 
 <script>
-    // --- CẤU HÌNH SERVER ---
-    // Thay đổi URL này nếu bạn đổi Worker khác
-    const SERVER_URL = "https://oia.duongminhminh46.workers.dev/"; 
-    const NEWS_JSON_URL = "https://raw.githubusercontent.com/minhReal/CSimu/refs/heads/main/news.json";
+    // --- CONFIG ---
+    const SERVER = "https://oia.duongminhminh46.workers.dev/"; 
+    const NEWS_SRC = "https://raw.githubusercontent.com/minhReal/CSimu/refs/heads/main/news.json";
 
-    // --- BIẾN TOÀN CỤC ---
-    let currentUser = null;
-    let wallet = { cash: 250, stocks: {} };
-    let marketData = [];
-    let candlesCache = {};
-    let selectedStock = null;
-    let newsList = [];
-    const bgm = document.getElementById("bgm"); 
-    bgm.volume = 0.3; // Âm lượng vừa phải
+    let me = null, wallet = {cash:250, stocks:{}}, data = [], candles = {}, sel = "VN-INDEX", news = [];
+    const bgm = document.getElementById("bgm"); bgm.volume = 0.3;
 
-    // --- KHỞI TẠO TỰ ĐỘNG ---
-    (function init() {
-        const session = localStorage.getItem("current_session");
-        if (session && localStorage.getItem(`user_db_${session}`)) {
-            currentUser = session;
-            wallet = JSON.parse(localStorage.getItem(`user_db_${session}`));
-            enterApp();
-        }
+    // --- AUTH ---
+    (function(){
+        const s = localStorage.getItem("sess");
+        if(s && localStorage.getItem(`u_${s}`)) { me = s; wallet = JSON.parse(localStorage.getItem(`u_${s}`)); enter(); }
     })();
 
-    // --- HỆ THỐNG XÁC THỰC (AUTH) ---
-    async function handleAuth(type) {
+    async function auth(type) {
         const u = document.getElementById("user").value.trim();
         const p = document.getElementById("pass").value.trim();
-        const msg = document.getElementById("msg");
-        
-        if (!u || !p) { msg.innerText = "Vui lòng nhập đầy đủ thông tin!"; return; }
-        const key = `user_db_${u}`;
+        if(!u || !p) return;
+        const k = `u_${u}`;
 
-        // ĐĂNG KÝ
-        if (type === 'register') {
-            msg.innerText = "Đang kiểm tra máy chủ...";
+        if(type==='reg') {
             try {
-                // Kiểm tra trùng tên trên Server Cloudflare
-                const checkRes = await fetch(`${SERVER_URL}check-user?u=${encodeURIComponent(u)}`);
-                const checkData = await checkRes.json();
-                
-                if (checkData.exists || localStorage.getItem(key)) {
-                    msg.innerText = "Tên này đã có người dùng!";
-                    msg.style.color = "var(--red)";
-                    return;
-                }
-                
-                // Tạo mới
-                localStorage.setItem(key, JSON.stringify({ pass: p, cash: 250, stocks: {} }));
-                msg.innerText = "Đăng ký thành công! Vốn cấp: $250";
-                msg.style.color = "var(--green)";
-            } catch (e) {
-                msg.innerText = "Lỗi kết nối Server!";
-            }
-        } 
-        // ĐĂNG NHẬP
-        else {
-            const userData = JSON.parse(localStorage.getItem(key));
-            if (!userData || userData.pass !== p) {
-                msg.innerText = "Sai tên hoặc mật khẩu!";
-                msg.style.color = "var(--red)";
-                return;
-            }
-            currentUser = u;
-            wallet = userData;
-            localStorage.setItem("current_session", u);
-            enterApp();
+                const check = await fetch(SERVER + "check-user?u=" + u).then(r=>r.json());
+                if(check.exists || localStorage.getItem(k)) return document.getElementById("msg").innerText = "Tài khoản đã tồn tại";
+                localStorage.setItem(k, JSON.stringify({pass:p, cash:250, stocks:{}}));
+                alert("Đăng ký thành công!");
+            } catch(e) { alert("Lỗi kết nối"); }
+        } else {
+            const d = JSON.parse(localStorage.getItem(k));
+            if(!d || d.pass!==p) return document.getElementById("msg").innerText = "Sai thông tin đăng nhập";
+            me = u; wallet = d; localStorage.setItem("sess", u); enter();
         }
     }
 
-    function enterApp() {
-        document.getElementById("login-screen").style.display = "none";
-        document.getElementById("app").style.display = "flex";
-        document.getElementById("u-name").innerText = currentUser;
-
-        // KÍCH HOẠT ADMIN MODE NẾU LÀ "minh"
-        if (currentUser.toLowerCase() === 'minh') {
-            document.getElementById("btn-admin").style.display = "block";
-        }
-
-        // Bật nhạc nếu được phép
-        if (document.getElementById("toggle-bgm").checked) bgm.play().catch(()=>{});
-
-        // Vòng lặp dữ liệu
-        fetchData(); // Gọi ngay lập tức
-        setInterval(fetchData, 1500); // Cập nhật giá mỗi 1.5s
-        setInterval(syncRankToServer, 3000); // Đồng bộ điểm lên server mỗi 3s
-        setInterval(fetchLeaderboard, 5000); // Lấy BXH mỗi 5s
-        setInterval(updateMiniTicker, 4000); // Chạy chữ tin tức
-        loadNewsData(); // Tải tin tức
-    }
-
-    // --- HỆ THỐNG ADMIN ---
-    function openAdmin() {
-        document.getElementById("admin-view").style.display = "flex";
-        loadAdminUsers();
-    }
-
-    async function loadAdminUsers() {
-        const container = document.getElementById("admin-user-list");
-        container.innerHTML = `<div style="padding:10px; color:#666;">Đang tải dữ liệu...</div>`;
-        try {
-            const res = await fetch(`${SERVER_URL}admin/users`);
-            const users = await res.json();
-            
-            if (users.length === 0) {
-                container.innerHTML = `<div style="padding:10px; color:#666;">Chưa có người chơi nào.</div>`;
-                return;
-            }
-
-            container.innerHTML = users.map(u => `
-                <div class="user-row">
-                    <div>
-                        <div style="font-weight:bold; color:white; font-size:14px;">${u.name}</div>
-                        <div style="font-size:11px; color:#888;">Tổng tài sản: <span style="color:var(--green)">$${parseFloat(u.asset).toLocaleString()}</span></div>
-                    </div>
-                    ${u.name.toLowerCase() !== 'minh' ? 
-                      `<button class="btn-del" onclick="deleteUser('${u.name}')">XÓA</button>` : 
-                      '<span style="font-size:10px; color:var(--gold); font-weight:bold;">MASTER</span>'}
-                </div>
-            `).join('');
-        } catch (e) {
-            container.innerHTML = `<div style="padding:10px; color:var(--red);">Lỗi kết nối Server!</div>`;
-        }
-    }
-
-    async function deleteUser(targetName) {
-        if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản: ${targetName}?`)) return;
-        try {
-            await fetch(`${SERVER_URL}admin/delete-user`, {
-                method: "POST",
-                body: JSON.stringify({ user: targetName })
-            });
-            alert("Đã xóa thành công!");
-            loadAdminUsers(); // Tải lại danh sách
-        } catch (e) { alert("Lỗi khi xóa!"); }
-    }
-
-    function adminAction() {
-        const stock = document.getElementById("adm-stock").value;
-        const action = document.getElementById("adm-action").value;
-        const msg = action === 'pump' ? "TIN MẬT: Cá mập đang gom hàng đẩy giá!" : "TIN MẬT: Chủ tịch bán chui cổ phiếu!";
-        const impact = action === 'pump' ? 50 : -50;
+    function enter() {
+        document.getElementById("login-screen").style.display="none";
+        document.getElementById("app").style.display="flex";
+        document.getElementById("avatar").innerText = me.charAt(0).toUpperCase();
         
-        // Thêm tin giả vào danh sách tin tức của máy khách
-        newsList.unshift({ t: `[ADMIN LEAK] ${stock}: ${msg}`, b: impact });
-        
-        alert(`Đã thực thi lệnh ${action.toUpperCase()} lên mã ${stock}.\nTin đồn đã được tung ra thị trường!`);
-        updateMiniTicker(); // Cập nhật ngay lập tức
+        if(me.toLowerCase() === 'minh') document.getElementById("btn-admin").style.display = 'block';
+
+        setInterval(loop, 1500);
+        setInterval(syncRank, 3000);
+        setInterval(fetchRank, 5000);
+        loadNews();
     }
 
-    // --- CORE LOGIC (THỊ TRƯỜNG) ---
-    async function fetchData() {
+    // --- CORE LOOP ---
+    async function loop() {
         try {
-            const res = await fetch(SERVER_URL);
+            const res = await fetch(SERVER);
             const json = await res.json();
-            marketData = json.stocks;
-
-            // Xử lý nến (Candles)
-            marketData.forEach(s => {
-                if (!candlesCache[s.code]) candlesCache[s.code] = [];
-                const list = candlesCache[s.code];
-                // Nếu nến mới (thời gian khác)
-                if (list.length === 0 || list[list.length - 1].time !== s.candle.time) {
+            data = json.stocks;
+            
+            // Update Candles
+            data.forEach(s => {
+                if(!candles[s.code]) candles[s.code] = [];
+                const list = candles[s.code];
+                if(!list.length || list.at(-1).time !== s.candle.time) {
                     list.push(s.candle);
-                    if (list.length > 50) list.shift(); // Giữ 50 nến gần nhất
-                } else {
-                    // Cập nhật nến hiện tại
-                    list[list.length - 1] = s.candle;
-                }
+                    if(list.length > 60) list.shift();
+                } else list[list.length-1] = s.candle;
             });
 
-            if (!selectedStock) renderMarketList();
-            else {
-                updateDetailData();
-                drawChart();
-            }
-            
-            document.getElementById("cash-display").innerText = wallet.cash.toFixed(2);
-        } catch (e) { console.error("Fetch error", e); }
+            renderWatchlist();
+            renderChart();
+            updateUI();
+            updateTicker();
+        } catch(e){}
     }
 
-    function renderMarketList() {
-        const container = document.getElementById("stock-list-container");
-        container.innerHTML = marketData.map(s => {
+    // --- UI RENDERERS ---
+    function renderWatchlist() {
+        const container = document.getElementById("watchlist-container");
+        container.innerHTML = data.map(s => {
             const isUp = s.candle.close >= s.candle.open;
-            const owned = wallet.stocks[s.code] || 0;
+            const change = ((s.candle.close - s.candle.open)/s.candle.open * 100).toFixed(2);
             return `
-            <div class="stock-item" onclick="openDetail('${s.code}')">
+            <div class="watchlist-item ${sel===s.code ? 'active' : ''}" onclick="selectStock('${s.code}')">
                 <div>
-                    <div style="font-weight:900; font-size:16px; color:white;">${s.code}</div>
-                    <div style="font-size:11px; color:#888;">Đang có: ${owned.toFixed(1)}</div>
+                    <div class="wl-symbol">${s.code}</div>
+                    <div class="wl-name">${getStockName(s.code)}</div>
                 </div>
-                <div style="text-align:right;">
-                    <div style="font-size:16px; font-weight:bold; color:${isUp ? 'var(--green)' : 'var(--red)'}">
-                        ${s.price.toFixed(2)}
-                    </div>
-                    <div style="font-size:10px; color:#666;">${isUp ? '▲ Tăng' : '▼ Giảm'}</div>
+                <div style="text-align: right;">
+                    <div class="wl-price ${isUp?'up':'down'}">${s.price.toFixed(2)}</div>
+                    <div class="wl-change ${isUp?'bg-up':'bg-down'}">${change}%</div>
                 </div>
             </div>`;
         }).join('');
     }
 
-    // --- XẾP HẠNG (REAL-TIME) ---
-    async function syncRankToServer() {
-        if (!currentUser) return;
-        let totalAsset = wallet.cash;
-        marketData.forEach(s => {
-            if (wallet.stocks[s.code]) totalAsset += wallet.stocks[s.code] * s.price;
-        });
+    function selectStock(code) { sel = code; renderChart(); updateUI(); }
 
-        try {
-            await fetch(`${SERVER_URL}update-rank`, {
-                method: "POST",
-                body: JSON.stringify({ user: currentUser, asset: totalAsset })
-            });
-        } catch (e) {}
-    }
-
-    async function fetchLeaderboard() {
-        if (document.getElementById("tab-rank").classList.contains("hidden")) return;
-        try {
-            const res = await fetch(`${SERVER_URL}get-rank`);
-            const list = await res.json();
-            const container = document.getElementById("rank-list-container");
-            
-            container.innerHTML = list.map((p, i) => `
-                <div class="rank-item ${p.name === currentUser ? 'rank-me' : ''}">
-                    <div class="rank-num ${i === 0 ? 'rank-1' : ''}">${i + 1}</div>
-                    <div style="flex:1; margin-left:10px;">
-                        <div style="font-weight:bold; color:white; font-size:14px;">
-                            ${p.name} ${i === 0 ? '👑' : ''}
-                        </div>
-                        <div style="font-size:12px; color:#888;">
-                            Tổng TS: <span style="color:#ddd">$${p.total.toLocaleString(undefined, {maximumFractionDigits:0})}</span>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        } catch (e) {}
-    }
-
-    // --- GIAO DỊCH (TRADE) ---
-    function openDetail(code) {
-        selectedStock = code;
-        document.getElementById("detail-view").style.display = "flex";
-        initChart();
-        updateDetailData();
-        updateMiniTicker();
-    }
-
-    function closeDetail() {
-        selectedStock = null;
-        document.getElementById("detail-view").style.display = "none";
-        renderMarketList();
-    }
-
-    function updateDetailData() {
-        const s = marketData.find(x => x.code === selectedStock);
-        if (s) {
-            document.getElementById("d-code").innerText = s.code;
-            document.getElementById("d-price").innerText = s.price.toFixed(2);
-            document.getElementById("d-owned").innerText = (wallet.stocks[selectedStock] || 0).toFixed(2);
-            
-            const lastCandle = candlesCache[selectedStock]?.at(-1);
-            const color = (lastCandle && lastCandle.close >= lastCandle.open) ? "var(--green)" : "var(--red)";
-            document.getElementById("d-price").style.color = color;
-        }
-    }
-
-    function trade(type) {
-        const input = document.getElementById("trade-amount");
-        const amount = parseFloat(input.value);
-        if (!amount || amount <= 0) return alert("Vui lòng nhập số tiền hợp lệ!");
-
-        const stock = marketData.find(s => s.code === selectedStock);
-        if (type === 'buy') {
-            if (amount > wallet.cash) return alert("Không đủ tiền mặt!");
-            wallet.cash -= amount;
-            wallet.stocks[selectedStock] = (wallet.stocks[selectedStock] || 0) + (amount / stock.price);
-            alert(`Đã MUA thành công!`);
-        } else {
-            const currentVal = (wallet.stocks[selectedStock] || 0) * stock.price;
-            if (amount > currentVal) return alert("Không đủ cổ phiếu để bán!");
-            wallet.stocks[selectedStock] -= (amount / stock.price);
-            wallet.cash += amount;
-            alert(`Đã BÁN thành công!`);
-        }
-        
-        // Lưu và đồng bộ
-        localStorage.setItem(`user_db_${currentUser}`, JSON.stringify(wallet));
-        syncRankToServer();
-        
-        // Hiệu ứng nút bấm
-        const btn = document.activeElement;
-        btn.style.transform = "scale(0.9)"; setTimeout(()=>btn.style.transform="scale(1)", 150);
-    }
-
-    // --- CHART ENGINE ---
-    let ctx;
-    function initChart() {
+    function renderChart() {
         const cvs = document.getElementById("chart");
-        // Tăng độ phân giải cho màn hình Retina/Mobile
-        cvs.width = cvs.parentElement.clientWidth * 2;
-        cvs.height = cvs.parentElement.clientHeight * 2;
-        ctx = cvs.getContext("2d");
+        const ctx = cvs.getContext("2d");
+        // Resize logic
+        const parent = cvs.parentElement;
+        cvs.width = parent.clientWidth * 2;
+        cvs.height = parent.clientHeight * 2;
         ctx.scale(2, 2);
-    }
-
-    function drawChart() {
-        if (!selectedStock || !candlesCache[selectedStock]) return;
-        const data = candlesCache[selectedStock];
-        if (data.length === 0) return;
-
-        const W = ctx.canvas.width / 2;
-        const H = ctx.canvas.height / 2;
-        ctx.clearRect(0, 0, W, H);
-
-        // Tìm min/max để vẽ scale
-        let min = Infinity, max = -Infinity;
-        data.forEach(d => {
-            if (d.low < min) min = d.low;
-            if (d.high > max) max = d.high;
-        });
-        const range = max - min || 1;
-        const paddingY = 30; 
         
-        const getY = (val) => H - paddingY - ((val - min) / range) * (H - paddingY * 2);
+        const arr = candles[sel];
+        if(!arr || !arr.length) return;
 
-        // Vẽ Grid Line
-        ctx.strokeStyle = "#222";
-        ctx.lineWidth = 1;
-        for (let i = 0; i <= 4; i++) {
-            let y = H - paddingY - (i/4)*(H - paddingY*2);
-            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+        const W = cvs.width/2, H = cvs.height/2;
+        ctx.clearRect(0,0,W,H);
+
+        // Calc Range
+        let min=Infinity, max=-Infinity;
+        arr.forEach(d=>{ if(d.low<min)min=d.low; if(d.high>max)max=d.high; });
+        const padding = 20;
+        const range = max-min || 1;
+        const getY = v => H - padding - ((v-min)/range)*(H-padding*2);
+
+        // Grid
+        ctx.strokeStyle = "#222"; ctx.lineWidth = 1;
+        for(let i=1; i<5; i++) {
+            let y = (H/5)*i; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
         }
 
-        // Vẽ Nến
-        const candleWidth = (W - 20) / 50; 
-        data.forEach((d, i) => {
-            const x = i * candleWidth + 10;
-            const color = d.close >= d.open ? "#00ff88" : "#ff3b3b";
+        // Draw Candles & Volume
+        const cw = (W - 40) / 60;
+        arr.forEach((d, i) => {
+            const x = i*cw + 10;
+            const isUp = d.close >= d.open;
+            const color = isUp ? "#00e676" : "#ff3d00";
             
-            ctx.strokeStyle = color;
-            ctx.fillStyle = color;
+            ctx.fillStyle = color; ctx.strokeStyle = color;
             
-            // Vẽ râu nến (High - Low)
-            ctx.beginPath();
-            ctx.moveTo(x + candleWidth/2, getY(d.high));
-            ctx.lineTo(x + candleWidth/2, getY(d.low));
-            ctx.stroke();
+            // Wick
+            ctx.beginPath(); ctx.moveTo(x+cw/2, getY(d.high)); ctx.lineTo(x+cw/2, getY(d.low)); ctx.stroke();
             
-            // Vẽ thân nến (Open - Close)
-            const yOpen = getY(d.open);
-            const yClose = getY(d.close);
-            const height = Math.abs(yOpen - yClose) || 1;
-            ctx.fillRect(x + 1, Math.min(yOpen, yClose), candleWidth - 2, height);
+            // Body
+            const yO = getY(d.open), yC = getY(d.close);
+            const h = Math.abs(yO-yC) < 1 ? 1 : Math.abs(yO-yC);
+            ctx.fillRect(x, Math.min(yO, yC), cw-2, h);
+
+            // Volume (Simulated visual at bottom)
+            const volH = (Math.abs(d.close-d.open) / range) * 50 + 5; 
+            ctx.fillStyle = isUp ? "rgba(0, 230, 118, 0.2)" : "rgba(255, 61, 0, 0.2)";
+            ctx.fillRect(x, H - volH, cw-2, volH);
         });
+
+        // Price Line
+        const last = arr[arr.length-1];
+        const ly = getY(last.close);
+        ctx.strokeStyle = "white"; ctx.setLineDash([5,5]); 
+        ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
         
-        // Vẽ đường giá hiện tại
-        const lastY = getY(data[data.length-1].close);
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-        ctx.setLineDash([5, 5]);
-        ctx.beginPath(); ctx.moveTo(0, lastY); ctx.lineTo(W, lastY); ctx.stroke();
-        ctx.setLineDash([]);
+        // Tag Price
+        ctx.fillStyle = "#333"; ctx.fillRect(W-50, ly-10, 50, 20);
+        ctx.fillStyle = "white"; ctx.font = "10px Arial"; ctx.fillText(last.close.toFixed(2), W-45, ly+4);
     }
 
-    // --- TIN TỨC ---
-    async function loadNewsData() {
+    function updateUI() {
+        const s = data.find(x => x.code === sel);
+        if(!s) return;
+        
+        document.getElementById("cash").innerText = wallet.cash.toFixed(2);
+        document.getElementById("chart-symbol").innerText = s.code;
+        document.getElementById("order-symbol").innerText = s.code;
+        document.getElementById("order-owned").innerText = (wallet.stocks[sel]||0).toFixed(2);
+        
+        const isUp = s.candle.close >= s.candle.open;
+        const color = isUp ? "var(--green)" : "var(--red)";
+        const change = s.candle.close - s.candle.open;
+        
+        document.getElementById("big-price").innerText = s.price.toFixed(2);
+        document.getElementById("big-price").style.color = color;
+        document.getElementById("price-change").innerText = `${change>0?'+':''}${change.toFixed(2)} (${((change/s.candle.open)*100).toFixed(2)}%)`;
+        document.getElementById("price-change").style.color = color;
+
+        // Update Gauge (Kim chỉ báo)
+        // Logic giả lập: Nếu tăng > 0.5% là Mua mạnh, < -0.5% là Bán mạnh
+        const pct = ((s.price - s.candle.open) / s.candle.open) * 100;
+        let pos = 50; 
+        let text = "TRUNG LẬP";
+        if(pct > 0.2) { pos = 80; text = "MUA MẠNH"; }
+        else if (pct < -0.2) { pos = 20; text = "BÁN MẠNH"; }
+        
+        document.getElementById("gauge-needle").style.left = pos + "%";
+        document.getElementById("gauge-text").innerText = text;
+        document.getElementById("gauge-text").style.color = pct>0 ? "var(--green)" : pct<0 ? "var(--red)" : "white";
+    }
+
+    function updateTicker() {
+        const str = data.map(s => `<span class="ticker-item">${s.code}: <span style="color:${s.candle.close>=s.candle.open?'#00e676':'#ff3d00'}">${s.price.toFixed(2)}</span></span>`).join('');
+        document.getElementById("ticker-tape").innerHTML = str + str; // Duplicate for smooth scroll
+    }
+
+    // --- TRADE & LOGIC ---
+    async function syncRank() {
+        let total = wallet.cash;
+        data.forEach(s => { if(wallet.stocks[s.code]) total += wallet.stocks[s.code] * s.price; });
+        await fetch(SERVER + "update-rank", { method: "POST", body: JSON.stringify({ user: me, asset: total }) });
+    }
+
+    async function fetchRank() {
         try {
-            const res = await fetch(NEWS_JSON_URL);
-            const data = await res.json();
-            newsList = data;
-            renderNewsList();
-        } catch(e) {}
+            const list = await fetch(SERVER + "get-rank").then(r=>r.json());
+            document.getElementById("rank-container").innerHTML = list.map((p, i) => `
+                <div class="rank-row ${p.name===me?'rank-me':''}">
+                    <div class="rank-idx">${i+1}</div>
+                    <div style="flex:1; font-weight:bold; color:${i===0?'var(--gold)':'white'}">${p.name}</div>
+                    <div style="font-weight:bold;">$${p.total.toLocaleString(undefined, {maximumFractionDigits:0})}</div>
+                </div>`).join('');
+        } catch(e){}
     }
 
-    function renderNewsList() {
-        const container = document.getElementById("news-list-container");
-        container.innerHTML = newsList.map(n => `
-            <div class="news-card" style="border-left-color:${n.b > 0 ? 'var(--green)' : n.b < 0 ? 'var(--red)' : '#666'}">
-                <div style="font-size:10px; color:#888; font-weight:bold; margin-bottom:5px;">
-                    ${n.b > 0 ? 'TÍCH CỰC' : n.b < 0 ? 'TIÊU CỰC' : 'THÔNG TIN'}
-                </div>
-                <div style="color:#ddd; line-height:1.4;">${n.t}</div>
-            </div>
-        `).join('');
-    }
-
-    function updateMiniTicker() {
-        if (newsList.length === 0) return;
-        const item = newsList[Math.floor(Math.random() * newsList.length)];
-        const ticker = document.getElementById("mini-news-ticker");
-        ticker.innerText = `📰 TIN MỚI: ${item.t}`;
-        ticker.style.borderLeftColor = item.b > 0 ? "var(--green)" : item.b < 0 ? "var(--red)" : "#888";
-    }
-
-    // --- HÀM TIỆN ÍCH ---
-    function logout() {
-        if (confirm("Đăng xuất khỏi thiết bị này?")) {
-            localStorage.removeItem("current_session");
-            location.reload();
+    function trade(t) {
+        const amt = parseFloat(document.getElementById("amt").value);
+        if(!amt || amt<=0) return;
+        const s = data.find(x=>x.code===sel);
+        if(t==='buy') {
+            if(amt>wallet.cash) return alert("Không đủ tiền");
+            wallet.cash -= amt; wallet.stocks[sel] = (wallet.stocks[sel]||0) + (amt/s.price);
+        } else {
+            if(amt > (wallet.stocks[sel]||0)*s.price) return alert("Không đủ CP");
+            wallet.stocks[sel] -= (amt/s.price); wallet.cash += amt;
         }
+        localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
+        syncRank();
     }
 
-    function openSettings() { document.getElementById("settings-modal").style.display = 'flex'; }
-    function toggleAudio() { 
-        if(document.getElementById("toggle-bgm").checked) bgm.play(); else bgm.pause(); 
+    // --- NEWS ---
+    async function loadNews() {
+        try {
+            const d = await fetch(NEWS_SRC).then(r=>r.json());
+            document.getElementById("news-container").innerHTML = d.map(n => `
+                <div style="margin-bottom:12px; border-left:3px solid ${n.b>0?'var(--green)':n.b<0?'var(--red)':'#666'}; padding-left:10px;">
+                    <div style="font-size:11px; color:#888; font-weight:bold;">${n.b>0?'TÍCH CỰC':n.b<0?'TIÊU CỰC':'TIN TỨC'}</div>
+                    <div style="font-size:13px; line-height:1.4;">${n.t}</div>
+                </div>`).join('');
+        } catch(e){}
     }
 
-    function switchTab(tabName) {
-        document.querySelectorAll('.view-content').forEach(el => el.classList.add('hidden'));
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        
-        document.getElementById(`tab-${tabName}`).classList.remove('hidden');
-        event.currentTarget.classList.add('active');
-        
-        if (tabName === 'rank') fetchLeaderboard();
-        if (tabName === 'news') loadNewsData();
+    // --- ADMIN ---
+    function openAdmin() { document.getElementById("admin-modal").style.display="flex"; }
+    async function loadUsers() {
+        const u = await fetch(SERVER + "admin/users").then(r=>r.json());
+        document.getElementById("admin-user-list").innerHTML = u.map(x=>`<div style="display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #333"><span>${x.name}</span> <span style="color:var(--green)">$${parseFloat(x.asset).toFixed(0)}</span> <button onclick="delUser('${x.name}')" style="background:var(--red);border:none;color:white;cursor:pointer">X</button></div>`).join('');
     }
+    async function delUser(u){ if(confirm("Xóa?")) await fetch(SERVER+"admin/delete-user",{method:"POST",body:JSON.stringify({user:u})}); loadUsers(); }
+    function adminAction(t) { alert(`Đã tung lệnh ${t.toUpperCase()} cho mã ${document.getElementById("adm-stock").value}`); }
+
+    // Utils
+    function getStockName(c) {
+        const m = {"VN-INDEX":"Chỉ số thị trường", "VIN":"Vingroup", "FPT":"FPT Corp", "HPG":"Hòa Phát", "DIG":"DIC Corp"};
+        return m[c] || "Công ty CP";
+    }
+    function toggleSettings() { alert("Phiên bản Investing Pro 1.0\nNhạc nền đã được bật."); }
 </script>
 </body>
 </html>
