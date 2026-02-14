@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X - Chill Mode</title>
+    <title>Terminal X - Pro</title>
     
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
@@ -21,6 +21,10 @@
         
         #app { display:none; height:100dvh; flex-direction:column; }
         
+        /* ICONS SVG */
+        .icon { width: 24px; height: 24px; fill: #888; transition: 0.2s; }
+        .icon:hover { fill: #fff; }
+
         /* LOGIN */
         #login-screen { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:center; align-items:center; }
         .login-box { background:var(--panel); border:1px solid var(--border); padding:30px; border-radius:16px; width:85%; max-width:350px; text-align:center; box-shadow:0 0 50px rgba(0,255,136,0.1); }
@@ -33,7 +37,8 @@
         .tab-btn { flex:1; padding:15px; text-align:center; font-size:12px; font-weight:bold; color:#666; border-bottom:3px solid transparent; }
         .tab-btn.active { color:var(--green); border-bottom-color:var(--green); background:#1a1a1a; color:white; }
         
-        .view-content { flex:1; overflow-y:auto; position:relative; padding-bottom: 80px; /* Chừa chỗ cho Bottom Sheet */ }
+        /* CONTENT AREA */
+        .view-content { flex:1; overflow-y:auto; position:relative; padding-bottom: 350px; /* Chừa chỗ cho Chart nếu mở */ transition: padding-bottom 0.3s; }
         .hidden { display:none!important; }
 
         /* LIST ITEMS */
@@ -42,45 +47,28 @@
         .rank-me { border:1px solid var(--green); background:#0f3318; }
         .news-card { background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin:10px; border-left:4px solid #555; }
 
-        /* --- BOTTOM SHEET (DETAIL VIEW) --- */
-        /* Đây là phần quan trọng tạo giao diện 1 nửa */
+        /* --- BOTTOM SHEET (CHART) --- */
         #detail-view { 
-            position: fixed; 
-            bottom: 0; left: 0; right: 0;
-            height: 65vh; /* Chiếm 65% màn hình dưới */
+            position: fixed; bottom: 0; left: 0; right: 0;
+            height: 55%; /* Chiếm 55% màn hình dưới */
             background: #101010;
-            border-top-left-radius: 25px;
-            border-top-right-radius: 25px;
-            box-shadow: 0 -5px 50px rgba(0,0,0,0.8);
-            border-top: 1px solid #333;
+            border-top: 1px solid var(--green);
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
             z-index: 2000;
             display: flex; flex-direction: column;
-            transform: translateY(110%); /* Mặc định ẩn xuống dưới */
+            transform: translateY(110%); /* Ẩn */
             transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
-        
-        #detail-view.active { transform: translateY(0); } /* Hiện lên */
+        #detail-view.active { transform: translateY(0); } 
 
-        /* Lớp phủ làm mờ nền khi mở Chart */
-        #overlay-dim {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(3px); /* Hiệu ứng kính mờ */
-            z-index: 1500; display: none;
-            opacity: 0; transition: opacity 0.3s;
-        }
-
-        .chart-header { padding:15px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #222; }
-        .chart-container { flex:1; width:100%; position:relative; background: #080808; margin-bottom: 10px; }
+        .chart-header { padding:10px 15px; display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; border-bottom:1px solid #333; }
+        .chart-container { flex:1; width:100%; position:relative; background: #080808; }
         canvas { display:block; width:100%; height:100%; }
-
-        .controls-area { padding:15px; background:#151515; border-top:1px solid #333; padding-bottom: 30px; }
-        .drag-handle { width: 40px; height: 5px; background: #444; border-radius: 5px; margin: 10px auto 0 auto; }
-
-        /* TIN TỨC CHẠY */
+        .controls-area { padding:10px; background:#151515; border-top:1px solid #333; padding-bottom: 20px; }
         .mini-news { font-size: 11px; padding: 5px 15px; color: #888; border-bottom: 1px solid #222; white-space: nowrap; overflow: hidden; background: #0f0f0f; }
 
         /* SETTINGS & ADMIN */
-        #admin-view { position:fixed; inset:0; background:#000; z-index:5000; display:none; flex-direction:column; }
+        #admin-view { position:fixed; inset:0; background:#000; z-index:6000; display:none; flex-direction:column; }
         #settings-modal { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; }
         .settings-box { background:var(--panel); padding:20px; border-radius:12px; width:80%; max-width:300px; }
         
@@ -95,53 +83,53 @@
 
 <div id="login-screen" onclick="unlockAudio()">
     <div class="login-box">
-        <h2 style="margin:0 0 20px 0; color:var(--green); letter-spacing:1px;">TERMINAL X</h2>
+        <h2 style="margin:0 0 20px 0; color:var(--green); letter-spacing:2px;">TERMINAL X</h2>
         <input type="text" id="user" class="inp-auth" placeholder="Tên hiển thị">
         <input type="password" id="pass" class="inp-auth" placeholder="Mật mã">
         <button onclick="auth('login')" class="btn-auth" style="background:#1f6feb;">ĐĂNG NHẬP</button>
         <button onclick="auth('reg')" class="btn-auth" style="background:#238636;">ĐĂNG KÝ</button>
         <div id="msg" style="color:var(--red); font-size:12px; margin-top:15px;"></div>
-        <div style="font-size:10px; color:#666; margin-top:20px;">*Chạm màn hình để bật nhạc Chill 🎵</div>
+        <div style="font-size:10px; color:#666; margin-top:20px;">*Chạm màn hình để kích hoạt hệ thống</div>
     </div>
 </div>
 
 <div id="app">
     <div class="header">
         <div style="font-weight:bold; display:flex; align-items:center; gap:5px;">👤 <span id="u-name" style="color:#ccc">...</span></div>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:5px 8px; border-radius:4px; font-size:10px;">ADMIN</button>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;">ADMIN</button>
             <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;">$<span id="cash">0.00</span></div>
-            <button onclick="openSettings()" style="background:none; border:none; font-size:20px; color:#888;">⚙️</button>
+            
+            <button onclick="openSettings()" style="background:none; border:none; padding:0;">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.43-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/></svg>
+            </button>
         </div>
     </div>
+    
     <div class="tab-bar">
         <div class="tab-btn active" onclick="tab('market')">THỊ TRƯỜNG</div>
         <div class="tab-btn" onclick="tab('rank')">XẾP HẠNG</div>
         <div class="tab-btn" onclick="tab('news')">TIN TỨC</div>
     </div>
     
-    <div id="tab-market" class="view-content"><div id="list" style="padding-bottom:100px;"></div></div>
+    <div id="tab-market" class="view-content"><div id="list"></div></div>
     <div id="tab-rank" class="view-content hidden"><div id="rank-list" style="padding:10px;"></div></div>
     <div id="tab-news" class="view-content hidden"><div id="news-list" style="padding:10px;"></div></div>
 </div>
 
-<div id="overlay-dim" onclick="closeDetail()"></div>
-
 <div id="detail-view">
-    <div class="drag-handle" onclick="closeDetail()"></div>
     <div class="chart-header">
         <div>
             <div id="d-code" style="font-weight:900; font-size:20px; color:white;">CODE</div>
-            <div style="font-size:11px; color:#888;">Đang có: <span id="d-owned" style="color:white">0</span></div>
+            <div style="font-size:11px; color:#888;">Có: <span id="d-owned" style="color:white">0</span></div>
         </div>
         <div style="text-align:right">
             <div id="d-price" style="font-size:24px; font-weight:bold;">0.00</div>
-            <button onclick="closeDetail()" style="background:#333; color:#ccc; border:none; padding:5px 10px; border-radius:15px; font-size:10px; margin-top:5px;">ĐÓNG ✕</button>
+            <button onclick="closeDetail()" style="background:none; border:none; color:#666; font-size:12px; margin-top:5px;">▼ ẨN</button>
         </div>
     </div>
     
-    <div class="mini-news" id="mini-news-ticker">📰 Thị trường đang sôi động...</div>
-
+    <div class="mini-news" id="mini-news-ticker">📰 ...</div>
     <div class="chart-container"><canvas id="chart"></canvas></div>
 
     <div class="controls-area">
@@ -168,7 +156,10 @@
 <div id="settings-modal" onclick="if(event.target.id==='settings-modal') this.style.display='none'">
     <div class="settings-box">
         <h3>CÀI ĐẶT</h3>
-        <div style="display:flex; justify-content:space-between; margin-bottom:20px;"><span>Nhạc Chill 🎵</span><input type="checkbox" id="toggle-bgm" checked onchange="toggleBGM()"></div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+            <span>Nhạc nền</span>
+            <input type="checkbox" id="toggle-bgm" onchange="toggleBGM()">
+        </div>
         <button onclick="logout()" style="width:100%; padding:10px; background:#da3633; color:white; border:none;">Đăng xuất</button>
     </div>
 </div>
@@ -178,13 +169,29 @@
     const NEWS_URL = "https://raw.githubusercontent.com/minhReal/CSimu/refs/heads/main/news.json";
     let me = null, wallet = {cash:250, stocks:{}}, data = [], candles = {}, sel = null, news = [];
     
-    // --- AUDIO ENGINE ---
+    // --- AUDIO SYSTEM (PERSISTENT) ---
     const bgm = document.getElementById("bgm");
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let unlocked = false;
 
+    // Load setting từ local storage (Mặc định là bật nếu chưa chỉnh)
+    let isBgmOn = localStorage.getItem("bgm_state") !== "off";
+    document.getElementById("toggle-bgm").checked = isBgmOn;
+
     function unlockAudio() {
-        if(!unlocked) { audioCtx.resume().then(()=>{ unlocked=true; if(document.getElementById("toggle-bgm").checked) bgm.play().catch(()=>{}); }); }
+        if(!unlocked) { 
+            audioCtx.resume().then(()=>{ 
+                unlocked=true; 
+                // Chỉ hát nếu setting là BẬT
+                if(isBgmOn) bgm.play().catch(()=>{}); 
+            }); 
+        }
+    }
+    
+    function toggleBGM() {
+        isBgmOn = document.getElementById("toggle-bgm").checked;
+        localStorage.setItem("bgm_state", isBgmOn ? "on" : "off");
+        if(isBgmOn) { if(unlocked) bgm.play(); } else bgm.pause();
     }
     
     function sfx(type) {
@@ -243,37 +250,45 @@
                 if(!l.length || l[l.length-1].time !== s.candle.time) { l.push(s.candle); if(l.length>50) l.shift(); }
                 else l[l.length-1] = s.candle;
             });
-            if(!sel) renderList(); else { updateD(); draw(); }
+            // Update chart realtime nếu đang mở, nhưng không vẽ lại list nếu không cần thiết
+            if(sel) { updateD(); draw(); }
+            renderList(); // Cập nhật list giá liên tục
             document.getElementById("cash").innerText = wallet.cash.toFixed(2);
         } catch(e){}
     }
 
     function renderList() {
-        document.getElementById("list").innerHTML = data.map(s => {
-            const up = s.candle.close >= s.candle.open;
-            return `<div class="stock-item" onclick="openDetail('${s.code}')">
-                <div><div style="font-weight:900;font-size:16px;color:white">${s.code}</div><div style="font-size:11px;color:#888">${(wallet.stocks[s.code]||0).toFixed(1)} CP</div></div>
-                <div style="text-align:right"><div style="font-size:16px;font-weight:bold;color:${up?'var(--green)':'var(--red)'}">${s.price.toFixed(2)}</div></div>
-            </div>`;
-        }).join('');
+        // Chỉ render lại giá, không làm mất trạng thái cuộn
+        const div = document.getElementById("list");
+        if(div.childElementCount !== data.length) {
+            div.innerHTML = data.map(s => `
+                <div class="stock-item" onclick="openDetail('${s.code}')" id="st-${s.code}">
+                    <div><div style="font-weight:900;font-size:16px;color:white">${s.code}</div><div style="font-size:11px;color:#888">${(wallet.stocks[s.code]||0).toFixed(1)} CP</div></div>
+                    <div style="text-align:right"><div class="price-val" style="font-size:16px;font-weight:bold;">${s.price.toFixed(2)}</div></div>
+                </div>`).join('');
+        } else {
+            data.forEach(s => {
+                const el = document.getElementById(`st-${s.code}`);
+                if(el) {
+                    const up = s.candle.close >= s.candle.open;
+                    const p = el.querySelector(".price-val");
+                    p.innerText = s.price.toFixed(2);
+                    p.style.color = up ? "var(--green)" : "var(--red)";
+                }
+            });
+        }
     }
 
     function openDetail(c) { 
         sfx('click'); sel = c; 
-        const el = document.getElementById("detail-view");
-        const ol = document.getElementById("overlay-dim");
-        ol.style.display="block"; setTimeout(()=>ol.style.opacity=1, 10);
-        el.classList.add("active");
+        document.getElementById("detail-view").classList.add("active");
+        // Không chặn tương tác bên trên (No Overlay)
         initChart(); updateD(); tick();
     }
     
     function closeDetail() { 
         sfx('click'); sel = null; 
-        const el = document.getElementById("detail-view");
-        const ol = document.getElementById("overlay-dim");
-        el.classList.remove("active");
-        ol.style.opacity=0; setTimeout(()=>ol.style.display="none", 300);
-        renderList(); 
+        document.getElementById("detail-view").classList.remove("active");
     }
 
     function updateD() {
@@ -315,11 +330,11 @@
         d.forEach(x => { if(x.low<min) min=x.low; if(x.high>max) max=x.high; });
         const r = max-min || 1, py=20;
         const gy = v => H - py - ((v-min)/r)*(H-py*2);
+        const cw = (W-20)/50;
 
         ctx.strokeStyle="#222"; ctx.lineWidth=1;
         for(let i=0; i<=4; i++) { let y=H-py-(i/4)*(H-py*2); ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
-        const cw = (W-20)/50;
         d.forEach((c,i) => {
             const x = i*cw+10, col = c.close >= c.open ? "#00ff88" : "#ff3b3b";
             ctx.strokeStyle = col; ctx.fillStyle = col;
@@ -342,13 +357,22 @@
     async function sync() { if(!me) return; let t = wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t += wallet.stocks[s.code]*s.price}); await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:me, asset:t})}); }
     async function getRank() { if(document.getElementById("tab-rank").classList.contains("hidden")) return; const r=await fetch(`${SERVER}get-rank`); const l=await r.json(); document.getElementById("rank-list").innerHTML=l.map((p,i)=>`<div class="rank-item ${p.name===me?'rank-me':''}"><div class="rank-num ${i==0?'rank-1':''}">${i+1}</div><div style="flex:1;margin-left:10px"><div style="font-weight:bold;color:white">${p.name} ${i==0?'👑':''}</div><div style="font-size:12px;color:#888">$${p.total.toLocaleString(undefined,{maximumFractionDigits:0})}</div></div></div>`).join(''); }
 
-    async function loadAdminUsers() { const d=document.getElementById("admin-user-list"); d.innerHTML="Loading..."; try{const r=await fetch(`${SERVER}admin/users`);const u=await r.json();d.innerHTML=u.map(x=>`<div class="user-row"><div><b>${x.name}</b><br><small>$${parseFloat(x.asset).toLocaleString()}</small></div>${x.name.toLowerCase()!=='minh'?`<button class="btn-del" onclick="delUser('${x.name}')">XÓA</button>`:''}</div>`).join('');}catch(e){d.innerHTML="Lỗi";} }
-    async function delUser(n) { if(confirm("Xóa?")) await fetch(`${SERVER}admin/delete-user`,{method:"POST",body:JSON.stringify({user:n})}); loadAdminUsers(); }
-    function adminAction() { news.unshift({t:`[TIN ĐỒN] ${document.getElementById("adm-stock").value} sắp có biến lớn!`, b:document.getElementById("adm-action").value==='pump'?50:-50}); alert("Xong!"); tick(); }
-    function openAdmin() { document.getElementById("admin-view").style.display="flex"; loadAdminUsers(); }
+    // --- ADMIN SECURITY FIX ---
+    async function loadAdminUsers() { 
+        if(me.toLowerCase() !== 'minh') return alert("Bạn không phải Admin!");
+        const d=document.getElementById("admin-user-list"); d.innerHTML="Loading..."; try{const r=await fetch(`${SERVER}admin/users`);const u=await r.json();d.innerHTML=u.map(x=>`<div class="user-row"><div><b>${x.name}</b><br><small>$${parseFloat(x.asset).toLocaleString()}</small></div>${x.name.toLowerCase()!=='minh'?`<button class="btn-del" onclick="delUser('${x.name}')">XÓA</button>`:''}</div>`).join('');}catch(e){d.innerHTML="Lỗi";} 
+    }
+    async function delUser(n) { if(me.toLowerCase() !== 'minh') return; if(confirm("Xóa?")) await fetch(`${SERVER}admin/delete-user`,{method:"POST",body:JSON.stringify({user:n})}); loadAdminUsers(); }
+    function adminAction() { 
+        if(me.toLowerCase() !== 'minh') return alert("Bạn không phải Admin!");
+        news.unshift({t:`[TIN ĐỒN] ${document.getElementById("adm-stock").value} sắp có biến lớn!`, b:document.getElementById("adm-action").value==='pump'?50:-50}); alert("Xong!"); tick(); 
+    }
+    function openAdmin() { 
+        if(me.toLowerCase() !== 'minh') return;
+        document.getElementById("admin-view").style.display="flex"; loadAdminUsers(); 
+    }
 
     function tab(id) { document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active')); document.getElementById(`tab-${id}`).classList.remove('hidden'); event.target.classList.add('active'); sfx('click'); if(id==='rank') getRank(); if(id==='news') {document.getElementById("news-list").innerHTML = news.map(n=>`<div class="news-card" style="border-left-color:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#666'}"><div style="font-size:10px;color:#888">${n.b>0?'TỐT':n.b<0?'XẤU':'TIN'}</div><div style="color:#ddd">${n.t}</div></div>`).join('');} }
-    function toggleBGM() { if(document.getElementById("toggle-bgm").checked) bgm.play(); else bgm.pause(); }
     function logout() { localStorage.removeItem("sess"); location.reload(); }
     function openSettings() { document.getElementById("settings-modal").style.display='flex'; }
 </script>
