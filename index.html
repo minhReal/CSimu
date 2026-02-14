@@ -537,4 +537,20 @@
 
     // --- UTILS ---
     async function sync() { if(!me) return; let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price}); await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:me, asset:t})}); }
-    async function getRank() { if(activeTab !== 'rank') return; const r=await fetch(`${SERVER}get-rank`); const l=await r.json(); document.getElementById("rank-list").innerHTML=l.map((p,i)=>`<div class="rank-item ${p.name===me?'rank-me':''}"><div style="width:30px;text-align:center
+    async function getRank() { if(activeTab !== 'rank') return; const r=await fetch(`${SERVER}get-rank`); const l=await r.json(); document.getElementById("rank-list").innerHTML=l.map((p,i)=>`<div class="rank-item ${p.name===me?'rank-me':''}"><div style="width:30px;text-align:center;font-weight:bold">${i+1}</div><div style="flex:1;margin-left:10px"><div style="font-weight:bold;color:white">${p.name} ${i==0?'👑':''}</div><div style="font-size:12px;color:#888">$${p.total.toLocaleString(undefined,{maximumFractionDigits:0})}</div></div></div>`).join(''); }
+
+    function tab(id) { 
+        document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden')); 
+        document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active')); 
+        document.getElementById(`tab-${id}`).classList.remove('hidden'); 
+        event.target.classList.add('active'); sfx('click'); 
+        activeTab = id;
+        if(id==='rank') getRank(); 
+        if(id==='news') renderNewsPage();
+    }
+    function logout() { localStorage.removeItem("sess"); location.reload(); }
+    function changeChartType() { chartType = document.getElementById("chart-type-select").value; localStorage.setItem("chart_type", chartType); if(sel) draw(); }
+    function openSettings() { document.getElementById("settings-modal").style.display='flex'; }
+</script>
+</body>
+</html>
