@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X - Ultra</title>
+    <title>Terminal X - Perfect Scale</title>
     
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
@@ -22,7 +22,7 @@
         
         #app { display:none; height:100dvh; flex-direction:column; }
         
-        /* STATUS BAR (NEW) */
+        /* STATUS BAR */
         .status-bar {
             height: 25px; background: #080808; border-top: 1px solid #333;
             display: flex; justify-content: space-between; align-items: center;
@@ -40,13 +40,12 @@
         .inp-auth { width:100%; padding:15px; margin:10px 0; background:#1a1a1a; border:1px solid #333; color:white; border-radius:8px; font-size:16px; text-align:center; outline:none; }
         .btn-auth { width:100%; padding:15px; margin-top:10px; border:none; border-radius:8px; font-weight:bold; font-size:16px; color:white; }
 
-        /* HEADER & TABS */
+        /* HEADER */
         .header { padding:12px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; height:60px; z-index: 10; }
         .tab-bar { display:flex; border-bottom:1px solid var(--border); background:var(--panel); height:50px; z-index: 10; }
         .tab-btn { flex:1; padding:15px; text-align:center; font-size:12px; font-weight:bold; color:#666; border-bottom:3px solid transparent; }
         .tab-btn.active { color:var(--green); border-bottom-color:var(--green); background:#1a1a1a; color:white; }
         
-        /* CONTENT */
         .view-content { flex:1; overflow-y:auto; position:relative; padding-bottom: 300px; } 
         .hidden { display:none!important; }
 
@@ -55,12 +54,11 @@
         .rank-item { display:flex; align-items:center; background:#161616; padding:12px; margin:8px 10px; border-radius:8px; border:1px solid var(--border); }
         .rank-me { border:1px solid var(--green); background:#0f3318; }
         .news-card { background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin:10px; border-left:4px solid #555; transition: transform 0.2s; }
-        .news-card:active { transform: scale(0.98); }
         .news-time { font-size: 10px; color: #666; margin-bottom: 4px; display: block; }
 
-        /* BOTTOM SHEET */
+        /* BOTTOM SHEET CHART */
         #detail-view { 
-            position: fixed; bottom: 25px; /* Để chừa chỗ cho status bar */ left: 0; right: 0;
+            position: fixed; bottom: 25px; left: 0; right: 0;
             height: 55%; 
             background: #101010;
             border-top: 1px solid var(--green);
@@ -142,11 +140,12 @@
     <div class="mini-news" id="mini-news-ticker">📰 Đang cập nhật tin tức...</div>
     <div class="chart-container"><canvas id="chart"></canvas></div>
     <div class="controls-area">
-        <input type="number" id="trade-amount" class="inp-auth" placeholder="Nhập số tiền ($)" style="margin-bottom:10px; font-size:18px; font-weight:bold;">
+        <input type="number" id="trade-amount" class="inp-auth" placeholder="Nhập số lượng (CP)" style="margin-bottom:10px; font-size:18px; font-weight:bold;">
         <div style="display:flex; gap:10px;">
             <button onclick="trade('buy')" class="btn-auth" style="margin:0; background:#238636; flex:1;">MUA</button>
             <button onclick="trade('sell')" class="btn-auth" style="margin:0; background:#da3633; flex:1;">BÁN</button>
         </div>
+        <div id="trade-estimate" style="text-align:center; font-size:11px; color:#888; margin-top:5px;">Ước tính: $0.00</div>
     </div>
 </div>
 
@@ -215,6 +214,16 @@
         document.getElementById("system-time").innerText = d.toLocaleTimeString('vi-VN');
     }, 1000);
 
+    // Tính tiền ước tính khi nhập số lượng
+    document.getElementById("trade-amount").addEventListener("input", function() {
+        const qty = parseFloat(this.value);
+        if(sel && data.length > 0) {
+            const s = data.find(x => x.code === sel);
+            const est = qty * s.price;
+            document.getElementById("trade-estimate").innerText = `Ước tính: $${isNaN(est) ? '0.00' : est.toFixed(2)}`;
+        }
+    });
+
     // --- APP ---
     (function(){ const s=localStorage.getItem("sess"); if(s && localStorage.getItem(`u_${s}`)) { me=s; wallet=JSON.parse(localStorage.getItem(`u_${s}`)); enter(); } })();
 
@@ -239,26 +248,20 @@
         sfx('ok'); document.getElementById("login-screen").style.display="none"; document.getElementById("app").style.display="flex"; document.getElementById("u-name").innerText=me;
         if(me.toLowerCase()==='minh') document.getElementById("btn-admin").style.display="block";
         setInterval(loop, 1500); setInterval(sync, 3000); setInterval(getRank, 5000); 
-        
         generateFakeNews(); 
-        setInterval(generateFakeNews, 8000); // 8s tạo tin mới 1 lần
+        setInterval(generateFakeNews, 8000); 
     }
 
-    // --- LOGIC ---
     function generateFakeNews() {
         if(data.length === 0) return;
         const stock = data[Math.floor(Math.random() * data.length)];
         const template = FAKE_NEWS_TEMPLATES[Math.floor(Math.random() * FAKE_NEWS_TEMPLATES.length)];
         const text = template.replace("{S}", stock.code);
         const isGood = stock.candle.close >= stock.candle.open;
-        
-        // Thêm tin mới
         news.unshift({ t: text, b: isGood ? 50 : -50, time: new Date().toLocaleTimeString() });
         if(news.length > 30) news.pop();
-
-        // Cập nhật UI Tin tức ngay lập tức nếu đang ở Tab News
         if(activeTab === 'news') renderNewsPage();
-        tick(); // Cập nhật ticker
+        tick(); 
     }
 
     function renderNewsPage() {
@@ -276,7 +279,6 @@
             const res = await fetch(SERVER);
             const latency = Date.now() - start;
             updatePing(latency);
-            
             const json = await res.json();
             data = json.stocks;
             data.forEach(s => {
@@ -303,7 +305,7 @@
         if(div.childElementCount !== data.length) {
             div.innerHTML = data.map(s => `
                 <div class="stock-item" onclick="openDetail('${s.code}')" id="st-${s.code}">
-                    <div><div style="font-weight:900;font-size:16px;color:white">${s.code}</div><div style="font-size:11px;color:#888">${(wallet.stocks[s.code]||0).toFixed(1)} CP</div></div>
+                    <div><div style="font-weight:900;font-size:16px;color:white">${s.code}</div><div style="font-size:11px;color:#888">${(wallet.stocks[s.code]||0).toFixed(0)} CP</div></div>
                     <div style="text-align:right"><div class="price-val" style="font-size:16px;font-weight:bold;">${s.price.toFixed(2)}</div></div>
                 </div>`).join('');
         } else {
@@ -325,19 +327,28 @@
         const s = data.find(x=>x.code===sel);
         document.getElementById("d-code").innerText = s.code;
         document.getElementById("d-price").innerText = s.price.toFixed(2);
-        document.getElementById("d-owned").innerText = (wallet.stocks[sel]||0).toFixed(1);
+        document.getElementById("d-owned").innerText = (wallet.stocks[sel]||0).toFixed(0);
         document.getElementById("d-price").style.color = (candles[sel]?.at(-1).close >= candles[sel]?.at(-1).open) ? "var(--green)" : "var(--red)";
     }
+
+    // --- SỬA LỖI MUA BÁN (NHẬP SỐ LƯỢNG) ---
     function trade(t) {
-        const v = parseFloat(document.getElementById("trade-amount").value);
-        if(!v || v<=0) return sfx('err');
+        const qty = parseFloat(document.getElementById("trade-amount").value);
+        if(!qty || qty<=0) return sfx('err');
+        
         const s = data.find(x=>x.code===sel);
+        const cost = qty * s.price; // Tổng tiền = Số lượng * Giá
+        
         if(t==='buy') {
-            if(v > wallet.cash) { sfx('err'); return alert("Thiếu tiền"); }
-            wallet.cash -= v; wallet.stocks[sel] = (wallet.stocks[sel]||0) + (v/s.price); sfx('ok');
+            if(cost > wallet.cash) { sfx('err'); return alert("Thiếu tiền!"); }
+            wallet.cash -= cost; 
+            wallet.stocks[sel] = (wallet.stocks[sel]||0) + qty; // Cộng số lượng
+            sfx('ok');
         } else {
-            if(v > (wallet.stocks[sel]||0)*s.price) { sfx('err'); return alert("Thiếu CP"); }
-            wallet.stocks[sel] -= (v/s.price); wallet.cash += v; sfx('ok');
+            if(qty > (wallet.stocks[sel]||0)) { sfx('err'); return alert("Thiếu cổ phiếu!"); }
+            wallet.stocks[sel] -= qty; // Trừ số lượng
+            wallet.cash += cost; 
+            sfx('ok');
         }
         localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); sync();
     }
@@ -345,19 +356,56 @@
     let ctx;
     function initChart() { const c=document.getElementById("chart"); c.width=c.parentElement.clientWidth*2; c.height=c.parentElement.clientHeight*2; ctx=c.getContext("2d"); ctx.scale(2,2); }
     
-    // --- DRAW CHART (FIXED COLOR LOGIC) ---
+    // --- SMART GRID & DRAWING ---
+    function calculateSmartGrid(min, max) {
+        const range = max - min;
+        const roughStep = range / 5;
+        // Các bước nhảy đẹp: 0.1, 0.5, 1, 2, 5, 10, 20, 50, 100...
+        const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
+        const normalizedStep = roughStep / magnitude;
+        let niceStep;
+        if (normalizedStep < 1.5) niceStep = 1;
+        else if (normalizedStep < 3) niceStep = 2;
+        else if (normalizedStep < 7) niceStep = 5;
+        else niceStep = 10;
+        return niceStep * magnitude;
+    }
+
     function draw() {
         if(!sel || !candles[sel]) return;
         const d = candles[sel]; if(!d.length) return;
         const W = ctx.canvas.width/2, H = ctx.canvas.height/2;
         ctx.clearRect(0,0,W,H);
+        
+        // Tính min/max với biên độ đệm
         let min=Infinity, max=-Infinity;
         d.forEach(x => { if(x.low<min) min=x.low; if(x.high>max) max=x.high; });
-        const r = max-min || 1, py=20, gy = v => H - py - ((v-min)/r)*(H-py*2), cw = (W-20)/50;
+        const padding = (max - min) * 0.1; // Thêm 10% đệm trên dưới
+        min -= padding; max += padding;
+        
+        const step = calculateSmartGrid(min, max);
+        const startY = Math.ceil(min / step) * step;
+        const py = 20; // Padding biên của canvas
 
-        ctx.strokeStyle="#222"; ctx.lineWidth=1;
-        for(let i=0; i<=4; i++) { let y=H-py-(i/4)*(H-py*2); ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+        // Hàm map giá trị -> tọa độ Y
+        const gy = v => H - py - ((v - min) / (max - min)) * (H - py * 2);
 
+        // Vẽ Grid ngang (SỐ CHẴN)
+        ctx.fillStyle = "#444";
+        ctx.font = "10px monospace";
+        ctx.textAlign = "right";
+        ctx.strokeStyle="#222"; 
+        ctx.lineWidth=1;
+        
+        for (let v = startY; v <= max; v += step) {
+            const y = gy(v);
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+            ctx.fillText(v.toFixed(step < 1 ? 2 : 0), W - 5, y - 2);
+        }
+
+        const cw = (W-30)/50;
+
+        // VẼ BIỂU ĐỒ
         if(chartType === 'candle') {
             d.forEach((c,i) => {
                 const x = i*cw+10, col = c.close >= c.open ? "#00ff88" : "#ff3b3b";
@@ -367,34 +415,28 @@
                 ctx.fillRect(x+1, Math.min(gy(c.open), gy(c.close)), cw-2, h);
             });
         } else {
-            // LINE CHART: Đổi màu theo xu hướng (Đỏ khi xuống, Xanh khi lên)
+            // LINE CHART MÀU ĐA SẮC
             ctx.lineWidth = 2;
             for (let i = 0; i < d.length - 1; i++) {
                 const x1 = i * cw + 10 + cw/2;
                 const y1 = gy(d[i].close);
                 const x2 = (i + 1) * cw + 10 + cw/2;
                 const y2 = gy(d[i+1].close);
-                
                 ctx.beginPath();
-                // Logic: Nếu điểm sau thấp hơn điểm trước -> ĐỎ, ngược lại -> XANH
-                ctx.strokeStyle = d[i+1].close >= d[i].close ? "#00ff88" : "#ff3b3b";
-                ctx.moveTo(x1, y1);
-                ctx.lineTo(x2, y2);
-                ctx.stroke();
+                ctx.strokeStyle = d[i+1].close >= d[i].close ? "#00ff88" : "#ff3b3b"; // Xanh khi lên, Đỏ khi xuống
+                ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
             }
-            // Fill gradient nhẹ
-            const grad = ctx.createLinearGradient(0, 0, 0, H);
-            grad.addColorStop(0, "rgba(255, 255, 255, 0.1)");
-            grad.addColorStop(1, "rgba(255, 255, 255, 0)");
-            ctx.fillStyle = grad;
-            ctx.beginPath();
-            ctx.moveTo(10 + cw/2, H);
-            d.forEach((c,i) => ctx.lineTo(i*cw + 10 + cw/2, gy(c.close)));
-            ctx.lineTo((d.length-1)*cw + 10 + cw/2, H);
-            ctx.fill();
         }
+        
+        // Đường giá hiện tại
         const ly = gy(d[d.length-1].close);
-        ctx.strokeStyle="rgba(255,255,255,0.3)"; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle="rgba(255,255,255,0.4)"; ctx.setLineDash([2,2]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
+        
+        // Tag giá hiện tại bên phải
+        ctx.fillStyle = d[d.length-1].close >= d[d.length-1].open ? "#00ff88" : "#ff3b3b";
+        ctx.fillRect(W-35, ly-8, 35, 16);
+        ctx.fillStyle = "black";
+        ctx.fillText(d[d.length-1].close.toFixed(2), W-2, ly+3);
     }
 
     function tick() { if(!news.length) return; const n=news[0]; const el=document.getElementById("mini-news-ticker"); el.innerText=`📰 ${n.t}`; el.style.borderLeftColor=n.b>0?"var(--green)":n.b<0?"var(--red)":"#888"; }
