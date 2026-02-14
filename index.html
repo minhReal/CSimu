@@ -6,130 +6,189 @@
     <title>Terminal X - Admin Edition</title>
     
     <script>
-        document.addEventListener('contextmenu', e => e.preventDefault());
+        // 1. Chặn Menu Chuột Phải
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        // 2. Chặn Phím Tắt (F12, Ctrl+U, Ctrl+Shift+I...)
         document.onkeydown = function(e) {
-            // Chặn F12, Ctrl+Shift+I, Ctrl+U, Ctrl+Shift+J
-            if(e.keyCode == 123 || (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) || (e.ctrlKey && e.keyCode == 85)) return false;
+            // F12
+            if(e.keyCode == 123) return false;
+            // Ctrl+Shift+I (DevTools)
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
+            // Ctrl+Shift+J (Console)
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
+            // Ctrl+Shift+C (Inspect)
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
+            // Ctrl+U (View Source)
+            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
         }
+
+        // 3. Bẫy Debugger (Treo trình duyệt nếu cố tình mở DevTool)
+        // setInterval(() => { debugger; }, 200); 
+        // (Lưu ý: Đã tạm tắt dòng trên để bạn test. Khi nào chạy thật hãy bỏ comment // ra)
     </script>
 
     <style>
-        /* --- CORE STYLES --- */
-        :root { --bg:#050505; --panel:#121212; --border:#2a2a2a; --green:#00ff88; --red:#ff3b3b; --gold:#ffd700; --text:#e0e0e0; }
-        body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow:hidden; height:100dvh; }
-        * { box-sizing:border-box; user-select:none; -webkit-tap-highlight-color:transparent; }
-        button { cursor: pointer; }
-        
-        #app { display:none; height:100dvh; flex-direction:column; }
-        
-        /* LOGIN */
-        #login-screen { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:center; align-items:center; }
-        .login-box { background:var(--panel); border:1px solid var(--border); padding:30px; border-radius:16px; width:85%; max-width:350px; text-align:center; box-shadow: 0 0 50px rgba(0,255,136,0.1); }
-        .inp-auth { width:100%; padding:15px; margin:10px 0; background:#1a1a1a; border:1px solid #333; color:white; border-radius:8px; font-size:16px; text-align:center; outline:none; }
-        .btn-auth { width:100%; padding:15px; margin-top:10px; border:none; border-radius:8px; font-weight:bold; font-size:16px; color:white; transition:0.2s; }
-        .btn-auth:active { transform:scale(0.95); }
-        
-        /* HEADER & TABS */
-        .header { padding:12px 15px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
-        .tab-bar { display:flex; border-bottom:1px solid var(--border); background:var(--panel); flex-shrink:0; }
-        .tab-btn { flex:1; padding:12px; text-align:center; font-size:12px; font-weight:bold; color:#888; border-bottom:3px solid transparent; }
-        .tab-btn.active { color:var(--green); border-bottom-color:var(--green); background:#1a1a1a; }
-        .view-content { flex:1; overflow-y:auto; position:relative; }
-        .hidden { display:none!important; }
+        /* --- GIAO DIỆN CHÍNH (THEME) --- */
+        :root { 
+            --bg: #050505; 
+            --panel: #121212; 
+            --border: #2a2a2a; 
+            --green: #00ff88; 
+            --red: #ff3b3b; 
+            --gold: #ffd700;
+            --text-main: #e0e0e0; 
+            --text-dim: #888;
+        }
 
-        /* LIST ITEMS */
-        .stock-item { display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:16px; margin:10px; border-radius:10px; border:1px solid var(--border); }
-        .rank-item { display:flex; align-items:center; background:#161616; padding:12px; margin:8px 10px; border-radius:8px; border:1px solid var(--border); }
-        .rank-me { border:1px solid var(--green); background:#0f3318; }
-        .rank-num { width:30px; font-weight:900; color:#666; text-align:center; }
-        .rank-1 { color:var(--gold); text-shadow:0 0 10px rgba(255,215,0,0.5); }
+        body { margin: 0; background: var(--bg); color: var(--text-main); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; height: 100dvh; }
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+        button { cursor: pointer; transition: 0.2s; }
+        button:active { transform: scale(0.95); }
         
-        /* ADMIN PANEL STYLES */
-        #admin-view { position:fixed; inset:0; background:#000; z-index:5000; display:none; flex-direction:column; }
-        .admin-header { padding:15px; background:#2a0505; color:var(--red); font-weight:bold; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--red); }
-        .admin-section { padding:15px; border-bottom:1px solid #333; }
-        .user-row { display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #222; }
-        .btn-del { background:var(--red); color:white; border:none; padding:5px 10px; border-radius:4px; font-size:10px; }
+        /* Layout Container */
+        #app { display: none; height: 100dvh; flex-direction: column; }
+        
+        /* --- MÀN HÌNH ĐĂNG NHẬP --- */
+        #login-screen { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.95); display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .login-box { background: var(--panel); border: 1px solid var(--border); padding: 30px; border-radius: 16px; width: 85%; max-width: 350px; text-align: center; box-shadow: 0 0 50px rgba(0,255,136,0.1); }
+        .inp-auth { width: 100%; padding: 15px; margin: 10px 0; background: #1a1a1a; border: 1px solid #333; color: white; border-radius: 8px; font-size: 16px; text-align: center; outline: none; }
+        .btn-auth { width: 100%; padding: 15px; margin-top: 10px; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; color: white; }
+        
+        /* --- HEADER & NAVIGATION --- */
+        .header { padding: 12px 15px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+        .tab-bar { display: flex; border-bottom: 1px solid var(--border); background: var(--panel); flex-shrink: 0; }
+        .tab-btn { flex: 1; padding: 12px; text-align: center; font-size: 12px; font-weight: bold; color: var(--text-dim); cursor: pointer; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: var(--green); border-bottom-color: var(--green); background: #1a1a1a; color: white; }
+        
+        /* --- KHUNG HIỂN THỊ NỘI DUNG --- */
+        .view-content { flex: 1; overflow-y: auto; position: relative; }
+        .hidden { display: none !important; }
 
-        /* DETAIL VIEW */
-        #detail-view { display:none; flex:1; flex-direction:column; background:#000; z-index:100; position:fixed; inset:0; }
-        .chart-container { flex:1; width:100%; min-height:200px; }
-        canvas { display:block; width:100%; height:100%; }
+        /* --- DANH SÁCH CỔ PHIẾU --- */
+        .stock-item { display: flex; justify-content: space-between; align-items: center; background: #1a1a1a; padding: 16px; margin: 10px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer; }
+        .stock-item:hover { background: #222; }
+
+        /* --- BẢNG XẾP HẠNG --- */
+        .rank-item { display: flex; align-items: center; background: #161616; padding: 12px; margin: 8px 10px; border-radius: 8px; border: 1px solid var(--border); }
+        .rank-me { border: 1px solid var(--green); background: #0f3318; }
+        .rank-num { width: 30px; font-weight: 900; font-size: 16px; color: #666; text-align: center; }
+        .rank-1 { color: var(--gold); text-shadow: 0 0 10px rgba(255,215,0,0.5); font-size: 18px; }
+        
+        /* --- ADMIN PANEL STYLE --- */
+        #admin-view { position: fixed; inset: 0; background: #000; z-index: 5000; display: none; flex-direction: column; }
+        .admin-header { padding: 15px; background: #2a0505; color: var(--red); font-weight: bold; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--red); }
+        .admin-section { padding: 15px; border-bottom: 1px solid #333; }
+        .user-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #222; }
+        .btn-del { background: var(--red); color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+
+        /* --- CHI TIẾT CỔ PHIẾU (CHART) --- */
+        #detail-view { display: none; flex: 1; flex-direction: column; background: #000; z-index: 100; position: fixed; inset: 0; }
+        .chart-header { padding: 10px 15px; background: var(--panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 15px; }
+        .chart-container { flex: 1; width: 100%; min-height: 200px; position: relative; }
+        canvas { display: block; width: 100%; height: 100%; }
+        
+        /* Dòng tin tức chạy trong Chart */
         .mini-news { background: #0a0a0a; border-bottom: 1px solid #333; padding: 8px; font-size: 12px; color: #aaa; white-space: nowrap; overflow: hidden; border-left: 3px solid var(--green); }
         
-        /* NEWS CARD */
-        .news-card { background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin:10px; border-left:4px solid #555; }
+        /* News Card */
+        .news-card { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; margin: 10px; border-left: 4px solid #555; }
         
-        /* SETTINGS */
-        #settings-modal { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; }
-        .settings-box { background:var(--panel); border:1px solid var(--border); padding:20px; border-radius:12px; width:80%; max-width:300px; }
-        .up{color:var(--green)} .down{color:var(--red)}
+        /* Settings Modal */
+        #settings-modal { position: fixed; inset: 0; z-index: 5000; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; }
+        .settings-box { background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px; width: 80%; max-width: 300px; }
+
+        /* Màu sắc tiện ích */
+        .up { color: var(--green); } 
+        .down { color: var(--red); }
     </style>
 </head>
 <body>
 
-<audio id="bgm" loop><source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg"></audio>
+<audio id="bgm" loop>
+    <source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg">
+</audio>
 
 <div id="login-screen">
     <div class="login-box">
         <h2 style="margin:0 0 20px 0; color:var(--green); letter-spacing:1px;">TERMINAL X</h2>
-        <input type="text" id="user" class="inp-auth" placeholder="Tên hiển thị">
+        <input type="text" id="user" class="inp-auth" placeholder="Tên hiển thị (minh = admin)">
         <input type="password" id="pass" class="inp-auth" placeholder="Mật mã bí mật">
-        <button onclick="auth('login')" class="btn-auth" style="background:#1f6feb;">ĐĂNG NHẬP</button>
-        <button onclick="auth('reg')" class="btn-auth" style="background:#238636;">ĐĂNG KÝ</button>
-        <div id="msg" style="color:var(--red); font-size:12px; margin-top:15px;"></div>
+        <button onclick="handleAuth('login')" class="btn-auth" style="background:#1f6feb;">ĐĂNG NHẬP</button>
+        <button onclick="handleAuth('register')" class="btn-auth" style="background:#238636;">ĐĂNG KÝ MỚI</button>
+        <div id="msg" style="color:var(--red); font-size:12px; margin-top:15px; min-height:20px;"></div>
     </div>
 </div>
 
 <div id="app">
     <div class="header">
-        <div style="font-weight:bold;">👤 <span id="u-name">...</span></div>
+        <div style="font-weight:bold; display:flex; align-items:center; gap:5px;">
+            👤 <span id="u-name" style="color:#ccc">...</span>
+        </div>
         <div style="display:flex; gap:10px; align-items:center;">
-            <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:5px 8px; border-radius:4px; font-size:10px; font-weight:bold;">ADMIN</button>
+            <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:6px 10px; border-radius:4px; font-size:10px; font-weight:bold; letter-spacing:1px;">ADMIN PANEL</button>
             
-            <div style="font-weight:bold; color:var(--green);">$<span id="cash">0.00</span></div>
-            <button onclick="openSettings()" style="background:none; border:none; font-size:18px;">⚙️</button>
+            <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;">
+                $<span id="cash-display">0.00</span>
+            </div>
+            <button onclick="openSettings()" style="background:none; border:none; font-size:20px; color:#888;">⚙️</button>
         </div>
     </div>
 
     <div class="tab-bar">
-        <div class="tab-btn active" onclick="tab('market')">THỊ TRƯỜNG</div>
-        <div class="tab-btn" onclick="tab('rank')">XẾP HẠNG</div>
-        <div class="tab-btn" onclick="tab('news')">TIN TỨC</div>
+        <div class="tab-btn active" onclick="switchTab('market')">THỊ TRƯỜNG</div>
+        <div class="tab-btn" onclick="switchTab('rank')">XẾP HẠNG</div>
+        <div class="tab-btn" onclick="switchTab('news')">TIN TỨC</div>
     </div>
 
-    <div id="tab-market" class="view-content"><div id="list"></div></div>
-    <div id="tab-rank" class="view-content hidden"><div id="rank-list" style="padding:10px;"></div></div>
-    <div id="tab-news" class="view-content hidden"><div id="news-list" style="padding:10px;"></div></div>
+    <div id="tab-market" class="view-content">
+        <div id="stock-list-container" style="padding-bottom:20px;">
+            <div style="text-align:center; padding:20px; color:#666;">Đang tải dữ liệu vệ tinh...</div>
+        </div>
+    </div>
+
+    <div id="tab-rank" class="view-content hidden">
+        <div style="text-align:center; padding:10px; font-size:11px; color:#666; border-bottom:1px solid #222;">BẢNG XẾP HẠNG REAL-TIME (SERVER)</div>
+        <div id="rank-list-container" style="padding:10px;"></div>
+    </div>
+
+    <div id="tab-news" class="view-content hidden">
+        <div id="news-list-container" style="padding:10px;"></div>
+    </div>
 </div>
 
 <div id="admin-view">
     <div class="admin-header">
-        <span>QUẢN TRỊ VIÊN (MINH)</span>
-        <button onclick="document.getElementById('admin-view').style.display='none'" style="background:#440000; color:#ffaaaa; border:1px solid var(--red); padding:5px 10px; border-radius:4px;">ĐÓNG</button>
+        <span>QUẢN TRỊ VIÊN (MASTER)</span>
+        <button onclick="document.getElementById('admin-view').style.display='none'" style="background:#440000; color:#ffaaaa; border:1px solid var(--red); padding:5px 12px; border-radius:4px; font-weight:bold;">ĐÓNG</button>
     </div>
+    
     <div class="view-content" style="padding-bottom:50px;">
         <div class="admin-section">
             <h4 style="margin:0 0 10px 0; color:#aaa;">QUẢN LÝ NGƯỜI DÙNG</h4>
-            <button onclick="loadAdminUsers()" style="background:#333; color:white; border:none; padding:8px; width:100%; border-radius:4px; margin-bottom:10px;">🔄 Làm mới danh sách</button>
-            <div id="admin-user-list">Đang tải...</div>
+            <button onclick="loadAdminUsers()" style="background:#333; color:white; border:none; padding:10px; width:100%; border-radius:4px; margin-bottom:10px; font-weight:bold;">🔄 LÀM MỚI DANH SÁCH</button>
+            <div id="admin-user-list" style="max-height: 200px; overflow-y: auto; background: #111; border-radius: 8px;">Đang tải...</div>
         </div>
         
         <div class="admin-section">
-            <h4 style="margin:0 0 10px 0; color:#aaa;">THAO TÚNG THỊ TRƯỜNG</h4>
-            <div style="display:flex; gap:5px; margin-bottom:10px;">
-                <select id="adm-stock" class="inp-auth" style="padding:8px; margin:0; flex:1;">
-                    <option value="VN-INDEX">VN-INDEX</option>
-                    <option value="VIN">VIN</option>
-                    <option value="FPT">FPT</option>
-                    <option value="DIG">DIG</option>
-                </select>
-                <select id="adm-action" class="inp-auth" style="padding:8px; margin:0; flex:1;">
-                    <option value="pump">ĐẨY GIÁ (PUMP)</option>
-                    <option value="dump">ĐẠP GIÁ (DUMP)</option>
-                </select>
+            <h4 style="margin:0 0 10px 0; color:#aaa;">THAO TÚNG THỊ TRƯỜNG (MARKET MAKER)</h4>
+            <div style="background: #111; padding:15px; border-radius:8px;">
+                <div style="display:flex; gap:5px; margin-bottom:10px;">
+                    <select id="adm-stock" class="inp-auth" style="padding:8px; margin:0; flex:1; text-align:left;">
+                        <option value="VN-INDEX">VN-INDEX</option>
+                        <option value="VIN">VIN (Vingroup)</option>
+                        <option value="FPT">FPT Corp</option>
+                        <option value="DIG">DIG Corp</option>
+                        <option value="HPG">Hòa Phát</option>
+                    </select>
+                    <select id="adm-action" class="inp-auth" style="padding:8px; margin:0; flex:1; text-align:left;">
+                        <option value="pump">PUMP (Đẩy giá)</option>
+                        <option value="dump">DUMP (Đạp giá)</option>
+                    </select>
+                </div>
+                <button onclick="adminAction()" style="width:100%; background:var(--gold); color:black; border:none; padding:12px; font-weight:bold; border-radius:4px; font-size:14px;">THỰC THI LỆNH</button>
+                <p style="font-size:10px; color:#666; margin-top:5px; text-align:center;">*Hành động này sẽ tung tin đồn giả lập để tác động tâm lý.</p>
             </div>
-            <button onclick="adminAction()" style="width:100%; background:var(--gold); color:black; border:none; padding:12px; font-weight:bold; border-radius:4px;">THỰC THI LỆNH</button>
         </div>
     </div>
 </div>
@@ -137,269 +196,466 @@
 <div id="settings-modal" onclick="if(event.target.id==='settings-modal') this.style.display='none'">
     <div class="settings-box">
         <h3 style="text-align:center; margin-top:0;">CÀI ĐẶT</h3>
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-            <span>Nhạc nền</span><input type="checkbox" id="toggle-bgm" checked onchange="toggleAudio()">
+        
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:15px;">
+            <span>Nhạc nền (BGM)</span>
+            <input type="checkbox" id="toggle-bgm" checked onchange="toggleAudio()">
         </div>
-        <button onclick="logout()" style="width:100%; padding:10px; background:#da3633; color:white; border:none; border-radius:5px;">Đăng xuất</button>
+        
+        <button onclick="logout()" style="width:100%; padding:12px; background:#da3633; color:white; border:none; border-radius:6px; font-weight:bold;">ĐĂNG XUẤT</button>
+        <div style="text-align:center; margin-top:10px; font-size:11px; color:#666;">Version 2.5 - Admin Edition</div>
     </div>
 </div>
 
 <div id="detail-view">
-    <div class="header">
-        <button onclick="closeDetail()" style="background:#333; color:white; border:none; padding:5px 15px; border-radius:4px;">◀</button>
-        <div id="d-code" style="font-weight:900; font-size:18px;"></div>
-        <div id="d-price" style="font-size:18px; font-weight:bold;"></div>
+    <div class="chart-header">
+        <button onclick="closeDetail()" style="background:#333; color:white; border:none; padding:6px 16px; border-radius:6px; font-weight:bold;">◀ TRỞ VỀ</button>
+        <div style="flex:1; text-align:center;">
+            <div id="d-code" style="font-weight:900; font-size:18px;">CODE</div>
+            <div style="font-size:11px; color:#888;">Đang sở hữu: <span id="d-owned" style="color:white; font-weight:bold;">0</span></div>
+        </div>
+        <div style="text-align: right;">
+            <div id="d-price" style="font-size:20px; font-weight: bold;">0.00</div>
+        </div>
     </div>
     
-    <div class="mini-news" id="mini-news-ticker">📰 Đang tải tin tức...</div>
-    <div class="chart-container"><canvas id="chart"></canvas></div>
+    <div class="mini-news" id="mini-news-ticker">📰 Đang cập nhật tin tức thị trường...</div>
+
+    <div class="chart-container">
+        <canvas id="chart"></canvas>
+    </div>
     
     <div style="padding:20px; background:#111; border-top:1px solid #333;">
-        <input type="number" id="amt" class="inp-auth" placeholder="Số tiền ($)" style="margin-bottom:10px;">
+        <input type="number" id="trade-amount" class="inp-auth" placeholder="Nhập số tiền ($)" style="margin-bottom:15px; font-size:20px; font-weight:bold;">
         <div style="display:flex; gap:10px;">
-            <button onclick="trade('buy')" class="btn-auth" style="margin:0; background:#238636;">MUA</button>
-            <button onclick="trade('sell')" class="btn-auth" style="margin:0; background:#da3633;">BÁN</button>
+            <button onclick="trade('buy')" class="btn-auth" style="margin:0; background:#238636; height:50px;">MUA</button>
+            <button onclick="trade('sell')" class="btn-auth" style="margin:0; background:#da3633; height:50px;">BÁN</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- CẤU HÌNH ---
-    const SERVER = "https://oia.duongminhminh46.workers.dev/"; 
-    const NEWS_SRC = "https://raw.githubusercontent.com/minhReal/CSimu/refs/heads/main/news.json";
+    // --- CẤU HÌNH SERVER ---
+    // Thay đổi URL này nếu bạn đổi Worker khác
+    const SERVER_URL = "https://oia.duongminhminh46.workers.dev/"; 
+    const NEWS_JSON_URL = "https://raw.githubusercontent.com/minhReal/CSimu/refs/heads/main/news.json";
 
-    let me = null, wallet = {cash:250, stocks:{}}, data = [], candles = {}, sel = null, news = [];
-    const bgm = document.getElementById("bgm"); bgm.volume = 0.3;
+    // --- BIẾN TOÀN CỤC ---
+    let currentUser = null;
+    let wallet = { cash: 250, stocks: {} };
+    let marketData = [];
+    let candlesCache = {};
+    let selectedStock = null;
+    let newsList = [];
+    const bgm = document.getElementById("bgm"); 
+    bgm.volume = 0.3; // Âm lượng vừa phải
 
-    // --- KHỞI TẠO ---
-    (function(){
-        const s = localStorage.getItem("sess");
-        if(s && localStorage.getItem(`u_${s}`)) { me = s; wallet = JSON.parse(localStorage.getItem(`u_${s}`)); enter(); }
+    // --- KHỞI TẠO TỰ ĐỘNG ---
+    (function init() {
+        const session = localStorage.getItem("current_session");
+        if (session && localStorage.getItem(`user_db_${session}`)) {
+            currentUser = session;
+            wallet = JSON.parse(localStorage.getItem(`user_db_${session}`));
+            enterApp();
+        }
     })();
 
-    // --- AUTHENTICATION ---
-    async function auth(type) {
+    // --- HỆ THỐNG XÁC THỰC (AUTH) ---
+    async function handleAuth(type) {
         const u = document.getElementById("user").value.trim();
         const p = document.getElementById("pass").value.trim();
-        if(!u || !p) return;
-        const k = `u_${u}`;
+        const msg = document.getElementById("msg");
+        
+        if (!u || !p) { msg.innerText = "Vui lòng nhập đầy đủ thông tin!"; return; }
+        const key = `user_db_${u}`;
 
-        // Đăng ký: Check server xem tên tồn tại chưa
-        if(type==='reg') {
+        // ĐĂNG KÝ
+        if (type === 'register') {
+            msg.innerText = "Đang kiểm tra máy chủ...";
             try {
-                const check = await fetch(SERVER + "check-user?u=" + u).then(r=>r.json());
-                if(check.exists || localStorage.getItem(k)) return alert("Tên này đã có người dùng!");
+                // Kiểm tra trùng tên trên Server Cloudflare
+                const checkRes = await fetch(`${SERVER_URL}check-user?u=${encodeURIComponent(u)}`);
+                const checkData = await checkRes.json();
                 
-                localStorage.setItem(k, JSON.stringify({pass:p, cash:250, stocks:{}}));
-                alert("Đăng ký thành công ($250)!");
-            } catch(e) { alert("Lỗi kết nối Server"); }
-        } else {
-            // Đăng nhập
-            const d = JSON.parse(localStorage.getItem(k));
-            if(!d || d.pass!==p) return alert("Sai mật khẩu hoặc tài khoản không tồn tại trên máy này");
-            me = u; wallet = d; localStorage.setItem("sess", u); enter();
+                if (checkData.exists || localStorage.getItem(key)) {
+                    msg.innerText = "Tên này đã có người dùng!";
+                    msg.style.color = "var(--red)";
+                    return;
+                }
+                
+                // Tạo mới
+                localStorage.setItem(key, JSON.stringify({ pass: p, cash: 250, stocks: {} }));
+                msg.innerText = "Đăng ký thành công! Vốn cấp: $250";
+                msg.style.color = "var(--green)";
+            } catch (e) {
+                msg.innerText = "Lỗi kết nối Server!";
+            }
+        } 
+        // ĐĂNG NHẬP
+        else {
+            const userData = JSON.parse(localStorage.getItem(key));
+            if (!userData || userData.pass !== p) {
+                msg.innerText = "Sai tên hoặc mật khẩu!";
+                msg.style.color = "var(--red)";
+                return;
+            }
+            currentUser = u;
+            wallet = userData;
+            localStorage.setItem("current_session", u);
+            enterApp();
         }
     }
 
-    function enter() {
-        document.getElementById("login-screen").style.display="none";
-        document.getElementById("app").style.display="flex";
-        document.getElementById("u-name").innerText = me;
-        
-        // CHECK ADMIN
-        if(me.toLowerCase() === 'minh') {
-            document.getElementById("btn-admin").style.display = 'block';
+    function enterApp() {
+        document.getElementById("login-screen").style.display = "none";
+        document.getElementById("app").style.display = "flex";
+        document.getElementById("u-name").innerText = currentUser;
+
+        // KÍCH HOẠT ADMIN MODE NẾU LÀ "minh"
+        if (currentUser.toLowerCase() === 'minh') {
+            document.getElementById("btn-admin").style.display = "block";
         }
 
-        if(document.getElementById("toggle-bgm").checked) bgm.play().catch(()=>{});
-        
-        setInterval(loop, 1500);
-        setInterval(syncRank, 3000); // Tự động lưu điểm lên server
-        setInterval(fetchRank, 5000);
-        setInterval(updateTicker, 4000);
-        loadNews();
+        // Bật nhạc nếu được phép
+        if (document.getElementById("toggle-bgm").checked) bgm.play().catch(()=>{});
+
+        // Vòng lặp dữ liệu
+        fetchData(); // Gọi ngay lập tức
+        setInterval(fetchData, 1500); // Cập nhật giá mỗi 1.5s
+        setInterval(syncRankToServer, 3000); // Đồng bộ điểm lên server mỗi 3s
+        setInterval(fetchLeaderboard, 5000); // Lấy BXH mỗi 5s
+        setInterval(updateMiniTicker, 4000); // Chạy chữ tin tức
+        loadNewsData(); // Tải tin tức
     }
 
-    // --- ADMIN FUNCTIONS ---
+    // --- HỆ THỐNG ADMIN ---
     function openAdmin() {
         document.getElementById("admin-view").style.display = "flex";
         loadAdminUsers();
     }
 
     async function loadAdminUsers() {
+        const container = document.getElementById("admin-user-list");
+        container.innerHTML = `<div style="padding:10px; color:#666;">Đang tải dữ liệu...</div>`;
         try {
-            const res = await fetch(SERVER + "admin/users");
+            const res = await fetch(`${SERVER_URL}admin/users`);
             const users = await res.json();
-            const div = document.getElementById("admin-user-list");
-            if(users.length === 0) { div.innerHTML = "Chưa có người chơi nào."; return; }
             
-            div.innerHTML = users.map(u => `
+            if (users.length === 0) {
+                container.innerHTML = `<div style="padding:10px; color:#666;">Chưa có người chơi nào.</div>`;
+                return;
+            }
+
+            container.innerHTML = users.map(u => `
                 <div class="user-row">
                     <div>
-                        <div style="font-weight:bold; color:white">${u.name}</div>
-                        <div style="font-size:11px; color:#888">$${parseFloat(u.asset).toLocaleString()}</div>
+                        <div style="font-weight:bold; color:white; font-size:14px;">${u.name}</div>
+                        <div style="font-size:11px; color:#888;">Tổng tài sản: <span style="color:var(--green)">$${parseFloat(u.asset).toLocaleString()}</span></div>
                     </div>
                     ${u.name.toLowerCase() !== 'minh' ? 
                       `<button class="btn-del" onclick="deleteUser('${u.name}')">XÓA</button>` : 
-                      '<span style="font-size:10px; color:gold">ADMIN</span>'}
+                      '<span style="font-size:10px; color:var(--gold); font-weight:bold;">MASTER</span>'}
                 </div>
             `).join('');
-        } catch(e) { alert("Lỗi tải danh sách users"); }
+        } catch (e) {
+            container.innerHTML = `<div style="padding:10px; color:var(--red);">Lỗi kết nối Server!</div>`;
+        }
     }
 
-    async function deleteUser(name) {
-        if(!confirm(`Xóa tài khoản: ${name}?`)) return;
-        await fetch(SERVER + "admin/delete-user", { 
-            method: "POST", 
-            body: JSON.stringify({user: name}) 
-        });
-        loadAdminUsers(); // Reload list
+    async function deleteUser(targetName) {
+        if (!confirm(`Bạn có chắc chắn muốn xóa tài khoản: ${targetName}?`)) return;
+        try {
+            await fetch(`${SERVER_URL}admin/delete-user`, {
+                method: "POST",
+                body: JSON.stringify({ user: targetName })
+            });
+            alert("Đã xóa thành công!");
+            loadAdminUsers(); // Tải lại danh sách
+        } catch (e) { alert("Lỗi khi xóa!"); }
     }
 
     function adminAction() {
         const stock = document.getElementById("adm-stock").value;
         const action = document.getElementById("adm-action").value;
-        const msg = action==='pump' ? "TIN TỐT: Cá mập gom hàng!" : "TIN XẤU: Chủ tịch bán chui!";
-        // Push fake news to local client immediately
-        news.unshift({ t: `ADMIN LEAK: ${stock} - ${msg}`, b: action==='pump'?50:-50 });
-        alert(`Đã tung lệnh ${action.toUpperCase()} cho mã ${stock}`);
+        const msg = action === 'pump' ? "TIN MẬT: Cá mập đang gom hàng đẩy giá!" : "TIN MẬT: Chủ tịch bán chui cổ phiếu!";
+        const impact = action === 'pump' ? 50 : -50;
+        
+        // Thêm tin giả vào danh sách tin tức của máy khách
+        newsList.unshift({ t: `[ADMIN LEAK] ${stock}: ${msg}`, b: impact });
+        
+        alert(`Đã thực thi lệnh ${action.toUpperCase()} lên mã ${stock}.\nTin đồn đã được tung ra thị trường!`);
+        updateMiniTicker(); // Cập nhật ngay lập tức
     }
 
-    // --- CORE LOGIC ---
-    async function loop() {
+    // --- CORE LOGIC (THỊ TRƯỜNG) ---
+    async function fetchData() {
         try {
-            const res = await fetch(SERVER);
+            const res = await fetch(SERVER_URL);
             const json = await res.json();
-            data = json.stocks;
-            
-            data.forEach(s => {
-                if(!candles[s.code]) candles[s.code] = [];
-                const list = candles[s.code];
-                if(!list.length || list.at(-1).time !== s.candle.time) {
+            marketData = json.stocks;
+
+            // Xử lý nến (Candles)
+            marketData.forEach(s => {
+                if (!candlesCache[s.code]) candlesCache[s.code] = [];
+                const list = candlesCache[s.code];
+                // Nếu nến mới (thời gian khác)
+                if (list.length === 0 || list[list.length - 1].time !== s.candle.time) {
                     list.push(s.candle);
-                    if(list.length>40) list.shift();
-                } else list[list.length-1] = s.candle;
+                    if (list.length > 50) list.shift(); // Giữ 50 nến gần nhất
+                } else {
+                    // Cập nhật nến hiện tại
+                    list[list.length - 1] = s.candle;
+                }
             });
 
-            if(!sel) renderList(); else updateDetail();
-            document.getElementById("cash").innerText = wallet.cash.toFixed(2);
-        } catch(e){}
+            if (!selectedStock) renderMarketList();
+            else {
+                updateDetailData();
+                drawChart();
+            }
+            
+            document.getElementById("cash-display").innerText = wallet.cash.toFixed(2);
+        } catch (e) { console.error("Fetch error", e); }
     }
 
-    async function syncRank() {
-        let total = wallet.cash;
-        data.forEach(s => { if(wallet.stocks[s.code]) total += wallet.stocks[s.code] * s.price; });
-        await fetch(SERVER + "update-rank", { method: "POST", body: JSON.stringify({ user: me, asset: total }) });
-    }
-
-    async function fetchRank() {
-        if(document.getElementById("tab-rank").classList.contains("hidden")) return;
-        try {
-            const res = await fetch(SERVER + "get-rank");
-            const list = await res.json();
-            document.getElementById("rank-list").innerHTML = list.map((p, i) => `
-                <div class="rank-item ${p.name===me?'rank-me':''}">
-                    <div class="rank-num ${i==0?'rank-1':''}">${i+1}</div>
-                    <div style="flex:1; margin-left:10px;">
-                        <div style="font-weight:bold; color:white;">${p.name}</div>
-                        <div style="font-size:12px; color:#888;">$${p.total.toLocaleString(undefined, {maximumFractionDigits:0})}</div>
-                    </div>
+    function renderMarketList() {
+        const container = document.getElementById("stock-list-container");
+        container.innerHTML = marketData.map(s => {
+            const isUp = s.candle.close >= s.candle.open;
+            const owned = wallet.stocks[s.code] || 0;
+            return `
+            <div class="stock-item" onclick="openDetail('${s.code}')">
+                <div>
+                    <div style="font-weight:900; font-size:16px; color:white;">${s.code}</div>
+                    <div style="font-size:11px; color:#888;">Đang có: ${owned.toFixed(1)}</div>
                 </div>
-            `).join('');
-        } catch(e){}
-    }
-
-    // --- UI HELPERS ---
-    function renderList() {
-        document.getElementById("list").innerHTML = data.map(s => {
-            const up = s.candle.close >= s.candle.open;
-            return `<div class="stock-item" onclick="openD('${s.code}')">
-                <div><div style="font-weight:900">${s.code}</div><div style="font-size:11px;color:#888">${wallet.stocks[s.code]?.toFixed(1)||0} CP</div></div>
-                <div style="text-align:right"><div style="font-weight:bold; color:${up?'var(--green)':'var(--red)'}">${s.price.toFixed(2)}</div></div>
-            </div>`
+                <div style="text-align:right;">
+                    <div style="font-size:16px; font-weight:bold; color:${isUp ? 'var(--green)' : 'var(--red)'}">
+                        ${s.price.toFixed(2)}
+                    </div>
+                    <div style="font-size:10px; color:#666;">${isUp ? '▲ Tăng' : '▼ Giảm'}</div>
+                </div>
+            </div>`;
         }).join('');
     }
 
-    function updateTicker() {
-        if(news.length===0) return;
-        const n = news[Math.floor(Math.random()*news.length)];
-        const el = document.getElementById("mini-news-ticker");
-        el.innerText = `📰 ${n.t}`;
-        el.style.borderLeftColor = n.b>0?"var(--green)":n.b<0?"var(--red)":"#888";
+    // --- XẾP HẠNG (REAL-TIME) ---
+    async function syncRankToServer() {
+        if (!currentUser) return;
+        let totalAsset = wallet.cash;
+        marketData.forEach(s => {
+            if (wallet.stocks[s.code]) totalAsset += wallet.stocks[s.code] * s.price;
+        });
+
+        try {
+            await fetch(`${SERVER_URL}update-rank`, {
+                method: "POST",
+                body: JSON.stringify({ user: currentUser, asset: totalAsset })
+            });
+        } catch (e) {}
     }
 
-    function openD(c) { sel=c; document.getElementById("detail-view").style.display="flex"; initChart(); updateTicker(); }
-    function closeDetail() { sel=null; document.getElementById("detail-view").style.display="none"; renderList(); }
-    
-    function trade(t) {
-        const amt = parseFloat(document.getElementById("amt").value);
-        if(!amt || amt<=0) return;
-        const s = data.find(x=>x.code===sel);
-        if(t==='buy') {
-            if(amt>wallet.cash) return alert("Thiếu tiền");
-            wallet.cash -= amt; wallet.stocks[sel] = (wallet.stocks[sel]||0) + (amt/s.price);
-        } else {
-            if(amt > (wallet.stocks[sel]||0)*s.price) return alert("Thiếu CP");
-            wallet.stocks[sel] -= (amt/s.price); wallet.cash += amt;
+    async function fetchLeaderboard() {
+        if (document.getElementById("tab-rank").classList.contains("hidden")) return;
+        try {
+            const res = await fetch(`${SERVER_URL}get-rank`);
+            const list = await res.json();
+            const container = document.getElementById("rank-list-container");
+            
+            container.innerHTML = list.map((p, i) => `
+                <div class="rank-item ${p.name === currentUser ? 'rank-me' : ''}">
+                    <div class="rank-num ${i === 0 ? 'rank-1' : ''}">${i + 1}</div>
+                    <div style="flex:1; margin-left:10px;">
+                        <div style="font-weight:bold; color:white; font-size:14px;">
+                            ${p.name} ${i === 0 ? '👑' : ''}
+                        </div>
+                        <div style="font-size:12px; color:#888;">
+                            Tổng TS: <span style="color:#ddd">$${p.total.toLocaleString(undefined, {maximumFractionDigits:0})}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {}
+    }
+
+    // --- GIAO DỊCH (TRADE) ---
+    function openDetail(code) {
+        selectedStock = code;
+        document.getElementById("detail-view").style.display = "flex";
+        initChart();
+        updateDetailData();
+        updateMiniTicker();
+    }
+
+    function closeDetail() {
+        selectedStock = null;
+        document.getElementById("detail-view").style.display = "none";
+        renderMarketList();
+    }
+
+    function updateDetailData() {
+        const s = marketData.find(x => x.code === selectedStock);
+        if (s) {
+            document.getElementById("d-code").innerText = s.code;
+            document.getElementById("d-price").innerText = s.price.toFixed(2);
+            document.getElementById("d-owned").innerText = (wallet.stocks[selectedStock] || 0).toFixed(2);
+            
+            const lastCandle = candlesCache[selectedStock]?.at(-1);
+            const color = (lastCandle && lastCandle.close >= lastCandle.open) ? "var(--green)" : "var(--red)";
+            document.getElementById("d-price").style.color = color;
         }
-        localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
-        syncRank(); 
     }
 
-    function tab(id) {
-        document.querySelectorAll('.view-content').forEach(x=>x.classList.add('hidden'));
-        document.querySelectorAll('.tab-btn').forEach(x=>x.classList.remove('active'));
-        document.getElementById(`tab-${id}`).classList.remove('hidden');
-        event.target.classList.add('active');
-        if(id==='rank') fetchRank();
+    function trade(type) {
+        const input = document.getElementById("trade-amount");
+        const amount = parseFloat(input.value);
+        if (!amount || amount <= 0) return alert("Vui lòng nhập số tiền hợp lệ!");
+
+        const stock = marketData.find(s => s.code === selectedStock);
+        if (type === 'buy') {
+            if (amount > wallet.cash) return alert("Không đủ tiền mặt!");
+            wallet.cash -= amount;
+            wallet.stocks[selectedStock] = (wallet.stocks[selectedStock] || 0) + (amount / stock.price);
+            alert(`Đã MUA thành công!`);
+        } else {
+            const currentVal = (wallet.stocks[selectedStock] || 0) * stock.price;
+            if (amount > currentVal) return alert("Không đủ cổ phiếu để bán!");
+            wallet.stocks[selectedStock] -= (amount / stock.price);
+            wallet.cash += amount;
+            alert(`Đã BÁN thành công!`);
+        }
+        
+        // Lưu và đồng bộ
+        localStorage.setItem(`user_db_${currentUser}`, JSON.stringify(wallet));
+        syncRankToServer();
+        
+        // Hiệu ứng nút bấm
+        const btn = document.activeElement;
+        btn.style.transform = "scale(0.9)"; setTimeout(()=>btn.style.transform="scale(1)", 150);
     }
 
-    // --- CHART DRAWING ---
+    // --- CHART ENGINE ---
     let ctx;
     function initChart() {
         const cvs = document.getElementById("chart");
-        cvs.width = cvs.parentElement.clientWidth*2; cvs.height = cvs.parentElement.clientHeight*2;
-        ctx = cvs.getContext("2d"); ctx.scale(2,2);
+        // Tăng độ phân giải cho màn hình Retina/Mobile
+        cvs.width = cvs.parentElement.clientWidth * 2;
+        cvs.height = cvs.parentElement.clientHeight * 2;
+        ctx = cvs.getContext("2d");
+        ctx.scale(2, 2);
     }
-    function updateDetail() {
-        const s = data.find(x=>x.code===sel);
-        document.getElementById("d-code").innerText = s.code;
-        document.getElementById("d-price").innerText = s.price.toFixed(2);
-        
-        const arr = candles[sel];
-        if(!arr) return;
-        const W=ctx.canvas.width/2, H=ctx.canvas.height/2;
-        ctx.clearRect(0,0,W,H);
-        
-        let min=Infinity, max=-Infinity;
-        arr.forEach(d=>{if(d.low<min)min=d.low; if(d.high>max)max=d.high});
-        const range = max-min || 1;
-        const w = (W-20)/40;
-        
-        arr.forEach((d,i)=>{
-            const x = i*w + 10;
-            const yH = H-((d.high-min)/range)*H, yL = H-((d.low-min)/range)*H;
-            const yO = H-((d.open-min)/range)*H, yC = H-((d.close-min)/range)*H;
-            ctx.fillStyle = d.close>=d.open ? "#00ff88":"#ff3b3b";
-            ctx.fillRect(x, Math.min(yO,yC), w-2, Math.abs(yO-yC)||1);
-            ctx.fillRect(x+w/2-0.5, yH, 1, yL-yH);
+
+    function drawChart() {
+        if (!selectedStock || !candlesCache[selectedStock]) return;
+        const data = candlesCache[selectedStock];
+        if (data.length === 0) return;
+
+        const W = ctx.canvas.width / 2;
+        const H = ctx.canvas.height / 2;
+        ctx.clearRect(0, 0, W, H);
+
+        // Tìm min/max để vẽ scale
+        let min = Infinity, max = -Infinity;
+        data.forEach(d => {
+            if (d.low < min) min = d.low;
+            if (d.high > max) max = d.high;
         });
+        const range = max - min || 1;
+        const paddingY = 30; 
+        
+        const getY = (val) => H - paddingY - ((val - min) / range) * (H - paddingY * 2);
+
+        // Vẽ Grid Line
+        ctx.strokeStyle = "#222";
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 4; i++) {
+            let y = H - paddingY - (i/4)*(H - paddingY*2);
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+        }
+
+        // Vẽ Nến
+        const candleWidth = (W - 20) / 50; 
+        data.forEach((d, i) => {
+            const x = i * candleWidth + 10;
+            const color = d.close >= d.open ? "#00ff88" : "#ff3b3b";
+            
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            
+            // Vẽ râu nến (High - Low)
+            ctx.beginPath();
+            ctx.moveTo(x + candleWidth/2, getY(d.high));
+            ctx.lineTo(x + candleWidth/2, getY(d.low));
+            ctx.stroke();
+            
+            // Vẽ thân nến (Open - Close)
+            const yOpen = getY(d.open);
+            const yClose = getY(d.close);
+            const height = Math.abs(yOpen - yClose) || 1;
+            ctx.fillRect(x + 1, Math.min(yOpen, yClose), candleWidth - 2, height);
+        });
+        
+        // Vẽ đường giá hiện tại
+        const lastY = getY(data[data.length-1].close);
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath(); ctx.moveTo(0, lastY); ctx.lineTo(W, lastY); ctx.stroke();
+        ctx.setLineDash([]);
     }
 
-    async function loadNews() {
-        try{ 
-            const r=await fetch(NEWS_SRC); const d=await r.json(); news = d;
-            document.getElementById("news-list").innerHTML = d.map(n=>`
-                <div class="news-card" style="border-left-color:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#666'}">
-                    <div style="font-size:10px;color:#888">${n.b>0?'TÍCH CỰC':n.b<0?'TIÊU CỰC':'TIN TỨC'}</div>
-                    <div style="color:#ddd">${n.t}</div>
-                </div>`).join('');
-        }catch(e){}
+    // --- TIN TỨC ---
+    async function loadNewsData() {
+        try {
+            const res = await fetch(NEWS_JSON_URL);
+            const data = await res.json();
+            newsList = data;
+            renderNewsList();
+        } catch(e) {}
     }
 
-    function logout() { localStorage.removeItem("sess"); location.reload(); }
-    function openSettings() { document.getElementById("settings-modal").style.display='flex'; }
-    function toggleAudio() { if(document.getElementById("toggle-bgm").checked) bgm.play(); else bgm.pause(); }
+    function renderNewsList() {
+        const container = document.getElementById("news-list-container");
+        container.innerHTML = newsList.map(n => `
+            <div class="news-card" style="border-left-color:${n.b > 0 ? 'var(--green)' : n.b < 0 ? 'var(--red)' : '#666'}">
+                <div style="font-size:10px; color:#888; font-weight:bold; margin-bottom:5px;">
+                    ${n.b > 0 ? 'TÍCH CỰC' : n.b < 0 ? 'TIÊU CỰC' : 'THÔNG TIN'}
+                </div>
+                <div style="color:#ddd; line-height:1.4;">${n.t}</div>
+            </div>
+        `).join('');
+    }
+
+    function updateMiniTicker() {
+        if (newsList.length === 0) return;
+        const item = newsList[Math.floor(Math.random() * newsList.length)];
+        const ticker = document.getElementById("mini-news-ticker");
+        ticker.innerText = `📰 TIN MỚI: ${item.t}`;
+        ticker.style.borderLeftColor = item.b > 0 ? "var(--green)" : item.b < 0 ? "var(--red)" : "#888";
+    }
+
+    // --- HÀM TIỆN ÍCH ---
+    function logout() {
+        if (confirm("Đăng xuất khỏi thiết bị này?")) {
+            localStorage.removeItem("current_session");
+            location.reload();
+        }
+    }
+
+    function openSettings() { document.getElementById("settings-modal").style.display = 'flex'; }
+    function toggleAudio() { 
+        if(document.getElementById("toggle-bgm").checked) bgm.play(); else bgm.pause(); 
+    }
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.view-content').forEach(el => el.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+        event.currentTarget.classList.add('active');
+        
+        if (tabName === 'rank') fetchLeaderboard();
+        if (tabName === 'news') loadNewsData();
+    }
 </script>
 </body>
 </html>
