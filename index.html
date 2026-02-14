@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X - Split View</title>
+    <title>Terminal X - Chill Mode</title>
     
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.onkeydown = function(e) {
             if(e.keyCode == 123) return false;
             if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
-            if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
         }
     </script>
 
@@ -29,45 +28,59 @@
         .btn-auth { width:100%; padding:15px; margin-top:10px; border:none; border-radius:8px; font-weight:bold; font-size:16px; color:white; }
 
         /* HEADER & TABS */
-        .header { padding:12px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; height:60px; }
-        .tab-bar { display:flex; border-bottom:1px solid var(--border); background:var(--panel); height:50px; }
+        .header { padding:12px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; height:60px; z-index: 10; }
+        .tab-bar { display:flex; border-bottom:1px solid var(--border); background:var(--panel); height:50px; z-index: 10; }
         .tab-btn { flex:1; padding:15px; text-align:center; font-size:12px; font-weight:bold; color:#666; border-bottom:3px solid transparent; }
         .tab-btn.active { color:var(--green); border-bottom-color:var(--green); background:#1a1a1a; color:white; }
         
-        .view-content { flex:1; overflow-y:auto; position:relative; }
+        .view-content { flex:1; overflow-y:auto; position:relative; padding-bottom: 80px; /* Chừa chỗ cho Bottom Sheet */ }
         .hidden { display:none!important; }
 
         /* LIST ITEMS */
         .stock-item { display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:16px; margin:10px; border-radius:10px; border:1px solid var(--border); }
         .rank-item { display:flex; align-items:center; background:#161616; padding:12px; margin:8px 10px; border-radius:8px; border:1px solid var(--border); }
         .rank-me { border:1px solid var(--green); background:#0f3318; }
-        
-        /* ADMIN */
-        #admin-view { position:fixed; inset:0; background:#000; z-index:5000; display:none; flex-direction:column; }
-        .admin-header { padding:15px; background:#2a0505; color:var(--red); border-bottom:1px solid var(--red); display:flex; justify-content:space-between; }
-        .user-row { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #222; }
-        .btn-del { background:var(--red); color:white; border:none; padding:5px; border-radius:4px; font-size:10px; }
+        .news-card { background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin:10px; border-left:4px solid #555; }
 
-        /* --- SPLIT DETAIL VIEW (NEW) --- */
-        #detail-view { display:none; flex:1; flex-direction:column; background:#000; z-index:100; position:fixed; inset:0; }
+        /* --- BOTTOM SHEET (DETAIL VIEW) --- */
+        /* Đây là phần quan trọng tạo giao diện 1 nửa */
+        #detail-view { 
+            position: fixed; 
+            bottom: 0; left: 0; right: 0;
+            height: 65vh; /* Chiếm 65% màn hình dưới */
+            background: #101010;
+            border-top-left-radius: 25px;
+            border-top-right-radius: 25px;
+            box-shadow: 0 -5px 50px rgba(0,0,0,0.8);
+            border-top: 1px solid #333;
+            z-index: 2000;
+            display: flex; flex-direction: column;
+            transform: translateY(110%); /* Mặc định ẩn xuống dưới */
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
         
-        .chart-section { height: 45%; display: flex; flex-direction: column; border-bottom: 2px solid var(--border); }
-        .chart-header { padding:10px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
-        .chart-container { flex:1; width:100%; position:relative; background: #080808; }
+        #detail-view.active { transform: translateY(0); } /* Hiện lên */
+
+        /* Lớp phủ làm mờ nền khi mở Chart */
+        #overlay-dim {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(3px); /* Hiệu ứng kính mờ */
+            z-index: 1500; display: none;
+            opacity: 0; transition: opacity 0.3s;
+        }
+
+        .chart-header { padding:15px 20px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #222; }
+        .chart-container { flex:1; width:100%; position:relative; background: #080808; margin-bottom: 10px; }
         canvas { display:block; width:100%; height:100%; }
 
-        .news-section { flex:1; background: #050505; display:flex; flex-direction:column; overflow:hidden; }
-        .news-header { padding:8px 15px; font-size:11px; font-weight:bold; color:#666; background:#111; border-bottom:1px solid #333; text-transform:uppercase; }
-        .news-scroll { flex:1; overflow-y:auto; padding:10px; }
-        
-        .mini-news-item { padding:10px; border-bottom:1px solid #222; margin-bottom:5px; }
-        .mini-news-title { font-size:12px; color:#ddd; margin-bottom:4px; }
-        .mini-news-tag { font-size:9px; padding:2px 5px; border-radius:3px; font-weight:bold; display:inline-block; }
+        .controls-area { padding:15px; background:#151515; border-top:1px solid #333; padding-bottom: 30px; }
+        .drag-handle { width: 40px; height: 5px; background: #444; border-radius: 5px; margin: 10px auto 0 auto; }
 
-        /* CONTROLS (FIXED BOTTOM) */
-        .controls-area { padding:15px; background:#111; border-top:1px solid var(--border); }
-        
-        /* SETTINGS */
+        /* TIN TỨC CHẠY */
+        .mini-news { font-size: 11px; padding: 5px 15px; color: #888; border-bottom: 1px solid #222; white-space: nowrap; overflow: hidden; background: #0f0f0f; }
+
+        /* SETTINGS & ADMIN */
+        #admin-view { position:fixed; inset:0; background:#000; z-index:5000; display:none; flex-direction:column; }
         #settings-modal { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; }
         .settings-box { background:var(--panel); padding:20px; border-radius:12px; width:80%; max-width:300px; }
         
@@ -77,7 +90,7 @@
 <body>
 
 <audio id="bgm" loop>
-    <source src="https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/theme_01.mp3" type="audio/mpeg">
+    <source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg"> 
 </audio>
 
 <div id="login-screen" onclick="unlockAudio()">
@@ -88,7 +101,7 @@
         <button onclick="auth('login')" class="btn-auth" style="background:#1f6feb;">ĐĂNG NHẬP</button>
         <button onclick="auth('reg')" class="btn-auth" style="background:#238636;">ĐĂNG KÝ</button>
         <div id="msg" style="color:var(--red); font-size:12px; margin-top:15px;"></div>
-        <div style="font-size:10px; color:#666; margin-top:20px;">*Chạm vào màn hình để bật âm thanh</div>
+        <div style="font-size:10px; color:#666; margin-top:20px;">*Chạm màn hình để bật nhạc Chill 🎵</div>
     </div>
 </div>
 
@@ -106,31 +119,32 @@
         <div class="tab-btn" onclick="tab('rank')">XẾP HẠNG</div>
         <div class="tab-btn" onclick="tab('news')">TIN TỨC</div>
     </div>
-    <div id="tab-market" class="view-content"><div id="list" style="padding-bottom:20px;"></div></div>
+    
+    <div id="tab-market" class="view-content"><div id="list" style="padding-bottom:100px;"></div></div>
     <div id="tab-rank" class="view-content hidden"><div id="rank-list" style="padding:10px;"></div></div>
     <div id="tab-news" class="view-content hidden"><div id="news-list" style="padding:10px;"></div></div>
 </div>
 
-<div id="detail-view">
-    <div class="chart-section">
-        <div class="chart-header">
-            <button onclick="closeDetail()" style="background:#333; color:white; border:none; padding:6px 15px; border-radius:4px; font-weight:bold;">◀ BACK</button>
-            <div style="text-align:right;">
-                <span id="d-code" style="font-weight:900; font-size:18px; margin-right:10px;">CODE</span>
-                <span id="d-price" style="font-size:18px; font-weight:bold;">0.00</span>
-            </div>
-        </div>
-        <div class="chart-container"><canvas id="chart"></canvas></div>
-    </div>
+<div id="overlay-dim" onclick="closeDetail()"></div>
 
-    <div class="news-section">
-        <div class="news-header">Tin tức & Sự kiện thị trường</div>
-        <div class="news-scroll" id="detail-news-list">
-            </div>
+<div id="detail-view">
+    <div class="drag-handle" onclick="closeDetail()"></div>
+    <div class="chart-header">
+        <div>
+            <div id="d-code" style="font-weight:900; font-size:20px; color:white;">CODE</div>
+            <div style="font-size:11px; color:#888;">Đang có: <span id="d-owned" style="color:white">0</span></div>
+        </div>
+        <div style="text-align:right">
+            <div id="d-price" style="font-size:24px; font-weight:bold;">0.00</div>
+            <button onclick="closeDetail()" style="background:#333; color:#ccc; border:none; padding:5px 10px; border-radius:15px; font-size:10px; margin-top:5px;">ĐÓNG ✕</button>
+        </div>
     </div>
+    
+    <div class="mini-news" id="mini-news-ticker">📰 Thị trường đang sôi động...</div>
+
+    <div class="chart-container"><canvas id="chart"></canvas></div>
 
     <div class="controls-area">
-        <div style="font-size:11px; color:#888; margin-bottom:5px;">Sở hữu: <span id="d-owned" style="color:white">0</span> CP</div>
         <input type="number" id="trade-amount" class="inp-auth" placeholder="Nhập số tiền ($)" style="margin-bottom:10px; font-size:18px; font-weight:bold;">
         <div style="display:flex; gap:10px;">
             <button onclick="trade('buy')" class="btn-auth" style="margin:0; background:#238636; flex:1;">MUA</button>
@@ -140,23 +154,21 @@
 </div>
 
 <div id="admin-view">
-    <div class="admin-header"><span>QUẢN TRỊ VIÊN</span><button onclick="document.getElementById('admin-view').style.display='none'" style="background:#440000; color:#faa; border:none; padding:5px 10px;">Đóng</button></div>
+    <div style="padding:15px; background:#200; color:red; display:flex; justify-content:space-between;"><b>ADMIN PANEL</b><button onclick="document.getElementById('admin-view').style.display='none'">ĐÓNG</button></div>
     <div style="padding:15px;">
-        <h4 style="color:#aaa; margin:0 0 10px 0;">QUẢN LÝ USER</h4>
-        <button onclick="loadAdminUsers()" style="background:#333; color:white; border:none; padding:8px; width:100%; margin-bottom:10px;">Làm mới</button>
-        <div id="admin-user-list" style="background:#111; padding:10px; border-radius:8px; max-height:300px; overflow-y:auto;"></div>
-        
-        <h4 style="color:#aaa; margin:20px 0 10px 0;">THAO TÚNG GIÁ</h4>
-        <select id="adm-stock" class="inp-auth" style="margin:0 0 5px 0;"><option value="VN-INDEX">VN-INDEX</option><option value="VIN">VIN</option><option value="FPT">FPT</option><option value="DIG">DIG</option></select>
-        <select id="adm-action" class="inp-auth" style="margin:0 0 5px 0;"><option value="pump">ĐẨY GIÁ (PUMP)</option><option value="dump">ĐẠP GIÁ (DUMP)</option></select>
-        <button onclick="adminAction()" style="width:100%; background:gold; color:black; padding:10px; border:none; font-weight:bold;">THỰC THI</button>
+        <button onclick="loadAdminUsers()" style="width:100%; padding:10px; margin-bottom:10px;">Làm mới User</button>
+        <div id="admin-user-list" style="background:#111; padding:10px; height:200px; overflow:auto;"></div>
+        <hr>
+        <select id="adm-stock" class="inp-auth" style="margin-bottom:5px;"><option>VN-INDEX</option><option>VIN</option><option>FPT</option><option>DIG</option></select>
+        <select id="adm-action" class="inp-auth" style="margin-bottom:5px;"><option value="pump">PUMP</option><option value="dump">DUMP</option></select>
+        <button onclick="adminAction()" style="width:100%; background:gold; color:black; padding:10px; font-weight:bold;">THỰC THI</button>
     </div>
 </div>
 
 <div id="settings-modal" onclick="if(event.target.id==='settings-modal') this.style.display='none'">
     <div class="settings-box">
         <h3>CÀI ĐẶT</h3>
-        <div style="display:flex; justify-content:space-between; margin-bottom:20px;"><span>Nhạc nền</span><input type="checkbox" id="toggle-bgm" checked onchange="toggleBGM()"></div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;"><span>Nhạc Chill 🎵</span><input type="checkbox" id="toggle-bgm" checked onchange="toggleBGM()"></div>
         <button onclick="logout()" style="width:100%; padding:10px; background:#da3633; color:white; border:none;">Đăng xuất</button>
     </div>
 </div>
@@ -166,86 +178,58 @@
     const NEWS_URL = "https://raw.githubusercontent.com/minhReal/CSimu/refs/heads/main/news.json";
     let me = null, wallet = {cash:250, stocks:{}}, data = [], candles = {}, sel = null, news = [];
     
-    // --- AUDIO SYSTEM FIX ---
+    // --- AUDIO ENGINE ---
     const bgm = document.getElementById("bgm");
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    let audioUnlocked = false;
+    let unlocked = false;
 
-    // Hàm mở khóa âm thanh (Chrome chặn autoplay)
     function unlockAudio() {
-        if (!audioUnlocked) {
-            audioCtx.resume().then(() => {
-                audioUnlocked = true;
-                if(document.getElementById("toggle-bgm").checked) bgm.play().catch(()=>{});
-            });
-        }
+        if(!unlocked) { audioCtx.resume().then(()=>{ unlocked=true; if(document.getElementById("toggle-bgm").checked) bgm.play().catch(()=>{}); }); }
+    }
+    
+    function sfx(type) {
+        if(audioCtx.state==='suspended') audioCtx.resume();
+        const o=audioCtx.createOscillator(), g=audioCtx.createGain();
+        o.connect(g); g.connect(audioCtx.destination);
+        if(type==='click'){ o.frequency.value=600; g.gain.value=0.05; o.start(); o.stop(audioCtx.currentTime+0.05); }
+        if(type==='ok'){ o.type='square'; o.frequency.setValueAtTime(400,audioCtx.currentTime); o.frequency.linearRampToValueAtTime(800,audioCtx.currentTime+0.1); g.gain.value=0.05; o.start(); o.stop(audioCtx.currentTime+0.2); }
+        if(type==='err'){ o.type='sawtooth'; o.frequency.value=150; g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.3); o.start(); o.stop(audioCtx.currentTime+0.3); }
     }
 
-    // Sound Effects xịn hơn
-    function playSound(type) {
-        if(audioCtx.state === 'suspended') audioCtx.resume();
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain); gain.connect(audioCtx.destination);
-
-        if (type === 'click') {
-            osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.05);
-        } else if (type === 'success') { // Tiếng tiền xu Mario
-            osc.type = 'square'; 
-            osc.frequency.setValueAtTime(900, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
-            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-        } else if (type === 'error') { // Tiếng è è
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-            osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2);
-            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
-            osc.start(); osc.stop(audioCtx.currentTime + 0.2);
-        }
-    }
-
-    // --- APP LOGIC ---
+    // --- APP ---
     (function(){
         const s = localStorage.getItem("sess");
         if(s && localStorage.getItem(`u_${s}`)) { me = s; wallet = JSON.parse(localStorage.getItem(`u_${s}`)); enter(); }
     })();
 
-    async function auth(type) {
-        unlockAudio(); // Kích hoạt âm thanh khi bấm nút
-        const u = document.getElementById("user").value.trim();
-        const p = document.getElementById("pass").value.trim();
+    async function auth(t) {
+        unlockAudio();
+        const u = document.getElementById("user").value.trim(), p = document.getElementById("pass").value.trim();
         const msg = document.getElementById("msg");
-        if(!u || !p) { playSound('error'); msg.innerText = "Thiếu thông tin"; return; }
-        
+        if(!u||!p) { sfx('err'); msg.innerText="Thiếu thông tin"; return; }
         const k = `u_${u}`;
-        if(type==='reg') {
+        if(t==='reg') {
             try {
-                const res = await fetch(`${SERVER}check-user?u=${encodeURIComponent(u)}`);
-                const json = await res.json();
-                if(json.exists || localStorage.getItem(k)) { playSound('error'); msg.innerText = "Tên đã tồn tại"; return; }
+                const r = await fetch(`${SERVER}check-user?u=${encodeURIComponent(u)}`);
+                const j = await r.json();
+                if(j.exists || localStorage.getItem(k)) { sfx('err'); msg.innerText="Tên đã tồn tại"; return; }
                 localStorage.setItem(k, JSON.stringify({pass:p, cash:250, stocks:{}}));
-                playSound('success'); msg.innerText = "Đăng ký thành công!"; msg.style.color="var(--green)";
-            } catch(e) { msg.innerText = "Lỗi kết nối"; }
+                sfx('ok'); msg.innerText="Đăng ký xong!"; msg.style.color="var(--green)";
+            } catch(e){ msg.innerText="Lỗi mạng"; }
         } else {
             const d = JSON.parse(localStorage.getItem(k));
-            if(!d || d.pass!==p) { playSound('error'); msg.innerText = "Sai mật khẩu"; return; }
+            if(!d || d.pass!==p) { sfx('err'); msg.innerText="Sai mật khẩu"; return; }
             me = u; wallet = d; localStorage.setItem("sess", u); enter();
         }
     }
 
     function enter() {
-        playSound('success');
+        sfx('ok');
         document.getElementById("login-screen").style.display="none";
         document.getElementById("app").style.display="flex";
         document.getElementById("u-name").innerText = me;
         if(me.toLowerCase()==='minh') document.getElementById("btn-admin").style.display="block";
-        
-        setInterval(loop, 1500); setInterval(syncRank, 3000); setInterval(getRank, 5000); loadNews();
+        setInterval(loop, 1500); setInterval(sync, 3000); setInterval(getRank, 5000); setInterval(tick, 4000); loadNews();
     }
 
     async function loop() {
@@ -259,7 +243,7 @@
                 if(!l.length || l[l.length-1].time !== s.candle.time) { l.push(s.candle); if(l.length>50) l.shift(); }
                 else l[l.length-1] = s.candle;
             });
-            if(!sel) renderList(); else { updateDetail(); draw(); }
+            if(!sel) renderList(); else { updateD(); draw(); }
             document.getElementById("cash").innerText = wallet.cash.toFixed(2);
         } catch(e){}
     }
@@ -275,14 +259,24 @@
     }
 
     function openDetail(c) { 
-        playSound('click'); sel = c; 
-        document.getElementById("detail-view").style.display="flex"; 
-        initChart(); updateDetail(); renderDetailNews();
+        sfx('click'); sel = c; 
+        const el = document.getElementById("detail-view");
+        const ol = document.getElementById("overlay-dim");
+        ol.style.display="block"; setTimeout(()=>ol.style.opacity=1, 10);
+        el.classList.add("active");
+        initChart(); updateD(); tick();
     }
     
-    function closeDetail() { playSound('click'); sel = null; document.getElementById("detail-view").style.display="none"; renderList(); }
+    function closeDetail() { 
+        sfx('click'); sel = null; 
+        const el = document.getElementById("detail-view");
+        const ol = document.getElementById("overlay-dim");
+        el.classList.remove("active");
+        ol.style.opacity=0; setTimeout(()=>ol.style.display="none", 300);
+        renderList(); 
+    }
 
-    function updateDetail() {
+    function updateD() {
         const s = data.find(x=>x.code===sel);
         document.getElementById("d-code").innerText = s.code;
         document.getElementById("d-price").innerText = s.price.toFixed(2);
@@ -290,7 +284,22 @@
         document.getElementById("d-price").style.color = (candles[sel]?.at(-1).close >= candles[sel]?.at(-1).open) ? "var(--green)" : "var(--red)";
     }
 
-    // --- CHART ---
+    function trade(t) {
+        const v = parseFloat(document.getElementById("trade-amount").value);
+        if(!v || v<=0) return sfx('err');
+        const s = data.find(x=>x.code===sel);
+        if(t==='buy') {
+            if(v > wallet.cash) { sfx('err'); return alert("Thiếu tiền"); }
+            wallet.cash -= v; wallet.stocks[sel] = (wallet.stocks[sel]||0) + (v/s.price);
+            sfx('ok');
+        } else {
+            if(v > (wallet.stocks[sel]||0)*s.price) { sfx('err'); return alert("Thiếu CP"); }
+            wallet.stocks[sel] -= (v/s.price); wallet.cash += v;
+            sfx('ok');
+        }
+        localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); sync();
+    }
+
     let ctx;
     function initChart() {
         const c = document.getElementById("chart");
@@ -302,13 +311,11 @@
         const d = candles[sel]; if(!d.length) return;
         const W = ctx.canvas.width/2, H = ctx.canvas.height/2;
         ctx.clearRect(0,0,W,H);
-        
         let min=Infinity, max=-Infinity;
         d.forEach(x => { if(x.low<min) min=x.low; if(x.high>max) max=x.high; });
         const r = max-min || 1, py=20;
         const gy = v => H - py - ((v-min)/r)*(H-py*2);
 
-        // Grid
         ctx.strokeStyle="#222"; ctx.lineWidth=1;
         for(let i=0; i<=4; i++) { let y=H-py-(i/4)*(H-py*2); ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
@@ -324,54 +331,23 @@
         ctx.strokeStyle="rgba(255,255,255,0.3)"; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
     }
 
-    // --- NEWS IN DETAIL VIEW ---
-    function renderDetailNews() {
-        const div = document.getElementById("detail-news-list");
-        if(!news.length) { div.innerHTML="<div style='color:#666;text-align:center;padding:20px'>Không có tin tức</div>"; return; }
-        
-        // Lấy tin tức ngẫu nhiên để giả lập "tin liên quan"
-        div.innerHTML = news.map(n => `
-            <div class="mini-news-item">
-                <div class="mini-news-title">${n.t}</div>
-                <span class="mini-news-tag" style="background:${n.b>0?'rgba(0,255,136,0.2)':'rgba(255,59,59,0.2)'}; color:${n.b>0?'var(--green)':'var(--red)'}">
-                    ${n.b>0 ? 'TÍCH CỰC' : 'TIÊU CỰC'}
-                </span>
-            </div>
-        `).join('');
+    async function loadNews() { try{const r=await fetch(NEWS_URL); news=await r.json();}catch(e){} }
+    function tick() {
+        if(!news.length) return;
+        const n = news[Math.floor(Math.random()*news.length)];
+        const el = document.getElementById("mini-news-ticker");
+        el.innerText = `📰 ${n.t}`; el.style.borderLeftColor = n.b>0?"var(--green)":n.b<0?"var(--red)":"#888";
     }
 
-    // --- TRADE ---
-    function trade(t) {
-        const v = parseFloat(document.getElementById("trade-amount").value);
-        if(!v || v<=0) { playSound('error'); return alert("Nhập số tiền hợp lệ"); }
-        const s = data.find(x=>x.code===sel);
-        if(t==='buy') {
-            if(v > wallet.cash) { playSound('error'); return alert("Không đủ tiền"); }
-            wallet.cash -= v; wallet.stocks[sel] = (wallet.stocks[sel]||0) + (v/s.price);
-            playSound('success');
-        } else {
-            if(v > (wallet.stocks[sel]||0)*s.price) { playSound('error'); return alert("Không đủ cổ phiếu"); }
-            wallet.stocks[sel] -= (v/s.price); wallet.cash += v;
-            playSound('success');
-        }
-        localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); syncRank();
-    }
-
-    // --- SYSTEM ---
-    async function loadNews() { try{ const r=await fetch(NEWS_URL); news=await r.json(); renderDetailNews(); }catch(e){} }
-    async function syncRank() { if(!me) return; let t = wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t += wallet.stocks[s.code]*s.price}); await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:me, asset:t})}); }
+    async function sync() { if(!me) return; let t = wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t += wallet.stocks[s.code]*s.price}); await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:me, asset:t})}); }
     async function getRank() { if(document.getElementById("tab-rank").classList.contains("hidden")) return; const r=await fetch(`${SERVER}get-rank`); const l=await r.json(); document.getElementById("rank-list").innerHTML=l.map((p,i)=>`<div class="rank-item ${p.name===me?'rank-me':''}"><div class="rank-num ${i==0?'rank-1':''}">${i+1}</div><div style="flex:1;margin-left:10px"><div style="font-weight:bold;color:white">${p.name} ${i==0?'👑':''}</div><div style="font-size:12px;color:#888">$${p.total.toLocaleString(undefined,{maximumFractionDigits:0})}</div></div></div>`).join(''); }
-    
-    // --- ADMIN ---
-    async function loadAdminUsers() { 
-        const d = document.getElementById("admin-user-list"); d.innerHTML="Loading...";
-        try { const r=await fetch(`${SERVER}admin/users`); const u=await r.json(); d.innerHTML=u.map(x=>`<div class="user-row"><div><b>${x.name}</b><br><small>$${parseFloat(x.asset).toLocaleString()}</small></div>${x.name.toLowerCase()!=='minh'?`<button class="btn-del" onclick="delUser('${x.name}')">XÓA</button>`:''}</div>`).join(''); } catch(e){d.innerHTML="Lỗi";}
-    }
+
+    async function loadAdminUsers() { const d=document.getElementById("admin-user-list"); d.innerHTML="Loading..."; try{const r=await fetch(`${SERVER}admin/users`);const u=await r.json();d.innerHTML=u.map(x=>`<div class="user-row"><div><b>${x.name}</b><br><small>$${parseFloat(x.asset).toLocaleString()}</small></div>${x.name.toLowerCase()!=='minh'?`<button class="btn-del" onclick="delUser('${x.name}')">XÓA</button>`:''}</div>`).join('');}catch(e){d.innerHTML="Lỗi";} }
     async function delUser(n) { if(confirm("Xóa?")) await fetch(`${SERVER}admin/delete-user`,{method:"POST",body:JSON.stringify({user:n})}); loadAdminUsers(); }
-    function adminAction() { news.unshift({t:`[TIN ĐỒN] ${document.getElementById("adm-stock").value} sắp có biến lớn!`, b:document.getElementById("adm-action").value==='pump'?50:-50}); alert("Xong!"); renderDetailNews(); }
+    function adminAction() { news.unshift({t:`[TIN ĐỒN] ${document.getElementById("adm-stock").value} sắp có biến lớn!`, b:document.getElementById("adm-action").value==='pump'?50:-50}); alert("Xong!"); tick(); }
     function openAdmin() { document.getElementById("admin-view").style.display="flex"; loadAdminUsers(); }
 
-    function tab(id) { document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active')); document.getElementById(`tab-${id}`).classList.remove('hidden'); event.target.classList.add('active'); playSound('click'); if(id==='rank') getRank(); }
+    function tab(id) { document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active')); document.getElementById(`tab-${id}`).classList.remove('hidden'); event.target.classList.add('active'); sfx('click'); if(id==='rank') getRank(); if(id==='news') {document.getElementById("news-list").innerHTML = news.map(n=>`<div class="news-card" style="border-left-color:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#666'}"><div style="font-size:10px;color:#888">${n.b>0?'TỐT':n.b<0?'XẤU':'TIN'}</div><div style="color:#ddd">${n.t}</div></div>`).join('');} }
     function toggleBGM() { if(document.getElementById("toggle-bgm").checked) bgm.play(); else bgm.pause(); }
     function logout() { localStorage.removeItem("sess"); location.reload(); }
     function openSettings() { document.getElementById("settings-modal").style.display='flex'; }
