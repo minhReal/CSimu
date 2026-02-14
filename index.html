@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X - Full Features</title>
+    <title>Terminal X - Damn Edition</title>
     
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
@@ -532,4 +532,15 @@
     function tab(id) { 
         document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden')); 
         document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active')); 
-        document.
+        document.getElementById(`tab-${id}`).classList.remove('hidden'); 
+        event.target.classList.add('active'); sfx('click'); 
+        activeTab = id;
+        if(id==='rank') getRank(); 
+        if(id==='news') renderNewsPage();
+    }
+    function logout() { localStorage.removeItem("sess"); location.reload(); }
+    function changeChartType() { chartType = document.getElementById("chart-type-select").value; localStorage.setItem("chart_type", chartType); if(sel) draw(); }
+    function openSettings() { document.getElementById("settings-modal").style.display='flex'; }
+</script>
+</body>
+</html>
