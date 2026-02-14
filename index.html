@@ -327,4 +327,31 @@
         ctx.strokeStyle="rgba(255,255,255,0.5)"; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
     }
 
-    async function loadNews()
+    async function loadNews() { try { const r=await fetch(NEWS_URL); news=await r.json(); renderNews(); } catch(e){} }
+    function renderNews() {
+        document.getElementById("news-list").innerHTML = news.map(n => `
+            <div class="news-card" style="border-left-color:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#666'}">
+                <div style="font-size:10px;color:#888;font-weight:bold;margin-bottom:5px;">${n.b>0?'TỐT':n.b<0?'XẤU':'TIN'}</div>
+                <div style="color:#ddd;line-height:1.4">${n.t}</div>
+            </div>`).join('');
+    }
+    function tick() {
+        if(!news.length) return;
+        const n = news[Math.floor(Math.random()*news.length)];
+        const el = document.getElementById("mini-news-ticker");
+        el.innerText = `📰 ${n.t}`; el.style.borderLeftColor = n.b>0?"var(--green)":n.b<0?"var(--red)":"#888";
+    }
+
+    function logout() { if(confirm("Thoát?")) { localStorage.removeItem("sess"); location.reload(); } }
+    function openSettings() { document.getElementById("settings-modal").style.display='flex'; }
+    function toggleAudio() { if(document.getElementById("toggle-bgm").checked) bgm.play(); else bgm.pause(); }
+    function tab(id) {
+        document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
+        document.getElementById(`tab-${id}`).classList.remove('hidden');
+        event.target.classList.add('active');
+        if(id==='rank') getRank(); if(id==='news') loadNews();
+    }
+</script>
+</body>
+</html>
