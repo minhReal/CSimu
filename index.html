@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X - Pro</title>
+    <title>Terminal X - Ultra</title>
     
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
@@ -22,6 +22,18 @@
         
         #app { display:none; height:100dvh; flex-direction:column; }
         
+        /* STATUS BAR (NEW) */
+        .status-bar {
+            height: 25px; background: #080808; border-top: 1px solid #333;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 10px; font-size: 10px; color: #666; font-family: monospace;
+            z-index: 5000;
+        }
+        .ping-indicator { display: flex; align-items: center; gap: 5px; }
+        .dot { width: 6px; height: 6px; border-radius: 50%; background: #444; }
+        .dot.online { background: var(--green); box-shadow: 0 0 5px var(--green); }
+        .dot.lag { background: var(--gold); }
+
         /* LOGIN */
         #login-screen { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:center; align-items:center; }
         .login-box { background:var(--panel); border:1px solid var(--border); padding:30px; border-radius:16px; width:85%; max-width:350px; text-align:center; box-shadow:0 0 50px rgba(0,255,136,0.1); }
@@ -35,19 +47,20 @@
         .tab-btn.active { color:var(--green); border-bottom-color:var(--green); background:#1a1a1a; color:white; }
         
         /* CONTENT */
-        .view-content { flex:1; overflow-y:auto; position:relative; padding-bottom: 300px; } /* Để khoảng trống cho Bottom Sheet */
+        .view-content { flex:1; overflow-y:auto; position:relative; padding-bottom: 300px; } 
         .hidden { display:none!important; }
 
         /* LIST ITEMS */
         .stock-item { display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:16px; margin:10px; border-radius:10px; border:1px solid var(--border); }
         .rank-item { display:flex; align-items:center; background:#161616; padding:12px; margin:8px 10px; border-radius:8px; border:1px solid var(--border); }
         .rank-me { border:1px solid var(--green); background:#0f3318; }
-        .news-card { background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin:10px; border-left:4px solid #555; }
+        .news-card { background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin:10px; border-left:4px solid #555; transition: transform 0.2s; }
+        .news-card:active { transform: scale(0.98); }
         .news-time { font-size: 10px; color: #666; margin-bottom: 4px; display: block; }
 
-        /* BOTTOM SHEET (CHART) */
+        /* BOTTOM SHEET */
         #detail-view { 
-            position: fixed; bottom: 0; left: 0; right: 0;
+            position: fixed; bottom: 25px; /* Để chừa chỗ cho status bar */ left: 0; right: 0;
             height: 55%; 
             background: #101010;
             border-top: 1px solid var(--green);
@@ -75,9 +88,7 @@
 </head>
 <body>
 
-<audio id="bgm" loop>
-    <source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg"> 
-</audio>
+<audio id="bgm" loop><source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg"></audio>
 
 <div id="login-screen" onclick="unlockAudio()">
     <div class="login-box">
@@ -87,7 +98,7 @@
         <button onclick="auth('login')" class="btn-auth" style="background:#1f6feb;">ĐĂNG NHẬP</button>
         <button onclick="auth('reg')" class="btn-auth" style="background:#238636;">ĐĂNG KÝ</button>
         <div id="msg" style="color:var(--red); font-size:12px; margin-top:15px;"></div>
-        <div style="font-size:10px; color:#666; margin-top:20px;">*Chạm màn hình để bật hệ thống</div>
+        <div style="font-size:10px; color:#666; margin-top:20px;">*Chạm màn hình để khởi động hệ thống</div>
     </div>
 </div>
 
@@ -97,7 +108,6 @@
         <div style="display:flex; gap:15px; align-items:center;">
             <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;">ADMIN</button>
             <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;">$<span id="cash">0.00</span></div>
-            
             <button onclick="openSettings()" style="background:none; border:none; padding:0; font-size:20px;">⚙️</button>
         </div>
     </div>
@@ -111,6 +121,11 @@
     <div id="tab-market" class="view-content"><div id="list"></div></div>
     <div id="tab-rank" class="view-content hidden"><div id="rank-list" style="padding:10px;"></div></div>
     <div id="tab-news" class="view-content hidden"><div id="news-list" style="padding:10px;"></div></div>
+
+    <div class="status-bar">
+        <div class="ping-indicator"><div class="dot" id="ping-dot"></div> PING: <span id="ping-val">--</span>ms</div>
+        <div id="system-time">00:00:00</div>
+    </div>
 </div>
 
 <div id="detail-view">
@@ -124,10 +139,8 @@
             <button onclick="closeDetail()" style="background:none; border:none; color:#666; font-size:12px; margin-top:5px;">▼ ẨN</button>
         </div>
     </div>
-    
     <div class="mini-news" id="mini-news-ticker">📰 Đang cập nhật tin tức...</div>
     <div class="chart-container"><canvas id="chart"></canvas></div>
-
     <div class="controls-area">
         <input type="number" id="trade-amount" class="inp-auth" placeholder="Nhập số tiền ($)" style="margin-bottom:10px; font-size:18px; font-weight:bold;">
         <div style="display:flex; gap:10px;">
@@ -152,27 +165,17 @@
 <div id="settings-modal" onclick="if(event.target.id==='settings-modal') this.style.display='none'">
     <div class="settings-box">
         <h3>CÀI ĐẶT</h3>
-        
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
-            <span>Nhạc nền</span>
-            <input type="checkbox" id="toggle-bgm" onchange="toggleBGM()">
-        </div>
-
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;"><span>Nhạc nền</span><input type="checkbox" id="toggle-bgm" onchange="toggleBGM()"></div>
         <div style="display:flex; justify-content:space-between; margin-bottom:20px; align-items:center;">
-            <span>Loại biểu đồ</span>
-            <select id="chart-type-select" onchange="changeChartType()">
-                <option value="candle">Nến (Candle)</option>
-                <option value="line">Đường (Line)</option>
-            </select>
+            <span>Biểu đồ</span>
+            <select id="chart-type-select" onchange="changeChartType()"><option value="candle">Nến (Candle)</option><option value="line">Đường (Line)</option></select>
         </div>
-
         <button onclick="logout()" style="width:100%; padding:10px; background:#da3633; color:white; border:none; border-radius:5px;">Đăng xuất</button>
     </div>
 </div>
 
 <script>
     const SERVER = "https://oia.duongminhminh46.workers.dev/"; 
-    // Fallback news nếu fetch lỗi
     const FAKE_NEWS_TEMPLATES = [
         "{S} công bố báo cáo tài chính đột phá, lợi nhuận tăng 200%.",
         "Cá mập đang gom mạnh mã {S}, khối lượng giao dịch tăng đột biến.",
@@ -180,128 +183,100 @@
         "Tin đồn: {S} sắp sáp nhập với tập đoàn nước ngoài.",
         "Thị trường đỏ lửa, nhưng {S} vẫn giữ vững phong độ.",
         "Chủ tịch tập đoàn {S} đăng ký mua vào 5 triệu cổ phiếu.",
-        "{S} mở rộng thị trường sang Đông Nam Á, kỳ vọng doanh thu khủng."
+        "Quỹ ngoại Dragon Capital vừa rót vốn vào {S}."
     ];
 
     let me = null, wallet = {cash:250, stocks:{}}, data = [], candles = {}, sel = null, news = [];
-    
-    // --- SETTINGS STATE ---
-    let chartType = localStorage.getItem("chart_type") || "candle"; // 'candle' or 'line'
+    let activeTab = 'market';
+    let chartType = localStorage.getItem("chart_type") || "candle"; 
     document.getElementById("chart-type-select").value = chartType;
-
     let isBgmOn = localStorage.getItem("bgm_state") !== "off";
     document.getElementById("toggle-bgm").checked = isBgmOn;
-
-    // --- AUDIO SYSTEM ---
+    
+    // --- AUDIO & UTILS ---
     const bgm = document.getElementById("bgm");
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let unlocked = false;
 
-    function unlockAudio() {
-        if(!unlocked) { 
-            audioCtx.resume().then(()=>{ 
-                unlocked=true; 
-                if(isBgmOn) bgm.play().catch(()=>{}); 
-            }); 
-        }
-    }
-    
-    function toggleBGM() {
-        isBgmOn = document.getElementById("toggle-bgm").checked;
-        localStorage.setItem("bgm_state", isBgmOn ? "on" : "off");
-        if(isBgmOn) { if(unlocked) bgm.play(); } else bgm.pause();
-    }
-
-    function changeChartType() {
-        chartType = document.getElementById("chart-type-select").value;
-        localStorage.setItem("chart_type", chartType);
-        if(sel) draw(); // Vẽ lại ngay nếu đang mở
-    }
-    
-    function sfx(type) {
+    function unlockAudio() { if(!unlocked) { audioCtx.resume().then(()=>{ unlocked=true; if(isBgmOn) bgm.play().catch(()=>{}); }); } }
+    function toggleBGM() { isBgmOn = document.getElementById("toggle-bgm").checked; localStorage.setItem("bgm_state", isBgmOn ? "on" : "off"); if(isBgmOn) { if(unlocked) bgm.play(); } else bgm.pause(); }
+    function changeChartType() { chartType = document.getElementById("chart-type-select").value; localStorage.setItem("chart_type", chartType); if(sel) draw(); }
+    function sfx(t) {
         if(audioCtx.state==='suspended') audioCtx.resume();
-        const o=audioCtx.createOscillator(), g=audioCtx.createGain();
-        o.connect(g); g.connect(audioCtx.destination);
-        if(type==='click'){ o.frequency.value=600; g.gain.value=0.05; o.start(); o.stop(audioCtx.currentTime+0.05); }
-        if(type==='ok'){ o.type='square'; o.frequency.setValueAtTime(400,audioCtx.currentTime); o.frequency.linearRampToValueAtTime(800,audioCtx.currentTime+0.1); g.gain.value=0.05; o.start(); o.stop(audioCtx.currentTime+0.2); }
-        if(type==='err'){ o.type='sawtooth'; o.frequency.value=150; g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.3); o.start(); o.stop(audioCtx.currentTime+0.3); }
+        const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
+        if(t==='click'){o.frequency.value=600;g.gain.value=0.05;o.start();o.stop(audioCtx.currentTime+0.05);}
+        if(t==='ok'){o.type='square';o.frequency.setValueAtTime(400,audioCtx.currentTime);o.frequency.linearRampToValueAtTime(800,audioCtx.currentTime+0.1);g.gain.value=0.05;o.start();o.stop(audioCtx.currentTime+0.2);}
+        if(t==='err'){o.type='sawtooth';o.frequency.value=150;g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.3);o.start();o.stop(audioCtx.currentTime+0.3);}
     }
+    
+    // Clock
+    setInterval(() => {
+        const d = new Date();
+        document.getElementById("system-time").innerText = d.toLocaleTimeString('vi-VN');
+    }, 1000);
 
     // --- APP ---
-    (function(){
-        const s = localStorage.getItem("sess");
-        if(s && localStorage.getItem(`u_${s}`)) { me = s; wallet = JSON.parse(localStorage.getItem(`u_${s}`)); enter(); }
-    })();
+    (function(){ const s=localStorage.getItem("sess"); if(s && localStorage.getItem(`u_${s}`)) { me=s; wallet=JSON.parse(localStorage.getItem(`u_${s}`)); enter(); } })();
 
     async function auth(t) {
         unlockAudio();
-        const u = document.getElementById("user").value.trim(), p = document.getElementById("pass").value.trim();
-        const msg = document.getElementById("msg");
+        const u = document.getElementById("user").value.trim(), p = document.getElementById("pass").value.trim(), msg = document.getElementById("msg");
         if(!u||!p) { sfx('err'); msg.innerText="Thiếu thông tin"; return; }
-        const k = `u_${u}`;
+        const k=`u_${u}`;
         if(t==='reg') {
             try {
-                const r = await fetch(`${SERVER}check-user?u=${encodeURIComponent(u)}`);
-                const j = await r.json();
-                if(j.exists || localStorage.getItem(k)) { sfx('err'); msg.innerText="Tên đã tồn tại"; return; }
-                localStorage.setItem(k, JSON.stringify({pass:p, cash:250, stocks:{}}));
-                sfx('ok'); msg.innerText="Đăng ký xong!"; msg.style.color="var(--green)";
+                const r=await fetch(`${SERVER}check-user?u=${encodeURIComponent(u)}`); const j=await r.json();
+                if(j.exists||localStorage.getItem(k)) { sfx('err'); msg.innerText="Tên đã tồn tại"; return; }
+                localStorage.setItem(k, JSON.stringify({pass:p, cash:250, stocks:{}})); sfx('ok'); msg.innerText="OK!"; msg.style.color="var(--green)";
             } catch(e){ msg.innerText="Lỗi mạng"; }
         } else {
-            const d = JSON.parse(localStorage.getItem(k));
-            if(!d || d.pass!==p) { sfx('err'); msg.innerText="Sai mật khẩu"; return; }
-            me = u; wallet = d; localStorage.setItem("sess", u); enter();
+            const d=JSON.parse(localStorage.getItem(k)); if(!d||d.pass!==p){ sfx('err'); msg.innerText="Sai mật khẩu"; return; }
+            me=u; wallet=d; localStorage.setItem("sess", u); enter();
         }
     }
 
     function enter() {
-        sfx('ok');
-        document.getElementById("login-screen").style.display="none";
-        document.getElementById("app").style.display="flex";
-        document.getElementById("u-name").innerText = me;
+        sfx('ok'); document.getElementById("login-screen").style.display="none"; document.getElementById("app").style.display="flex"; document.getElementById("u-name").innerText=me;
         if(me.toLowerCase()==='minh') document.getElementById("btn-admin").style.display="block";
-        setInterval(loop, 1500); setInterval(sync, 3000); setInterval(getRank, 5000); setInterval(tick, 4000); 
+        setInterval(loop, 1500); setInterval(sync, 3000); setInterval(getRank, 5000); 
         
-        // Tạo tin tức ngay lập tức
         generateFakeNews(); 
-        setInterval(generateFakeNews, 10000); // Cứ 10s tạo tin mới
+        setInterval(generateFakeNews, 8000); // 8s tạo tin mới 1 lần
     }
 
-    // --- NEWS ENGINE (GENERATOR) ---
+    // --- LOGIC ---
     function generateFakeNews() {
         if(data.length === 0) return;
-        // Chọn ngẫu nhiên 1 mã cổ phiếu
         const stock = data[Math.floor(Math.random() * data.length)];
-        // Chọn ngẫu nhiên 1 template
         const template = FAKE_NEWS_TEMPLATES[Math.floor(Math.random() * FAKE_NEWS_TEMPLATES.length)];
         const text = template.replace("{S}", stock.code);
-        
-        // Xác định tin tốt hay xấu dựa trên giá
         const isGood = stock.candle.close >= stock.candle.open;
         
-        // Thêm vào đầu danh sách
+        // Thêm tin mới
         news.unshift({ t: text, b: isGood ? 50 : -50, time: new Date().toLocaleTimeString() });
-        
-        // Giữ tối đa 20 tin
-        if(news.length > 20) news.pop();
-        
-        // Cập nhật giao diện nếu đang ở tab Tin Tức
-        if(document.getElementById("tab-news").classList.contains("active")) renderNewsPage();
+        if(news.length > 30) news.pop();
+
+        // Cập nhật UI Tin tức ngay lập tức nếu đang ở Tab News
+        if(activeTab === 'news') renderNewsPage();
+        tick(); // Cập nhật ticker
     }
 
     function renderNewsPage() {
-        const div = document.getElementById("news-list");
-        div.innerHTML = news.map(n => `
+        document.getElementById("news-list").innerHTML = news.map(n => `
             <div class="news-card" style="border-left-color:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#666'}">
-                <span class="news-time">${n.time || 'Vừa xong'}</span>
+                <span class="news-time">${n.time}</span>
                 <div style="font-size:10px;color:#888;font-weight:bold;margin-bottom:2px;">${n.b>0?'TÍCH CỰC':n.b<0?'TIÊU CỰC':'THỊ TRƯỜNG'}</div>
                 <div style="color:#ddd;">${n.t}</div>
             </div>`).join('');
     }
 
     async function loop() {
+        const start = Date.now();
         try {
             const res = await fetch(SERVER);
+            const latency = Date.now() - start;
+            updatePing(latency);
+            
             const json = await res.json();
             data = json.stocks;
             data.forEach(s => {
@@ -311,9 +286,16 @@
                 else l[l.length-1] = s.candle;
             });
             if(sel) { updateD(); draw(); }
-            renderList(); 
-            document.getElementById("cash").innerText = wallet.cash.toFixed(2);
-        } catch(e){}
+            renderList(); document.getElementById("cash").innerText = wallet.cash.toFixed(2);
+        } catch(e){ updatePing(-1); }
+    }
+
+    function updatePing(ms) {
+        const el = document.getElementById("ping-val");
+        const dot = document.getElementById("ping-dot");
+        if(ms === -1) { el.innerText="ERR"; dot.className="dot lag"; return; }
+        el.innerText = ms;
+        dot.className = ms < 100 ? "dot online" : "dot lag";
     }
 
     function renderList() {
@@ -339,7 +321,6 @@
 
     function openDetail(c) { sfx('click'); sel = c; document.getElementById("detail-view").classList.add("active"); initChart(); updateD(); tick(); }
     function closeDetail() { sfx('click'); sel = null; document.getElementById("detail-view").classList.remove("active"); }
-
     function updateD() {
         const s = data.find(x=>x.code===sel);
         document.getElementById("d-code").innerText = s.code;
@@ -347,47 +328,36 @@
         document.getElementById("d-owned").innerText = (wallet.stocks[sel]||0).toFixed(1);
         document.getElementById("d-price").style.color = (candles[sel]?.at(-1).close >= candles[sel]?.at(-1).open) ? "var(--green)" : "var(--red)";
     }
-
     function trade(t) {
         const v = parseFloat(document.getElementById("trade-amount").value);
         if(!v || v<=0) return sfx('err');
         const s = data.find(x=>x.code===sel);
         if(t==='buy') {
             if(v > wallet.cash) { sfx('err'); return alert("Thiếu tiền"); }
-            wallet.cash -= v; wallet.stocks[sel] = (wallet.stocks[sel]||0) + (v/s.price);
-            sfx('ok');
+            wallet.cash -= v; wallet.stocks[sel] = (wallet.stocks[sel]||0) + (v/s.price); sfx('ok');
         } else {
             if(v > (wallet.stocks[sel]||0)*s.price) { sfx('err'); return alert("Thiếu CP"); }
-            wallet.stocks[sel] -= (v/s.price); wallet.cash += v;
-            sfx('ok');
+            wallet.stocks[sel] -= (v/s.price); wallet.cash += v; sfx('ok');
         }
         localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); sync();
     }
 
     let ctx;
-    function initChart() {
-        const c = document.getElementById("chart");
-        c.width = c.parentElement.clientWidth*2; c.height = c.parentElement.clientHeight*2;
-        ctx = c.getContext("2d"); ctx.scale(2,2);
-    }
-
+    function initChart() { const c=document.getElementById("chart"); c.width=c.parentElement.clientWidth*2; c.height=c.parentElement.clientHeight*2; ctx=c.getContext("2d"); ctx.scale(2,2); }
+    
+    // --- DRAW CHART (FIXED COLOR LOGIC) ---
     function draw() {
         if(!sel || !candles[sel]) return;
         const d = candles[sel]; if(!d.length) return;
         const W = ctx.canvas.width/2, H = ctx.canvas.height/2;
         ctx.clearRect(0,0,W,H);
-        
         let min=Infinity, max=-Infinity;
         d.forEach(x => { if(x.low<min) min=x.low; if(x.high>max) max=x.high; });
-        const r = max-min || 1, py=20;
-        const gy = v => H - py - ((v-min)/r)*(H-py*2);
-        const cw = (W-20)/50;
+        const r = max-min || 1, py=20, gy = v => H - py - ((v-min)/r)*(H-py*2), cw = (W-20)/50;
 
-        // Grid
         ctx.strokeStyle="#222"; ctx.lineWidth=1;
         for(let i=0; i<=4; i++) { let y=H-py-(i/4)*(H-py*2); ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
-        // VẼ THEO LOẠI BIỂU ĐỒ ĐÃ CHỌN
         if(chartType === 'candle') {
             d.forEach((c,i) => {
                 const x = i*cw+10, col = c.close >= c.open ? "#00ff88" : "#ff3b3b";
@@ -397,62 +367,51 @@
                 ctx.fillRect(x+1, Math.min(gy(c.open), gy(c.close)), cw-2, h);
             });
         } else {
-            // LINE CHART
-            ctx.beginPath();
+            // LINE CHART: Đổi màu theo xu hướng (Đỏ khi xuống, Xanh khi lên)
             ctx.lineWidth = 2;
-            ctx.strokeStyle = "#00ff88"; // Màu đường
-            d.forEach((c,i) => {
-                const x = i*cw + 10 + cw/2;
-                const y = gy(c.close);
-                if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
-            });
-            ctx.stroke();
-
-            // Gradient fill dưới đường
+            for (let i = 0; i < d.length - 1; i++) {
+                const x1 = i * cw + 10 + cw/2;
+                const y1 = gy(d[i].close);
+                const x2 = (i + 1) * cw + 10 + cw/2;
+                const y2 = gy(d[i+1].close);
+                
+                ctx.beginPath();
+                // Logic: Nếu điểm sau thấp hơn điểm trước -> ĐỎ, ngược lại -> XANH
+                ctx.strokeStyle = d[i+1].close >= d[i].close ? "#00ff88" : "#ff3b3b";
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+            }
+            // Fill gradient nhẹ
             const grad = ctx.createLinearGradient(0, 0, 0, H);
-            grad.addColorStop(0, "rgba(0, 255, 136, 0.2)");
-            grad.addColorStop(1, "rgba(0, 255, 136, 0)");
+            grad.addColorStop(0, "rgba(255, 255, 255, 0.1)");
+            grad.addColorStop(1, "rgba(255, 255, 255, 0)");
             ctx.fillStyle = grad;
-            ctx.lineTo(d.length*cw, H);
-            ctx.lineTo(0, H);
+            ctx.beginPath();
+            ctx.moveTo(10 + cw/2, H);
+            d.forEach((c,i) => ctx.lineTo(i*cw + 10 + cw/2, gy(c.close)));
+            ctx.lineTo((d.length-1)*cw + 10 + cw/2, H);
             ctx.fill();
         }
-
-        // Current Price Line
         const ly = gy(d[d.length-1].close);
         ctx.strokeStyle="rgba(255,255,255,0.3)"; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
     }
 
-    function tick() {
-        if(!news.length) return;
-        const n = news[0]; // Lấy tin mới nhất
-        const el = document.getElementById("mini-news-ticker");
-        el.innerText = `📰 ${n.t}`; el.style.borderLeftColor = n.b>0?"var(--green)":n.b<0?"var(--red)":"#888";
-    }
+    function tick() { if(!news.length) return; const n=news[0]; const el=document.getElementById("mini-news-ticker"); el.innerText=`📰 ${n.t}`; el.style.borderLeftColor=n.b>0?"var(--green)":n.b<0?"var(--red)":"#888"; }
+    async function sync() { if(!me) return; let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price}); await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:me, asset:t})}); }
+    async function getRank() { if(activeTab !== 'rank') return; const r=await fetch(`${SERVER}get-rank`); const l=await r.json(); document.getElementById("rank-list").innerHTML=l.map((p,i)=>`<div class="rank-item ${p.name===me?'rank-me':''}"><div class="rank-num ${i==0?'rank-1':''}">${i+1}</div><div style="flex:1;margin-left:10px"><div style="font-weight:bold;color:white">${p.name} ${i==0?'👑':''}</div><div style="font-size:12px;color:#888">$${p.total.toLocaleString(undefined,{maximumFractionDigits:0})}</div></div></div>`).join(''); }
 
-    async function sync() { if(!me) return; let t = wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t += wallet.stocks[s.code]*s.price}); await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:me, asset:t})}); }
-    async function getRank() { if(document.getElementById("tab-rank").classList.contains("hidden")) return; const r=await fetch(`${SERVER}get-rank`); const l=await r.json(); document.getElementById("rank-list").innerHTML=l.map((p,i)=>`<div class="rank-item ${p.name===me?'rank-me':''}"><div class="rank-num ${i==0?'rank-1':''}">${i+1}</div><div style="flex:1;margin-left:10px"><div style="font-weight:bold;color:white">${p.name} ${i==0?'👑':''}</div><div style="font-size:12px;color:#888">$${p.total.toLocaleString(undefined,{maximumFractionDigits:0})}</div></div></div>`).join(''); }
-
-    async function loadAdminUsers() { 
-        if(me.toLowerCase() !== 'minh') return alert("Bạn không phải Admin!");
-        const d=document.getElementById("admin-user-list"); d.innerHTML="Loading..."; try{const r=await fetch(`${SERVER}admin/users`);const u=await r.json();d.innerHTML=u.map(x=>`<div class="user-row"><div><b>${x.name}</b><br><small>$${parseFloat(x.asset).toLocaleString()}</small></div>${x.name.toLowerCase()!=='minh'?`<button class="btn-del" onclick="delUser('${x.name}')">XÓA</button>`:''}</div>`).join('');}catch(e){d.innerHTML="Lỗi";} 
-    }
-    async function delUser(n) { if(me.toLowerCase() !== 'minh') return; if(confirm("Xóa?")) await fetch(`${SERVER}admin/delete-user`,{method:"POST",body:JSON.stringify({user:n})}); loadAdminUsers(); }
-    function adminAction() { 
-        if(me.toLowerCase() !== 'minh') return alert("Bạn không phải Admin!");
-        news.unshift({t:`[TIN ĐỒN] ${document.getElementById("adm-stock").value} sắp có biến lớn!`, b:document.getElementById("adm-action").value==='pump'?50:-50}); alert("Xong!"); tick(); 
-    }
-    function openAdmin() { 
-        if(me.toLowerCase() !== 'minh') return;
-        document.getElementById("admin-view").style.display="flex"; loadAdminUsers(); 
-    }
+    async function loadAdminUsers() { if(me.toLowerCase()!=='minh') return alert("Access Denied"); const d=document.getElementById("admin-user-list"); d.innerHTML="Loading..."; try{const r=await fetch(`${SERVER}admin/users`);const u=await r.json();d.innerHTML=u.map(x=>`<div class="user-row"><div><b>${x.name}</b><br><small>$${parseFloat(x.asset).toLocaleString()}</small></div>${x.name.toLowerCase()!=='minh'?`<button class="btn-del" onclick="delUser('${x.name}')">XÓA</button>`:''}</div>`).join('');}catch(e){d.innerHTML="Lỗi";} }
+    async function delUser(n) { if(me.toLowerCase()!=='minh') return; if(confirm("Xóa?")) await fetch(`${SERVER}admin/delete-user`,{method:"POST",body:JSON.stringify({user:n})}); loadAdminUsers(); }
+    function adminAction() { if(me.toLowerCase()!=='minh') return; news.unshift({t:`[TIN ĐỒN] ${document.getElementById("adm-stock").value} sắp có biến lớn!`, b:document.getElementById("adm-action").value==='pump'?50:-50}); alert("Xong!"); tick(); }
+    function openAdmin() { if(me.toLowerCase()!=='minh') return; document.getElementById("admin-view").style.display="flex"; loadAdminUsers(); }
 
     function tab(id) { 
         document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden')); 
         document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active')); 
         document.getElementById(`tab-${id}`).classList.remove('hidden'); 
         event.target.classList.add('active'); 
-        sfx('click'); 
+        activeTab = id; sfx('click'); 
         if(id==='rank') getRank(); 
         if(id==='news') renderNewsPage();
     }
