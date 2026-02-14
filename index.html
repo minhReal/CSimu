@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X - Damn Edition</title>
+    <title>Terminal X - Secured</title>
     
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
@@ -31,7 +31,7 @@
         /* HEADER */
         .header { padding:12px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; height:60px; z-index: 10; }
         
-        /* TAB BAR (4 TABS) */
+        /* TAB BAR */
         .tab-bar { display:flex; border-bottom:1px solid var(--border); background:var(--panel); height:50px; z-index: 10; }
         .tab-btn { flex:1; padding:15px 5px; text-align:center; font-size:11px; font-weight:bold; color:#666; border-bottom:3px solid transparent; position: relative; white-space: nowrap; }
         .tab-btn.active { color:var(--green); border-bottom-color:var(--green); background:#1a1a1a; color:white; }
@@ -47,7 +47,7 @@
         .rank-item { display:flex; align-items:center; background:#161616; padding:12px; margin:8px 10px; border-radius:8px; border:1px solid var(--border); }
         .rank-me { border:1px solid var(--green); background:#0f3318; }
         
-        /* NEWS CARD (Market News) */
+        /* NEWS CARD */
         .news-card { background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin:10px; border-left:4px solid #555; }
         .news-time { font-size: 10px; color: #666; margin-bottom: 4px; display: block; }
         
@@ -190,6 +190,7 @@
         </div>
         <hr style="border-color:#333; margin:15px 0;">
         <h4 style="margin:0 0 10px 0; color:#888">Bảo mật</h4>
+        <input type="password" id="old-pass" class="inp-auth" placeholder="Mật khẩu cũ" style="margin-bottom:5px;">
         <input type="password" id="new-pass" class="inp-auth" placeholder="Mật khẩu mới" style="margin-bottom:10px;">
         <button onclick="changePassword()" style="width:100%; padding:10px; background:#444; color:white; border:none; border-radius:5px; margin-bottom:10px;">Đổi mật khẩu</button>
         <button onclick="logout()" style="width:100%; padding:10px; background:#da3633; color:white; border:none; border-radius:5px;">Đăng xuất</button>
@@ -197,7 +198,7 @@
 </div>
 
 <script>
-    const SERVER = "https://oia.duongminhminh46.workers.dev/"; 
+    const SERVER = "https://csm.duongminhminh46.workers.dev/"; 
     // Hệ thống tạo tin tức giả
     const FAKE_NEWS_TEMPLATES = [
         "{S} công bố báo cáo tài chính đột phá, lợi nhuận tăng 200%.",
@@ -373,10 +374,19 @@
     }
 
     function changePassword() {
+        const oldP = document.getElementById("old-pass").value.trim();
         const newP = document.getElementById("new-pass").value.trim();
-        if(!newP) return alert("Chưa nhập mật khẩu mới");
+        
+        if(!oldP || !newP) return alert("Vui lòng nhập đủ thông tin");
+        
+        if(oldP !== wallet.pass) {
+            sfx('err');
+            return alert("Mật khẩu cũ không đúng!");
+        }
+        
         wallet.pass = newP;
         localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
+        sfx('ok');
         alert("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
         logout();
     }
@@ -527,20 +537,4 @@
 
     // --- UTILS ---
     async function sync() { if(!me) return; let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price}); await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:me, asset:t})}); }
-    async function getRank() { if(activeTab !== 'rank') return; const r=await fetch(`${SERVER}get-rank`); const l=await r.json(); document.getElementById("rank-list").innerHTML=l.map((p,i)=>`<div class="rank-item ${p.name===me?'rank-me':''}"><div style="width:30px;text-align:center;font-weight:bold">${i+1}</div><div style="flex:1;margin-left:10px"><div style="font-weight:bold;color:white">${p.name} ${i==0?'👑':''}</div><div style="font-size:12px;color:#888">$${p.total.toLocaleString(undefined,{maximumFractionDigits:0})}</div></div></div>`).join(''); }
-
-    function tab(id) { 
-        document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden')); 
-        document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active')); 
-        document.getElementById(`tab-${id}`).classList.remove('hidden'); 
-        event.target.classList.add('active'); sfx('click'); 
-        activeTab = id;
-        if(id==='rank') getRank(); 
-        if(id==='news') renderNewsPage();
-    }
-    function logout() { localStorage.removeItem("sess"); location.reload(); }
-    function changeChartType() { chartType = document.getElementById("chart-type-select").value; localStorage.setItem("chart_type", chartType); if(sel) draw(); }
-    function openSettings() { document.getElementById("settings-modal").style.display='flex'; }
-</script>
-</body>
-</html>
+    async function getRank() { if(activeTab !== 'rank') return; const r=await fetch(`${SERVER}get-rank`); const l=await r.json(); document.getElementById("rank-list").innerHTML=l.map((p,i)=>`<div class="rank-item ${p.name===me?'rank-me':''}"><div style="width:30px;text-align:center
