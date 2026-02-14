@@ -3,67 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X</title>
+    <title>Terminal X - Split View</title>
+    
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.onkeydown = function(e) {
             if(e.keyCode == 123) return false;
             if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'J'.charCodeAt(0)) return false;
-            if(e.ctrlKey && e.shiftKey && e.keyCode == 'C'.charCodeAt(0)) return false;
             if(e.ctrlKey && e.keyCode == 'U'.charCodeAt(0)) return false;
         }
     </script>
+
     <style>
         :root { --bg:#050505; --panel:#121212; --border:#2a2a2a; --green:#00ff88; --red:#ff3b3b; --gold:#ffd700; --text:#e0e0e0; }
         body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow:hidden; height:100dvh; }
         * { box-sizing:border-box; user-select:none; -webkit-tap-highlight-color:transparent; }
-        button { cursor:pointer; transition:0.2s; }
-        button:active { transform:scale(0.95); }
+        button { cursor:pointer; transition:0.1s; } button:active { transform:scale(0.95); }
+        
         #app { display:none; height:100dvh; flex-direction:column; }
+        
+        /* LOGIN */
         #login-screen { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:center; align-items:center; }
         .login-box { background:var(--panel); border:1px solid var(--border); padding:30px; border-radius:16px; width:85%; max-width:350px; text-align:center; box-shadow:0 0 50px rgba(0,255,136,0.1); }
         .inp-auth { width:100%; padding:15px; margin:10px 0; background:#1a1a1a; border:1px solid #333; color:white; border-radius:8px; font-size:16px; text-align:center; outline:none; }
         .btn-auth { width:100%; padding:15px; margin-top:10px; border:none; border-radius:8px; font-weight:bold; font-size:16px; color:white; }
-        .header { padding:12px 15px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; }
-        .tab-bar { display:flex; border-bottom:1px solid var(--border); background:var(--panel); flex-shrink:0; }
-        .tab-btn { flex:1; padding:12px; text-align:center; font-size:12px; font-weight:bold; color:#888; border-bottom:3px solid transparent; }
+
+        /* HEADER & TABS */
+        .header { padding:12px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; height:60px; }
+        .tab-bar { display:flex; border-bottom:1px solid var(--border); background:var(--panel); height:50px; }
+        .tab-btn { flex:1; padding:15px; text-align:center; font-size:12px; font-weight:bold; color:#666; border-bottom:3px solid transparent; }
         .tab-btn.active { color:var(--green); border-bottom-color:var(--green); background:#1a1a1a; color:white; }
+        
         .view-content { flex:1; overflow-y:auto; position:relative; }
         .hidden { display:none!important; }
-        .stock-item { display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:16px; margin:10px; border-radius:10px; border:1px solid var(--border); cursor:pointer; }
+
+        /* LIST ITEMS */
+        .stock-item { display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:16px; margin:10px; border-radius:10px; border:1px solid var(--border); }
         .rank-item { display:flex; align-items:center; background:#161616; padding:12px; margin:8px 10px; border-radius:8px; border:1px solid var(--border); }
         .rank-me { border:1px solid var(--green); background:#0f3318; }
-        .rank-num { width:30px; font-weight:900; font-size:16px; color:#666; text-align:center; }
-        .rank-1 { color:var(--gold); text-shadow:0 0 10px rgba(255,215,0,0.5); font-size:18px; }
+        
+        /* ADMIN */
         #admin-view { position:fixed; inset:0; background:#000; z-index:5000; display:none; flex-direction:column; }
-        .admin-header { padding:15px; background:#2a0505; color:var(--red); font-weight:bold; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--red); }
-        .admin-section { padding:15px; border-bottom:1px solid #333; }
-        .user-row { display:flex; justify-content:space-between; align-items:center; padding:10px; border-bottom:1px solid #222; }
-        .btn-del { background:var(--red); color:white; border:none; padding:5px 10px; border-radius:4px; font-size:11px; font-weight:bold; }
+        .admin-header { padding:15px; background:#2a0505; color:var(--red); border-bottom:1px solid var(--red); display:flex; justify-content:space-between; }
+        .user-row { display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #222; }
+        .btn-del { background:var(--red); color:white; border:none; padding:5px; border-radius:4px; font-size:10px; }
+
+        /* --- SPLIT DETAIL VIEW (NEW) --- */
         #detail-view { display:none; flex:1; flex-direction:column; background:#000; z-index:100; position:fixed; inset:0; }
-        .chart-header { padding:10px 15px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:15px; }
-        .chart-container { flex:1; width:100%; min-height:200px; position:relative; }
+        
+        .chart-section { height: 45%; display: flex; flex-direction: column; border-bottom: 2px solid var(--border); }
+        .chart-header { padding:10px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+        .chart-container { flex:1; width:100%; position:relative; background: #080808; }
         canvas { display:block; width:100%; height:100%; }
-        .mini-news { background:#0a0a0a; border-bottom:1px solid #333; padding:8px; font-size:12px; color:#aaa; white-space:nowrap; overflow:hidden; border-left:3px solid var(--green); }
-        .news-card { background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin:10px; border-left:4px solid #555; }
+
+        .news-section { flex:1; background: #050505; display:flex; flex-direction:column; overflow:hidden; }
+        .news-header { padding:8px 15px; font-size:11px; font-weight:bold; color:#666; background:#111; border-bottom:1px solid #333; text-transform:uppercase; }
+        .news-scroll { flex:1; overflow-y:auto; padding:10px; }
+        
+        .mini-news-item { padding:10px; border-bottom:1px solid #222; margin-bottom:5px; }
+        .mini-news-title { font-size:12px; color:#ddd; margin-bottom:4px; }
+        .mini-news-tag { font-size:9px; padding:2px 5px; border-radius:3px; font-weight:bold; display:inline-block; }
+
+        /* CONTROLS (FIXED BOTTOM) */
+        .controls-area { padding:15px; background:#111; border-top:1px solid var(--border); }
+        
+        /* SETTINGS */
         #settings-modal { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; }
-        .settings-box { background:var(--panel); border:1px solid var(--border); padding:20px; border-radius:12px; width:80%; max-width:300px; }
-        .up { color:var(--green); } 
-        .down { color:var(--red); }
+        .settings-box { background:var(--panel); padding:20px; border-radius:12px; width:80%; max-width:300px; }
+        
+        .up{color:var(--green)} .down{color:var(--red)}
     </style>
 </head>
 <body>
-<audio id="bgm" loop><source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg"></audio>
 
-<div id="login-screen">
+<audio id="bgm" loop>
+    <source src="https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/theme_01.mp3" type="audio/mpeg">
+</audio>
+
+<div id="login-screen" onclick="unlockAudio()">
     <div class="login-box">
         <h2 style="margin:0 0 20px 0; color:var(--green); letter-spacing:1px;">TERMINAL X</h2>
         <input type="text" id="user" class="inp-auth" placeholder="Tên hiển thị">
-        <input type="password" id="pass" class="inp-auth" placeholder="Mật mã bí mật">
+        <input type="password" id="pass" class="inp-auth" placeholder="Mật mã">
         <button onclick="auth('login')" class="btn-auth" style="background:#1f6feb;">ĐĂNG NHẬP</button>
         <button onclick="auth('reg')" class="btn-auth" style="background:#238636;">ĐĂNG KÝ</button>
-        <div id="msg" style="color:var(--red); font-size:12px; margin-top:15px; min-height:20px;"></div>
+        <div id="msg" style="color:var(--red); font-size:12px; margin-top:15px;"></div>
+        <div style="font-size:10px; color:#666; margin-top:20px;">*Chạm vào màn hình để bật âm thanh</div>
     </div>
 </div>
 
@@ -71,7 +96,7 @@
     <div class="header">
         <div style="font-weight:bold; display:flex; align-items:center; gap:5px;">👤 <span id="u-name" style="color:#ccc">...</span></div>
         <div style="display:flex; gap:10px; align-items:center;">
-            <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:6px 10px; border-radius:4px; font-size:10px; font-weight:bold;">ADMIN</button>
+            <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:5px 8px; border-radius:4px; font-size:10px;">ADMIN</button>
             <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;">$<span id="cash">0.00</span></div>
             <button onclick="openSettings()" style="background:none; border:none; font-size:20px; color:#888;">⚙️</button>
         </div>
@@ -86,67 +111,53 @@
     <div id="tab-news" class="view-content hidden"><div id="news-list" style="padding:10px;"></div></div>
 </div>
 
-<div id="admin-view">
-    <div class="admin-header">
-        <span>QUẢN TRỊ VIÊN</span>
-        <button onclick="document.getElementById('admin-view').style.display='none'" style="background:#440000; color:#ffaaaa; border:1px solid var(--red); padding:5px 12px; border-radius:4px; font-weight:bold;">ĐÓNG</button>
-    </div>
-    <div class="view-content" style="padding-bottom:50px;">
-        <div class="admin-section">
-            <h4 style="margin:0 0 10px 0; color:#aaa;">QUẢN LÝ NGƯỜI DÙNG</h4>
-            <button onclick="loadAdminUsers()" style="background:#333; color:white; border:none; padding:10px; width:100%; border-radius:4px; margin-bottom:10px; font-weight:bold;">LÀM MỚI</button>
-            <div id="admin-user-list" style="max-height:200px; overflow-y:auto; background:#111; border-radius:8px;"></div>
-        </div>
-        <div class="admin-section">
-            <h4 style="margin:0 0 10px 0; color:#aaa;">THAO TÚNG THỊ TRƯỜNG</h4>
-            <div style="background:#111; padding:15px; border-radius:8px;">
-                <div style="display:flex; gap:5px; margin-bottom:10px;">
-                    <select id="adm-stock" class="inp-auth" style="padding:8px; margin:0; flex:1; text-align:left;">
-                        <option value="VN-INDEX">VN-INDEX</option>
-                        <option value="VIN">VIN</option>
-                        <option value="FPT">FPT</option>
-                        <option value="DIG">DIG</option>
-                        <option value="HPG">HPG</option>
-                    </select>
-                    <select id="adm-action" class="inp-auth" style="padding:8px; margin:0; flex:1; text-align:left;">
-                        <option value="pump">PUMP</option>
-                        <option value="dump">DUMP</option>
-                    </select>
-                </div>
-                <button onclick="adminAction()" style="width:100%; background:var(--gold); color:black; border:none; padding:12px; font-weight:bold; border-radius:4px;">THỰC THI</button>
+<div id="detail-view">
+    <div class="chart-section">
+        <div class="chart-header">
+            <button onclick="closeDetail()" style="background:#333; color:white; border:none; padding:6px 15px; border-radius:4px; font-weight:bold;">◀ BACK</button>
+            <div style="text-align:right;">
+                <span id="d-code" style="font-weight:900; font-size:18px; margin-right:10px;">CODE</span>
+                <span id="d-price" style="font-size:18px; font-weight:bold;">0.00</span>
             </div>
         </div>
+        <div class="chart-container"><canvas id="chart"></canvas></div>
+    </div>
+
+    <div class="news-section">
+        <div class="news-header">Tin tức & Sự kiện thị trường</div>
+        <div class="news-scroll" id="detail-news-list">
+            </div>
+    </div>
+
+    <div class="controls-area">
+        <div style="font-size:11px; color:#888; margin-bottom:5px;">Sở hữu: <span id="d-owned" style="color:white">0</span> CP</div>
+        <input type="number" id="trade-amount" class="inp-auth" placeholder="Nhập số tiền ($)" style="margin-bottom:10px; font-size:18px; font-weight:bold;">
+        <div style="display:flex; gap:10px;">
+            <button onclick="trade('buy')" class="btn-auth" style="margin:0; background:#238636; flex:1;">MUA</button>
+            <button onclick="trade('sell')" class="btn-auth" style="margin:0; background:#da3633; flex:1;">BÁN</button>
+        </div>
+    </div>
+</div>
+
+<div id="admin-view">
+    <div class="admin-header"><span>QUẢN TRỊ VIÊN</span><button onclick="document.getElementById('admin-view').style.display='none'" style="background:#440000; color:#faa; border:none; padding:5px 10px;">Đóng</button></div>
+    <div style="padding:15px;">
+        <h4 style="color:#aaa; margin:0 0 10px 0;">QUẢN LÝ USER</h4>
+        <button onclick="loadAdminUsers()" style="background:#333; color:white; border:none; padding:8px; width:100%; margin-bottom:10px;">Làm mới</button>
+        <div id="admin-user-list" style="background:#111; padding:10px; border-radius:8px; max-height:300px; overflow-y:auto;"></div>
+        
+        <h4 style="color:#aaa; margin:20px 0 10px 0;">THAO TÚNG GIÁ</h4>
+        <select id="adm-stock" class="inp-auth" style="margin:0 0 5px 0;"><option value="VN-INDEX">VN-INDEX</option><option value="VIN">VIN</option><option value="FPT">FPT</option><option value="DIG">DIG</option></select>
+        <select id="adm-action" class="inp-auth" style="margin:0 0 5px 0;"><option value="pump">ĐẨY GIÁ (PUMP)</option><option value="dump">ĐẠP GIÁ (DUMP)</option></select>
+        <button onclick="adminAction()" style="width:100%; background:gold; color:black; padding:10px; border:none; font-weight:bold;">THỰC THI</button>
     </div>
 </div>
 
 <div id="settings-modal" onclick="if(event.target.id==='settings-modal') this.style.display='none'">
     <div class="settings-box">
-        <h3 style="text-align:center; margin-top:0;">CÀI ĐẶT</h3>
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #333; padding-bottom:15px;">
-            <span>Nhạc nền</span>
-            <input type="checkbox" id="toggle-bgm" checked onchange="toggleAudio()">
-        </div>
-        <button onclick="logout()" style="width:100%; padding:12px; background:#da3633; color:white; border:none; border-radius:6px; font-weight:bold;">ĐĂNG XUẤT</button>
-    </div>
-</div>
-
-<div id="detail-view">
-    <div class="chart-header">
-        <button onclick="closeDetail()" style="background:#333; color:white; border:none; padding:6px 16px; border-radius:6px; font-weight:bold;">TRỞ VỀ</button>
-        <div style="flex:1; text-align:center;">
-            <div id="d-code" style="font-weight:900; font-size:18px;"></div>
-            <div style="font-size:11px; color:#888;">Sở hữu: <span id="d-owned" style="color:white; font-weight:bold;">0</span></div>
-        </div>
-        <div style="text-align:right;"><div id="d-price" style="font-size:20px; font-weight:bold;">0.00</div></div>
-    </div>
-    <div class="mini-news" id="mini-news-ticker">📰 Đang cập nhật...</div>
-    <div class="chart-container"><canvas id="chart"></canvas></div>
-    <div style="padding:20px; background:#111; border-top:1px solid #333;">
-        <input type="number" id="trade-amount" class="inp-auth" placeholder="Nhập số tiền ($)" style="margin-bottom:15px; font-size:20px; font-weight:bold;">
-        <div style="display:flex; gap:10px;">
-            <button onclick="trade('buy')" class="btn-auth" style="margin:0; background:#238636; height:50px;">MUA</button>
-            <button onclick="trade('sell')" class="btn-auth" style="margin:0; background:#da3633; height:50px;">BÁN</button>
-        </div>
+        <h3>CÀI ĐẶT</h3>
+        <div style="display:flex; justify-content:space-between; margin-bottom:20px;"><span>Nhạc nền</span><input type="checkbox" id="toggle-bgm" checked onchange="toggleBGM()"></div>
+        <button onclick="logout()" style="width:100%; padding:10px; background:#da3633; color:white; border:none;">Đăng xuất</button>
     </div>
 </div>
 
@@ -154,71 +165,87 @@
     const SERVER = "https://oia.duongminhminh46.workers.dev/"; 
     const NEWS_URL = "https://raw.githubusercontent.com/minhReal/CSimu/refs/heads/main/news.json";
     let me = null, wallet = {cash:250, stocks:{}}, data = [], candles = {}, sel = null, news = [];
-    const bgm = document.getElementById("bgm"); bgm.volume = 0.3;
+    
+    // --- AUDIO SYSTEM FIX ---
+    const bgm = document.getElementById("bgm");
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioUnlocked = false;
 
+    // Hàm mở khóa âm thanh (Chrome chặn autoplay)
+    function unlockAudio() {
+        if (!audioUnlocked) {
+            audioCtx.resume().then(() => {
+                audioUnlocked = true;
+                if(document.getElementById("toggle-bgm").checked) bgm.play().catch(()=>{});
+            });
+        }
+    }
+
+    // Sound Effects xịn hơn
+    function playSound(type) {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+
+        if (type === 'click') {
+            osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+        } else if (type === 'success') { // Tiếng tiền xu Mario
+            osc.type = 'square'; 
+            osc.frequency.setValueAtTime(900, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        } else if (type === 'error') { // Tiếng è è
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+        }
+    }
+
+    // --- APP LOGIC ---
     (function(){
         const s = localStorage.getItem("sess");
         if(s && localStorage.getItem(`u_${s}`)) { me = s; wallet = JSON.parse(localStorage.getItem(`u_${s}`)); enter(); }
     })();
 
     async function auth(type) {
+        unlockAudio(); // Kích hoạt âm thanh khi bấm nút
         const u = document.getElementById("user").value.trim();
         const p = document.getElementById("pass").value.trim();
         const msg = document.getElementById("msg");
-        if(!u || !p) { msg.innerText = "Nhập thiếu!"; return; }
+        if(!u || !p) { playSound('error'); msg.innerText = "Thiếu thông tin"; return; }
+        
         const k = `u_${u}`;
-        if(type === 'reg') {
+        if(type==='reg') {
             try {
                 const res = await fetch(`${SERVER}check-user?u=${encodeURIComponent(u)}`);
                 const json = await res.json();
-                if(json.exists || localStorage.getItem(k)) { msg.innerText = "Tên đã tồn tại"; return; }
+                if(json.exists || localStorage.getItem(k)) { playSound('error'); msg.innerText = "Tên đã tồn tại"; return; }
                 localStorage.setItem(k, JSON.stringify({pass:p, cash:250, stocks:{}}));
-                msg.innerText = "Đăng ký xong!"; msg.style.color="var(--green)";
-            } catch(e) { msg.innerText = "Lỗi mạng"; }
+                playSound('success'); msg.innerText = "Đăng ký thành công!"; msg.style.color="var(--green)";
+            } catch(e) { msg.innerText = "Lỗi kết nối"; }
         } else {
             const d = JSON.parse(localStorage.getItem(k));
-            if(!d || d.pass!==p) { msg.innerText = "Sai mật khẩu"; return; }
+            if(!d || d.pass!==p) { playSound('error'); msg.innerText = "Sai mật khẩu"; return; }
             me = u; wallet = d; localStorage.setItem("sess", u); enter();
         }
     }
 
     function enter() {
+        playSound('success');
         document.getElementById("login-screen").style.display="none";
         document.getElementById("app").style.display="flex";
         document.getElementById("u-name").innerText = me;
-        if(me.toLowerCase() === 'minh') document.getElementById("btn-admin").style.display="block";
-        if(document.getElementById("toggle-bgm").checked) bgm.play().catch(()=>{});
-        loop(); setInterval(loop, 1500); setInterval(syncRank, 3000); setInterval(getRank, 5000); setInterval(tick, 4000); loadNews();
-    }
-
-    function openAdmin() { document.getElementById("admin-view").style.display="flex"; loadAdminUsers(); }
-    
-    async function loadAdminUsers() {
-        const div = document.getElementById("admin-user-list");
-        div.innerHTML = "Loading...";
-        try {
-            const res = await fetch(`${SERVER}admin/users`);
-            const users = await res.json();
-            if(!users.length) { div.innerHTML="Trống"; return; }
-            div.innerHTML = users.map(u => `
-                <div class="user-row">
-                    <div><div style="font-weight:bold;color:white">${u.name}</div><div style="font-size:11px;color:#888">$${parseFloat(u.asset).toLocaleString()}</div></div>
-                    ${u.name.toLowerCase()!=='minh' ? `<button class="btn-del" onclick="delUser('${u.name}')">XÓA</button>` : '<span style="font-size:10px;color:gold">MASTER</span>'}
-                </div>`).join('');
-        } catch(e) { div.innerHTML="Lỗi"; }
-    }
-
-    async function delUser(n) {
-        if(!confirm(`Xóa ${n}?`)) return;
-        await fetch(`${SERVER}admin/delete-user`, { method:"POST", body:JSON.stringify({user:n}) });
-        loadAdminUsers();
-    }
-
-    function adminAction() {
-        const s = document.getElementById("adm-stock").value;
-        const a = document.getElementById("adm-action").value;
-        news.unshift({ t:`[ADMIN] ${s}: ${a==='pump'?'Cá mập gom hàng':'Xả hàng cực mạnh'}`, b:a==='pump'?50:-50 });
-        alert("Đã tung lệnh!"); tick();
+        if(me.toLowerCase()==='minh') document.getElementById("btn-admin").style.display="block";
+        
+        setInterval(loop, 1500); setInterval(syncRank, 3000); setInterval(getRank, 5000); loadNews();
     }
 
     async function loop() {
@@ -232,7 +259,7 @@
                 if(!l.length || l[l.length-1].time !== s.candle.time) { l.push(s.candle); if(l.length>50) l.shift(); }
                 else l[l.length-1] = s.candle;
             });
-            if(!sel) renderList(); else { updateD(); draw(); }
+            if(!sel) renderList(); else { updateDetail(); draw(); }
             document.getElementById("cash").innerText = wallet.cash.toFixed(2);
         } catch(e){}
     }
@@ -241,77 +268,47 @@
         document.getElementById("list").innerHTML = data.map(s => {
             const up = s.candle.close >= s.candle.open;
             return `<div class="stock-item" onclick="openDetail('${s.code}')">
-                <div><div style="font-weight:900;font-size:16px;color:white">${s.code}</div><div style="font-size:11px;color:#888">Có: ${(wallet.stocks[s.code]||0).toFixed(1)}</div></div>
+                <div><div style="font-weight:900;font-size:16px;color:white">${s.code}</div><div style="font-size:11px;color:#888">${(wallet.stocks[s.code]||0).toFixed(1)} CP</div></div>
                 <div style="text-align:right"><div style="font-size:16px;font-weight:bold;color:${up?'var(--green)':'var(--red)'}">${s.price.toFixed(2)}</div></div>
             </div>`;
         }).join('');
     }
 
-    async function syncRank() {
-        if(!me) return;
-        let t = wallet.cash;
-        data.forEach(s => { if(wallet.stocks[s.code]) t += wallet.stocks[s.code] * s.price; });
-        await fetch(`${SERVER}update-rank`, { method:"POST", body:JSON.stringify({user:me, asset:t}) });
+    function openDetail(c) { 
+        playSound('click'); sel = c; 
+        document.getElementById("detail-view").style.display="flex"; 
+        initChart(); updateDetail(); renderDetailNews();
     }
-
-    async function getRank() {
-        if(document.getElementById("tab-rank").classList.contains("hidden")) return;
-        try {
-            const res = await fetch(`${SERVER}get-rank`);
-            const list = await res.json();
-            document.getElementById("rank-list").innerHTML = list.map((p,i) => `
-                <div class="rank-item ${p.name===me?'rank-me':''}">
-                    <div class="rank-num ${i==0?'rank-1':''}">${i+1}</div>
-                    <div style="flex:1;margin-left:10px;"><div style="font-weight:bold;color:white">${p.name} ${i==0?'👑':''}</div><div style="font-size:12px;color:#888">$${p.total.toLocaleString(undefined,{maximumFractionDigits:0})}</div></div>
-                </div>`).join('');
-        } catch(e){}
-    }
-
-    function openDetail(c) { sel=c; document.getElementById("detail-view").style.display="flex"; initChart(); updateD(); tick(); }
-    function closeDetail() { sel=null; document.getElementById("detail-view").style.display="none"; renderList(); }
     
-    function updateD() {
-        const s = data.find(x => x.code === sel);
-        if(s) {
-            document.getElementById("d-code").innerText = s.code;
-            document.getElementById("d-price").innerText = s.price.toFixed(2);
-            document.getElementById("d-owned").innerText = (wallet.stocks[sel]||0).toFixed(2);
-            document.getElementById("d-price").style.color = (candles[sel]?.at(-1).close >= candles[sel]?.at(-1).open) ? "var(--green)" : "var(--red)";
-        }
+    function closeDetail() { playSound('click'); sel = null; document.getElementById("detail-view").style.display="none"; renderList(); }
+
+    function updateDetail() {
+        const s = data.find(x=>x.code===sel);
+        document.getElementById("d-code").innerText = s.code;
+        document.getElementById("d-price").innerText = s.price.toFixed(2);
+        document.getElementById("d-owned").innerText = (wallet.stocks[sel]||0).toFixed(1);
+        document.getElementById("d-price").style.color = (candles[sel]?.at(-1).close >= candles[sel]?.at(-1).open) ? "var(--green)" : "var(--red)";
     }
 
-    function trade(type) {
-        const v = parseFloat(document.getElementById("trade-amount").value);
-        if(!v || v<=0) return alert("Số tiền sai");
-        const s = data.find(x => x.code === sel);
-        if(type === 'buy') {
-            if(v > wallet.cash) return alert("Thiếu tiền");
-            wallet.cash -= v; wallet.stocks[sel] = (wallet.stocks[sel]||0) + (v/s.price);
-        } else {
-            if(v > (wallet.stocks[sel]||0)*s.price) return alert("Thiếu CP");
-            wallet.stocks[sel] -= (v/s.price); wallet.cash += v;
-        }
-        localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); syncRank();
-        const b = document.activeElement; b.style.transform="scale(0.9)"; setTimeout(()=>b.style.transform="scale(1)",150);
-    }
-
+    // --- CHART ---
     let ctx;
     function initChart() {
         const c = document.getElementById("chart");
         c.width = c.parentElement.clientWidth*2; c.height = c.parentElement.clientHeight*2;
         ctx = c.getContext("2d"); ctx.scale(2,2);
     }
-
     function draw() {
         if(!sel || !candles[sel]) return;
         const d = candles[sel]; if(!d.length) return;
         const W = ctx.canvas.width/2, H = ctx.canvas.height/2;
         ctx.clearRect(0,0,W,H);
+        
         let min=Infinity, max=-Infinity;
         d.forEach(x => { if(x.low<min) min=x.low; if(x.high>max) max=x.high; });
-        const r = max-min || 1, py = 30;
+        const r = max-min || 1, py=20;
         const gy = v => H - py - ((v-min)/r)*(H-py*2);
 
+        // Grid
         ctx.strokeStyle="#222"; ctx.lineWidth=1;
         for(let i=0; i<=4; i++) { let y=H-py-(i/4)*(H-py*2); ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
@@ -324,34 +321,60 @@
             ctx.fillRect(x+1, Math.min(gy(c.open), gy(c.close)), cw-2, h);
         });
         const ly = gy(d[d.length-1].close);
-        ctx.strokeStyle="rgba(255,255,255,0.5)"; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle="rgba(255,255,255,0.3)"; ctx.setLineDash([5,5]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
     }
 
-    async function loadNews() { try { const r=await fetch(NEWS_URL); news=await r.json(); renderNews(); } catch(e){} }
-    function renderNews() {
-        document.getElementById("news-list").innerHTML = news.map(n => `
-            <div class="news-card" style="border-left-color:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#666'}">
-                <div style="font-size:10px;color:#888;font-weight:bold;margin-bottom:5px;">${n.b>0?'TỐT':n.b<0?'XẤU':'TIN'}</div>
-                <div style="color:#ddd;line-height:1.4">${n.t}</div>
-            </div>`).join('');
-    }
-    function tick() {
-        if(!news.length) return;
-        const n = news[Math.floor(Math.random()*news.length)];
-        const el = document.getElementById("mini-news-ticker");
-        el.innerText = `📰 ${n.t}`; el.style.borderLeftColor = n.b>0?"var(--green)":n.b<0?"var(--red)":"#888";
+    // --- NEWS IN DETAIL VIEW ---
+    function renderDetailNews() {
+        const div = document.getElementById("detail-news-list");
+        if(!news.length) { div.innerHTML="<div style='color:#666;text-align:center;padding:20px'>Không có tin tức</div>"; return; }
+        
+        // Lấy tin tức ngẫu nhiên để giả lập "tin liên quan"
+        div.innerHTML = news.map(n => `
+            <div class="mini-news-item">
+                <div class="mini-news-title">${n.t}</div>
+                <span class="mini-news-tag" style="background:${n.b>0?'rgba(0,255,136,0.2)':'rgba(255,59,59,0.2)'}; color:${n.b>0?'var(--green)':'var(--red)'}">
+                    ${n.b>0 ? 'TÍCH CỰC' : 'TIÊU CỰC'}
+                </span>
+            </div>
+        `).join('');
     }
 
-    function logout() { if(confirm("Thoát?")) { localStorage.removeItem("sess"); location.reload(); } }
+    // --- TRADE ---
+    function trade(t) {
+        const v = parseFloat(document.getElementById("trade-amount").value);
+        if(!v || v<=0) { playSound('error'); return alert("Nhập số tiền hợp lệ"); }
+        const s = data.find(x=>x.code===sel);
+        if(t==='buy') {
+            if(v > wallet.cash) { playSound('error'); return alert("Không đủ tiền"); }
+            wallet.cash -= v; wallet.stocks[sel] = (wallet.stocks[sel]||0) + (v/s.price);
+            playSound('success');
+        } else {
+            if(v > (wallet.stocks[sel]||0)*s.price) { playSound('error'); return alert("Không đủ cổ phiếu"); }
+            wallet.stocks[sel] -= (v/s.price); wallet.cash += v;
+            playSound('success');
+        }
+        localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); syncRank();
+    }
+
+    // --- SYSTEM ---
+    async function loadNews() { try{ const r=await fetch(NEWS_URL); news=await r.json(); renderDetailNews(); }catch(e){} }
+    async function syncRank() { if(!me) return; let t = wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t += wallet.stocks[s.code]*s.price}); await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:me, asset:t})}); }
+    async function getRank() { if(document.getElementById("tab-rank").classList.contains("hidden")) return; const r=await fetch(`${SERVER}get-rank`); const l=await r.json(); document.getElementById("rank-list").innerHTML=l.map((p,i)=>`<div class="rank-item ${p.name===me?'rank-me':''}"><div class="rank-num ${i==0?'rank-1':''}">${i+1}</div><div style="flex:1;margin-left:10px"><div style="font-weight:bold;color:white">${p.name} ${i==0?'👑':''}</div><div style="font-size:12px;color:#888">$${p.total.toLocaleString(undefined,{maximumFractionDigits:0})}</div></div></div>`).join(''); }
+    
+    // --- ADMIN ---
+    async function loadAdminUsers() { 
+        const d = document.getElementById("admin-user-list"); d.innerHTML="Loading...";
+        try { const r=await fetch(`${SERVER}admin/users`); const u=await r.json(); d.innerHTML=u.map(x=>`<div class="user-row"><div><b>${x.name}</b><br><small>$${parseFloat(x.asset).toLocaleString()}</small></div>${x.name.toLowerCase()!=='minh'?`<button class="btn-del" onclick="delUser('${x.name}')">XÓA</button>`:''}</div>`).join(''); } catch(e){d.innerHTML="Lỗi";}
+    }
+    async function delUser(n) { if(confirm("Xóa?")) await fetch(`${SERVER}admin/delete-user`,{method:"POST",body:JSON.stringify({user:n})}); loadAdminUsers(); }
+    function adminAction() { news.unshift({t:`[TIN ĐỒN] ${document.getElementById("adm-stock").value} sắp có biến lớn!`, b:document.getElementById("adm-action").value==='pump'?50:-50}); alert("Xong!"); renderDetailNews(); }
+    function openAdmin() { document.getElementById("admin-view").style.display="flex"; loadAdminUsers(); }
+
+    function tab(id) { document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active')); document.getElementById(`tab-${id}`).classList.remove('hidden'); event.target.classList.add('active'); playSound('click'); if(id==='rank') getRank(); }
+    function toggleBGM() { if(document.getElementById("toggle-bgm").checked) bgm.play(); else bgm.pause(); }
+    function logout() { localStorage.removeItem("sess"); location.reload(); }
     function openSettings() { document.getElementById("settings-modal").style.display='flex'; }
-    function toggleAudio() { if(document.getElementById("toggle-bgm").checked) bgm.play(); else bgm.pause(); }
-    function tab(id) {
-        document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden'));
-        document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
-        document.getElementById(`tab-${id}`).classList.remove('hidden');
-        event.target.classList.add('active');
-        if(id==='rank') getRank(); if(id==='news') loadNews();
-    }
 </script>
 </body>
 </html>
