@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X - Admin Power</title>
+    <title>Terminal X - Custom GUI</title>
     
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
@@ -61,10 +61,20 @@
         .mail-sender { font-size: 11px; color: #aaa; }
         .mail-subject { font-size: 13px; color: #ccc; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* MODALS */
-        #mail-detail, #compose-modal { position: fixed; inset: 0; background: #101010; z-index: 3000; display: none; flex-direction: column; }
-        .mail-header { padding: 15px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 15px; }
-        .mail-body { padding: 20px; flex: 1; overflow-y: auto; line-height: 1.6; color: #ddd; }
+        /* MODALS (Custom GUI) */
+        #mail-detail, #compose-modal, #custom-alert, #custom-prompt { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; flex-direction: column; justify-content:center; align-items:center; }
+        #mail-detail { background: #101010; justify-content: flex-start; z-index: 3000; }
+        #compose-modal { background: #101010; justify-content: flex-start; z-index: 3000; }
+
+        .modal-box { background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        .modal-title { font-weight: bold; margin-bottom: 10px; color: var(--green); font-size: 16px; }
+        .modal-text { font-size: 14px; color: #ccc; margin-bottom: 20px; line-height: 1.5; }
+        .modal-btn { width: 100%; padding: 10px; background: #444; border: none; border-radius: 6px; color: white; font-weight: bold; margin-top: 5px; }
+        .modal-btn.primary { background: var(--green); color: black; }
+        .modal-btn.danger { background: var(--red); color: white; }
+
+        .mail-header { padding: 15px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 15px; width:100%; }
+        .mail-body { padding: 20px; flex: 1; overflow-y: auto; line-height: 1.6; color: #ddd; width:100%; }
         .reset-btn { width: 100%; background: var(--red); color: white; padding: 15px; border: none; border-radius: 8px; font-weight: bold; margin-top: 20px; cursor: pointer; }
 
         /* BOTTOM SHEET CHART */
@@ -88,7 +98,7 @@
 </head>
 <body>
 
-<audio id="bgm" loop><source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg"></audio>
+<audio id="bgm" loop preload="auto"><source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg"></audio>
 
 <div id="login-screen" onclick="unlockAudio()">
     <div class="login-box">
@@ -106,6 +116,7 @@
     <div class="header">
         <div style="font-weight:bold; display:flex; align-items:center; gap:5px;">👤 <span id="u-name" style="color:#ccc">...</span></div>
         <div style="display:flex; gap:15px; align-items:center;">
+            <button id="btn-music" onclick="toggleBGM()" style="background:none; border:none; font-size:16px;">🎵</button>
             <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;">ADMIN</button>
             <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;">$<span id="cash">0.00</span></div>
             <button onclick="openSettings()" style="background:none; border:none; padding:0; font-size:20px;">⚙️</button>
@@ -135,6 +146,25 @@
     <div class="status-bar">
         <div class="ping-indicator"><div class="dot" id="ping-dot"></div> PING: <span id="ping-val">--</span>ms</div>
         <div id="system-time">00:00:00</div>
+    </div>
+</div>
+
+<div id="custom-alert">
+    <div class="modal-box">
+        <div class="modal-title">THÔNG BÁO</div>
+        <div class="modal-text" id="alert-msg">...</div>
+        <button class="modal-btn primary" onclick="closeAlert()">ĐÃ HIỂU</button>
+    </div>
+</div>
+
+<div id="custom-prompt">
+    <div class="modal-box">
+        <div class="modal-title" id="prompt-title">NHẬP DỮ LIỆU</div>
+        <input type="text" id="prompt-input" class="inp-auth" style="margin-bottom:15px;">
+        <div style="display:flex; gap:10px;">
+            <button class="modal-btn" onclick="resolvePrompt(null)">HỦY</button>
+            <button class="modal-btn primary" onclick="resolvePrompt(document.getElementById('prompt-input').value)">OK</button>
+        </div>
     </div>
 </div>
 
@@ -196,7 +226,6 @@
 <div id="settings-modal" onclick="if(event.target.id==='settings-modal') this.style.display='none'">
     <div class="settings-box">
         <h3>CÀI ĐẶT</h3>
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;"><span>Nhạc nền</span><input type="checkbox" id="toggle-bgm" onchange="toggleBGM()"></div>
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;"><span>Biểu đồ</span><select id="chart-type-select" onchange="changeChartType()"><option value="candle">Nến</option><option value="line">Đường</option></select></div>
         <hr style="border-color:#333; margin:15px 0;">
         <input type="password" id="old-pass" class="inp-auth" placeholder="Mật khẩu cũ" style="margin-bottom:5px;">
@@ -209,14 +238,40 @@
 <script>
     const SERVER = "https://terc.duongminhminh46.workers.dev/"; 
     const FAKE_NEWS_TEMPLATES = ["{S} báo cáo lãi khủng.", "Cá mập gom {S}.", "{S} gặp khó khăn pháp lý.", "Tin đồn: {S} sắp sáp nhập.", "{S} dẫn đầu thị trường.", "Chủ tịch {S} mua vào."];
-    let me = null, wallet = {cash:250, stocks:{}, inbox:[]}, data = [], candles = {}, sel = null, news = [];
+    let me = null, wallet = {cash:250, stocks:{}, inbox:[], lastBC:0}, data = [], candles = {}, sel = null, news = [];
     let activeTab = 'market'; let chartType = localStorage.getItem("chart_type") || "candle"; document.getElementById("chart-type-select").value = chartType;
-    let isBgmOn = localStorage.getItem("bgm_state") !== "off"; document.getElementById("toggle-bgm").checked = isBgmOn;
+    let isBgmOn = localStorage.getItem("bgm_state") !== "off"; 
     let adminPass = ""; let currentMailIdx = -1;
 
-    const bgm = document.getElementById("bgm"); const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); let unlocked = false;
-    function unlockAudio() { if(!unlocked) { audioCtx.resume().then(()=>{ unlocked=true; if(isBgmOn) bgm.play().catch(()=>{}); }); } }
-    function toggleBGM() { isBgmOn = document.getElementById("toggle-bgm").checked; localStorage.setItem("bgm_state", isBgmOn?"on":"off"); if(isBgmOn) {if(unlocked) bgm.play();} else bgm.pause(); }
+    // --- MUSIC FIX ---
+    const bgm = document.getElementById("bgm"); 
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+    let unlocked = false;
+
+    function unlockAudio() { 
+        if(!unlocked) { 
+            audioCtx.resume().then(()=>{ 
+                unlocked=true; 
+                if(isBgmOn) bgm.play().catch(e=>console.log("Auto-play blocked")); 
+            }); 
+        } 
+    }
+    
+    function toggleBGM() { 
+        isBgmOn = !isBgmOn;
+        localStorage.setItem("bgm_state", isBgmOn?"on":"off");
+        const btn = document.getElementById("btn-music");
+        if(isBgmOn) {
+            bgm.play().catch(()=>{});
+            btn.style.opacity = "1";
+        } else {
+            bgm.pause();
+            btn.style.opacity = "0.5";
+        }
+    }
+    // Init Music Button State
+    document.getElementById("btn-music").style.opacity = isBgmOn ? "1" : "0.5";
+
     function sfx(t) {
         if(audioCtx.state==='suspended') audioCtx.resume();
         const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
@@ -226,9 +281,42 @@
         if(t==='mail'){o.frequency.setValueAtTime(800,audioCtx.currentTime); o.frequency.linearRampToValueAtTime(1200,audioCtx.currentTime+0.1); g.gain.value=0.1; o.start(); o.stop(audioCtx.currentTime+0.3);}
     }
 
+    // --- CUSTOM GUI (NO ALERT/PROMPT) ---
+    function showMsg(text) {
+        document.getElementById("alert-msg").innerHTML = text;
+        document.getElementById("custom-alert").style.display = "flex";
+    }
+    function closeAlert() {
+        document.getElementById("custom-alert").style.display = "none";
+    }
+    
+    let promptResolver = null;
+    function askInput(title) {
+        document.getElementById("prompt-title").innerText = title;
+        document.getElementById("prompt-input").value = "";
+        document.getElementById("custom-prompt").style.display = "flex";
+        document.getElementById("prompt-input").focus();
+        return new Promise(resolve => {
+            promptResolver = resolve;
+        });
+    }
+    function resolvePrompt(val) {
+        document.getElementById("custom-prompt").style.display = "none";
+        if(promptResolver) promptResolver(val);
+    }
+
     setInterval(() => { document.getElementById("system-time").innerText = new Date().toLocaleTimeString('vi-VN'); }, 1000);
 
-    (function(){ const s=localStorage.getItem("sess"); if(s && localStorage.getItem(`u_${s}`)) { me=s; wallet=JSON.parse(localStorage.getItem(`u_${s}`)); if(!wallet.inbox) wallet.inbox=[]; enter(); } })();
+    (function(){ 
+        const s=localStorage.getItem("sess"); 
+        if(s && localStorage.getItem(`u_${s}`)) { 
+            me=s; 
+            wallet=JSON.parse(localStorage.getItem(`u_${s}`)); 
+            if(!wallet.inbox) wallet.inbox=[]; 
+            if(!wallet.lastBC) wallet.lastBC=0; // Init lastBC if missing
+            enter(); 
+        } 
+    })();
 
     async function auth(t) {
         unlockAudio();
@@ -240,12 +328,15 @@
                 const r=await fetch(`${SERVER}check-user?u=${encodeURIComponent(u)}`); const j=await r.json();
                 if(j.exists||localStorage.getItem(k)) { sfx('err'); msg.innerText="Tên đã tồn tại"; return; }
                 const firstMail = {id:`sys_${Date.now()}`, from:"Terminal X", title:"Chào mừng", body:"Chào mừng bạn đến với thị trường chứng khoán ảo.", time:Date.now(), read:false};
-                localStorage.setItem(k, JSON.stringify({pass:p, cash:250, stocks:{}, inbox:[firstMail]})); 
+                localStorage.setItem(k, JSON.stringify({pass:p, cash:250, stocks:{}, inbox:[firstMail], lastBC: Date.now()})); 
                 sfx('ok'); msg.innerText="OK!"; msg.style.color="var(--green)";
             } catch(e){ msg.innerText="Lỗi mạng"; }
         } else {
             const d=JSON.parse(localStorage.getItem(k)); if(!d||d.pass!==p){ sfx('err'); msg.innerText="Sai mật khẩu"; return; }
-            me=u; wallet=d; if(!wallet.inbox) wallet.inbox=[]; localStorage.setItem("sess", u); enter();
+            me=u; wallet=d; 
+            if(!wallet.inbox) wallet.inbox=[]; 
+            if(!wallet.lastBC) wallet.lastBC=0;
+            localStorage.setItem("sess", u); enter();
         }
     }
 
@@ -259,7 +350,7 @@
     async function checkBan() {
         try {
             const r = await fetch(`${SERVER}check-user?u=${encodeURIComponent(me)}`); const j = await r.json();
-            if(!j.exists) { alert("Tài khoản đã bị BAN."); localStorage.clear(); location.reload(); }
+            if(!j.exists) { showMsg("Tài khoản đã bị BAN."); setTimeout(()=>{localStorage.clear(); location.reload();}, 2000); }
         } catch(e) {}
     }
 
@@ -292,11 +383,11 @@
     
     async function sendP2PMail() {
         const to = document.getElementById("mail-to").value.trim(), sub = document.getElementById("mail-subj").value.trim(), body = document.getElementById("mail-content").value.trim();
-        if(!to || !sub || !body) return alert("Nhập đủ thông tin");
-        if(wallet.cash < 10) return alert("Không đủ tiền ($10)");
+        if(!to || !sub || !body) return showMsg("Nhập đủ thông tin");
+        if(wallet.cash < 10) return showMsg("Không đủ tiền ($10)");
         
         const r = await fetch(`${SERVER}user/send-mail`, {method:"POST", body:JSON.stringify({to, from:me, title:sub, body})});
-        if(r.ok) { wallet.cash -= 10; alert("Đã gửi!"); document.getElementById("compose-modal").style.display="none"; } else alert("Lỗi gửi thư");
+        if(r.ok) { wallet.cash -= 10; showMsg("Đã gửi!"); document.getElementById("compose-modal").style.display="none"; } else showMsg("Lỗi gửi thư");
     }
 
     async function checkP2PMail() {
@@ -320,12 +411,17 @@
             renderMail();
         }
     }
-    window.resetAccount = function() { if(confirm("Reset?")) { wallet.cash=250; wallet.stocks={}; wallet.inbox=[]; localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); closeMail(); renderMail(); } }
-    function forgotPass() { if(confirm("Xóa dữ liệu?")) { localStorage.clear(); location.reload(); } }
-    function changePassword() {
-        const o = document.getElementById("old-pass").value.trim(), n = document.getElementById("new-pass").value.trim();
-        if(!o || !n) return alert("Nhập đủ"); if(o !== wallet.pass) return alert("Mật khẩu cũ sai");
-        wallet.pass = n; localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); alert("Xong!"); logout();
+    window.resetAccount = async function() { 
+        const c = await askInput("Gõ 'RESET' để xác nhận:");
+        if(c === 'RESET') { wallet.cash=250; wallet.stocks={}; wallet.inbox=[]; localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); closeMail(); renderMail(); } 
+    }
+    async function forgotPass() { const c = await askInput("Gõ 'DEL' để xóa dữ liệu:"); if(c==='DEL') { localStorage.clear(); location.reload(); } }
+    async function changePassword() {
+        const o = await askInput("Mật khẩu cũ:");
+        const n = await askInput("Mật khẩu mới:");
+        if(!o || !n) return;
+        if(o !== wallet.pass) return showMsg("Mật khẩu cũ sai");
+        wallet.pass = n; localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); showMsg("Đã đổi!"); logout();
     }
 
     async function loop() {
@@ -353,17 +449,21 @@
         }
     }
 
-    let lastBC = 0;
     async function checkBroadcast() {
-        try { const r = await fetch(`${SERVER}get-broadcast`); const m = await r.json(); 
-        if(m.time && m.time > lastBC) { 
-            if(!wallet.inbox.some(x=>x.id===m.id)) { 
+        try { 
+            const r = await fetch(`${SERVER}get-broadcast`); 
+            const m = await r.json(); 
+            // So sánh với lastBC đã lưu trong ví
+            if(m.time && m.time > wallet.lastBC) { 
                 wallet.inbox.unshift({id:m.id, from:"Admin", title:m.t, body:m.b, time:m.time, read:false}); 
-                sfx('mail'); renderMail(); lastBC=m.time; 
+                wallet.lastBC = m.time; // Cập nhật timestamp mới nhất
+                sfx('mail'); renderMail(); 
+                localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); // Lưu ngay
             } 
-        } 
-        checkBan(); } catch(e){}
+            checkBan(); 
+        } catch(e){}
     }
+
     async function checkGift() {
         try { 
             const r = await fetch(`${SERVER}check-gift?u=${encodeURIComponent(me)}`); 
@@ -371,7 +471,7 @@
             if(j.amount !== 0) { 
                 wallet.cash = parseFloat(wallet.cash) + parseFloat(j.amount);
                 const type = j.amount > 0 ? "QUÀ TẶNG" : "THU THUẾ";
-                const msg = j.amount > 0 ? `Bạn nhận được gói cứu trợ: $${j.amount}` : `Bạn bị trừ: $${Math.abs(j.amount)}`;
+                const msg = j.amount > 0 ? `Bạn nhận được: $${j.amount}` : `Bạn bị trừ: $${Math.abs(j.amount)}`;
                 wallet.inbox.unshift({id:`gift_${Date.now()}`, from:"System", title:type, body:msg, time:Date.now(), read:false}); 
                 sfx('ok'); renderMail(); 
                 localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
@@ -380,11 +480,19 @@
     }
 
     document.getElementById("trade-amount").addEventListener("input", function() { const qty = parseFloat(this.value); if(sel && data.length > 0) { const s = data.find(x => x.code === sel); document.getElementById("trade-estimate").innerText = `Ước tính: $${isNaN(qty * s.price) ? '0.00' : (qty * s.price).toFixed(2)}`; } });
-    function trade(t) {
-        const qty = parseFloat(document.getElementById("trade-amount").value); if(!qty || qty<=0) return sfx('err');
+    
+    async function trade(t) {
+        let qty = parseFloat(document.getElementById("trade-amount").value); 
+        if(!qty || qty<=0) {
+            // Fallback to prompt if input empty
+            const inp = await askInput("Nhập số lượng:");
+            qty = parseFloat(inp);
+        }
+        if(!qty || qty<=0) return showMsg("Số lượng không hợp lệ");
+
         const s = data.find(x=>x.code===sel); const cost = qty * s.price;
-        if(t==='buy') { if(cost > wallet.cash) return alert("Thiếu tiền"); wallet.cash -= cost; wallet.stocks[sel] = (wallet.stocks[sel]||0) + qty; }
-        else { if(qty > (wallet.stocks[sel]||0)) return alert("Thiếu CP"); wallet.stocks[sel] -= qty; wallet.cash += cost; }
+        if(t==='buy') { if(cost > wallet.cash) return showMsg("Thiếu tiền"); wallet.cash -= cost; wallet.stocks[sel] = (wallet.stocks[sel]||0) + qty; }
+        else { if(qty > (wallet.stocks[sel]||0)) return showMsg("Thiếu CP"); wallet.stocks[sel] -= qty; wallet.cash += cost; }
         sfx('ok'); localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); sync();
     }
 
@@ -411,45 +519,10 @@
     }
     function tick() { if(!news.length) return; const n=news[0]; const el=document.getElementById("mini-news-ticker"); el.innerText=`📰 ${n.t}`; el.className = `mini-news ${n.b > 0 ? 'pos' : 'neg'}`; }
 
-    function openAdmin() { if(me.toLowerCase()!=='minh') return; adminPass = prompt("PASS:"); if(!adminPass) return; document.getElementById("admin-view").style.display="flex"; loadAdminUsers(); }
-    async function loadAdminUsers() { 
-        const d=document.getElementById("admin-user-list"); d.innerHTML="Loading..."; 
-        try{
-            const r=await fetch(`${SERVER}admin/users`, {headers: {'X-Admin-Pass': adminPass}});
-            if(r.status === 401) { alert("Sai pass"); return document.getElementById("admin-view").style.display="none"; }
-            const u=await r.json(); d.innerHTML=u.map(x=>`
-            <div class="mail-item" style="padding:10px; cursor:default;">
-                <div style="flex:1"><b>${x.name}</b><br><small>$${parseFloat(x.asset).toLocaleString()}</small></div>
-                <div style="display:flex; gap:5px;">
-                    <button onclick="grantCash('${x.name}')" style="background:var(--blue);color:white;border:none;padding:5px;width:30px;" title="Tặng tiền">+</button>
-                    <button onclick="taxUser('${x.name}')" style="background:var(--gold);color:black;border:none;padding:5px;width:30px;" title="Thu thuế">-</button>
-                    <button onclick="delUser('${x.name}')" style="background:var(--red);color:white;border:none;padding:5px;">BAN</button>
-                </div>
-            </div>`).join('');
-        }catch(e){d.innerHTML="Lỗi";} 
+    async function openAdmin() { 
+        if(me.toLowerCase()!=='minh') return; 
+        adminPass = await askInput("NHẬP MẬT KHẨU:"); 
+        if(!adminPass) return; 
+        document.getElementById("admin-view").style.display="flex"; 
+        loadAdminUsers(); 
     }
-    async function delUser(n) { if(confirm("BAN "+n+"?")) await fetch(`${SERVER}admin/delete-user`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n})}); loadAdminUsers(); }
-    async function grantCash(n) { 
-        const a = prompt(`Tặng tiền ${n}:`); 
-        if(a) await fetch(`${SERVER}admin/grant-cash`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n, amount:Math.abs(parseFloat(a))})}); 
-        alert("Đã tặng"); 
-    }
-    async function taxUser(n) { 
-        const a = prompt(`Thu thuế ${n} (Trừ tiền):`); 
-        if(a) {
-            await fetch(`${SERVER}admin/grant-cash`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n, amount: -Math.abs(parseFloat(a))})}); 
-            alert("Đã thu thuế"); 
-        }
-    }
-    async function adminBroadcast() { const t=document.getElementById("bc-title").value, b=document.getElementById("bc-body").value; if(t&&b) await fetch(`${SERVER}admin/broadcast`, {method:"POST", headers:{'X-Admin-Pass':adminPass}, body:JSON.stringify({title:t, body:b})}); alert("Đã gửi"); }
-
-    async function sync() { if(!me) return; let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price}); await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:me, asset:t})}); }
-    async function getRank() { if(activeTab !== 'rank') return; const r=await fetch(`${SERVER}get-rank`); const l=await r.json(); document.getElementById("rank-list").innerHTML=l.map((p,i)=>`<div class="rank-item ${p.name===me?'rank-me':''}"><div style="width:30px;text-align:center;font-weight:bold">${i+1}</div><div style="flex:1;margin-left:10px"><div style="font-weight:bold;color:white">${p.name} ${i==0?'👑':''}</div><div style="font-size:12px;color:#888">$${p.total.toLocaleString(undefined,{maximumFractionDigits:0})}</div></div></div>`).join(''); }
-
-    function tab(id) { document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active')); document.getElementById(`tab-${id}`).classList.remove('hidden'); event.target.classList.add('active'); sfx('click'); activeTab = id; if(id==='rank') getRank(); if(id==='news') renderNewsPage(); }
-    function logout() { localStorage.removeItem("sess"); location.reload(); }
-    function changeChartType() { chartType = document.getElementById("chart-type-select").value; localStorage.setItem("chart_type", chartType); if(sel) draw(); }
-    function openSettings() { document.getElementById("settings-modal").style.display='flex'; }
-</script>
-</body>
-</html>
