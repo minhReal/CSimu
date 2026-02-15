@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X - Stable Release</title>
+    <title>Terminal X - A.I News Edition</title>
     
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
@@ -22,31 +22,26 @@
         
         #app { display:none; height:100dvh; flex-direction:column; }
 
-        /* STATUS BAR */
         .status-bar { height: 25px; background: #080808; border-top: 1px solid #333; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; font-size: 10px; color: #666; font-family: monospace; z-index: 5000; }
         .ping-indicator { display: flex; align-items: center; gap: 5px; }
         .dot { width: 6px; height: 6px; border-radius: 50%; background: #444; }
         .dot.online { background: var(--green); box-shadow: 0 0 5px var(--green); }
         .dot.lag { background: var(--gold); }
         
-        /* LOGIN */
         #login-screen { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:center; align-items:center; }
         .login-box { background:var(--panel); border:1px solid var(--border); padding:30px; border-radius:16px; width:85%; max-width:350px; text-align:center; box-shadow:0 0 50px rgba(0,255,136,0.1); }
         .inp-auth { width:100%; padding:15px; margin:10px 0; background:#1a1a1a; border:1px solid #333; color:white; border-radius:8px; font-size:16px; text-align:center; outline:none; }
         .btn-auth { width:100%; padding:15px; margin-top:10px; border:none; border-radius:8px; font-weight:bold; font-size:16px; color:white; }
 
-        /* HEADER & TABS */
         .header { padding:12px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; height:60px; z-index: 10; }
         .tab-bar { display:flex; border-bottom:1px solid var(--border); background:var(--panel); height:50px; z-index: 10; }
         .tab-btn { flex:1; padding:15px 5px; text-align:center; font-size:11px; font-weight:bold; color:#666; border-bottom:3px solid transparent; position: relative; white-space: nowrap; }
         .tab-btn.active { color:var(--green); border-bottom-color:var(--green); background:#1a1a1a; color:white; }
         .badge { position: absolute; top: 5px; right: 10px; background: var(--red); color: white; border-radius: 50%; width: 14px; height: 14px; font-size: 9px; display: flex; align-items: center; justify-content: center; font-weight: bold; display: none; }
         
-        /* CONTENT */
         .view-content { flex:1; overflow-y:auto; position:relative; padding-bottom: 300px; } 
         .hidden { display:none!important; }
 
-        /* LIST ITEMS */
         .stock-item { display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:16px; margin:10px; border-radius:10px; border:1px solid var(--border); }
         
         .rank-item { display:flex; align-items:center; background:#161616; padding:12px; margin:8px 10px; border-radius:8px; border:1px solid var(--border); color: white; }
@@ -55,7 +50,6 @@
         .news-card { background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin:10px; border-left:4px solid #555; }
         .news-time { font-size: 10px; color: #666; margin-bottom: 4px; display: block; }
         
-        /* MAIL UI */
         .mail-item { background:#161616; padding:15px; border-bottom:1px solid #333; cursor: pointer; display: flex; gap: 10px; align-items: center; }
         .mail-item.unread { background:#222; border-left: 3px solid var(--green); }
         .mail-icon { width: 35px; height: 35px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #888; flex-shrink: 0; font-size: 12px; }
@@ -63,7 +57,6 @@
         .mail-sender { font-size: 11px; color: #aaa; }
         .mail-subject { font-size: 13px; color: #ccc; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* MODALS (Popup) */
         #mail-detail, #compose-modal, #custom-prompt { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; flex-direction: column; justify-content:center; align-items:center; }
         #mail-detail { background: #101010; justify-content: flex-start; z-index: 3000; }
         #compose-modal { background: #101010; justify-content: flex-start; z-index: 3000; }
@@ -76,7 +69,6 @@
         .mail-header { padding: 15px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 15px; width:100%; }
         .mail-body { padding: 20px; flex: 1; overflow-y: auto; line-height: 1.6; color: #ddd; width:100%; }
 
-        /* TOAST NOTIFICATION */
         #toast-container { position: fixed; bottom: 35px; right: 0; left: 0; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 9999; }
         .toast-box { background: #111; border: 1px solid #333; color: white; width: 90%; max-width: 300px; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.5); animation: slideUp 0.3s ease-out; position: relative; pointer-events: auto; }
         .toast-content { padding: 12px 15px; display: flex; align-items: center; gap: 10px; }
@@ -86,7 +78,6 @@
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes timeRun { from { width: 100%; } to { width: 0%; } }
 
-        /* CHART */
         #detail-view { position: fixed; bottom: 25px; left: 0; right: 0; height: 55%; background: #101010; border-top: 1px solid var(--green); box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 2000; display: flex; flex-direction: column; transform: translateY(110%); transition: transform 0.3s; }
         #detail-view.active { transform: translateY(0); } 
 
@@ -232,6 +223,7 @@
         </div>
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;"><span>Biểu đồ</span><select id="chart-type-select" onchange="changeChartType()"><option value="candle">Nến</option><option value="line">Đường</option></select></div>
         <hr style="border-color:#333; margin:15px 0;">
+        <button onclick="forceSync()" style="width:100%; padding:10px; background:var(--blue); color:white; border:none; border-radius:5px; margin-bottom:10px;">ĐỒNG BỘ SV (Fix Lỗi)</button>
         <input type="password" id="old-pass" class="inp-auth" placeholder="Mật khẩu cũ" style="margin-bottom:5px;">
         <input type="password" id="new-pass" class="inp-auth" placeholder="Mật khẩu mới" style="margin-bottom:10px;">
         <button onclick="changePassword()" style="width:100%; padding:10px; background:#444; color:white; border:none; border-radius:5px; margin-bottom:10px;">Đổi mật khẩu</button>
@@ -241,14 +233,13 @@
 
 <script>
     const SERVER = "https://terc.duongminhminh46.workers.dev/"; 
-    const FAKE_NEWS_TEMPLATES = ["{S} báo cáo lãi khủng.", "Cá mập gom {S}.", "{S} gặp khó khăn pháp lý.", "Tin đồn: {S} sắp sáp nhập.", "{S} dẫn đầu thị trường.", "Chủ tịch {S} mua vào."];
     let me = null, wallet = {cash:250, stocks:{}, inbox:[], lastBC:0}, data = [], candles = {}, sel = null, news = [];
     let activeTab = 'market'; let chartType = localStorage.getItem("chart_type") || "candle"; document.getElementById("chart-type-select").value = chartType;
     let isBgmOn = localStorage.getItem("bgm_state") !== "off"; 
     document.getElementById("toggle-bgm").checked = isBgmOn; 
     let adminPass = ""; let currentMailIdx = -1;
+    let sessionStartTime = Date.now(); 
 
-    // --- MUSIC MANAGER ---
     const bgm = document.getElementById("bgm"); 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
     let unlocked = false;
@@ -278,7 +269,6 @@
         if(t==='mail'){o.frequency.setValueAtTime(800,audioCtx.currentTime); o.frequency.linearRampToValueAtTime(1200,audioCtx.currentTime+0.1); g.gain.value=0.1; o.start(); o.stop(audioCtx.currentTime+0.3);}
     }
 
-    // --- TOAST MANAGER ---
     function showToast(title, msg, duration = 3000) {
         const c = document.getElementById("toast-container");
         const el = document.createElement("div");
@@ -302,7 +292,6 @@
         }, duration);
     }
 
-    // --- PROMPT MANAGER ---
     let promptResolver = null;
     function askInput(title) {
         document.getElementById("prompt-title").innerText = title;
@@ -320,7 +309,6 @@
 
     setInterval(() => { document.getElementById("system-time").innerText = new Date().toLocaleTimeString('vi-VN'); }, 1000);
 
-    // --- APP START ---
     (function(){ 
         const s=localStorage.getItem("sess"); 
         if(s && localStorage.getItem(`u_${s}`)) { 
@@ -340,10 +328,9 @@
         if(t==='reg') {
             try {
                 const r=await fetch(`${SERVER}check-user?u=${encodeURIComponent(u)}`); const j=await r.json();
-                if(j.exists||localStorage.getItem(k)) { sfx('err'); msg.innerText="Tên đã tồn tại"; return; }
+                if(j.exists||localStorage.getItem(k)) { sfx('err'); msg.innerText="Tên đã tồn tại (hoặc lỗi SV)"; return; }
                 const firstMail = {id:`sys_${Date.now()}`, from:"Terminal X", title:"Chào mừng", body:"Chào mừng bạn đến với thị trường chứng khoán ảo.", time:Date.now(), read:false};
                 localStorage.setItem(k, JSON.stringify({pass:p, cash:250, stocks:{}, inbox:[firstMail], lastBC: Date.now()})); 
-                // CRITICAL FIX: Gửi dữ liệu lên server ngay lập tức để tránh bị ban
                 await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:u, asset:250})});
                 sfx('ok'); msg.innerText="OK!"; msg.style.color="var(--green)";
             } catch(e){ msg.innerText="Lỗi mạng"; }
@@ -359,19 +346,33 @@
     function enter() {
         sfx('ok'); document.getElementById("login-screen").style.display="none"; document.getElementById("app").style.display="flex"; document.getElementById("u-name").innerText=me;
         if(me.toLowerCase()==='minh') document.getElementById("btn-admin").style.display="block";
+        sessionStartTime = Date.now(); 
+        
         setInterval(loop, 1500); setInterval(sync, 3000); setInterval(checkBroadcast, 10000); setInterval(checkBankruptcy, 5000); setInterval(checkGift, 5000); setInterval(checkP2PMail, 8000);
-        generateFakeNews(); setInterval(generateFakeNews, 8000); renderMail();
+        
+        setTimeout(() => { setInterval(checkBan, 10000); }, 15000);
+        renderMail();
         window.dispatchEvent(new Event('resize')); 
     }
 
+    async function forceSync() {
+        if(!me) return;
+        let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price}); 
+        await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:me, asset:t})});
+        showToast("HỆ THỐNG", "Đã đồng bộ dữ liệu lên Server!");
+    }
+
     async function checkBan() {
+        if(Date.now() - sessionStartTime < 15000) return;
         try {
             const r = await fetch(`${SERVER}check-user?u=${encodeURIComponent(me)}`); const j = await r.json();
-            if(!j.exists) { showToast("CẢNH BÁO", "Tài khoản đã bị BAN.", 5000); setTimeout(()=>{localStorage.clear(); location.reload();}, 2000); }
+            if(!j.exists) { 
+                showToast("CẢNH BÁO", "Tài khoản không tồn tại trên Server (BAN).", 5000); 
+                setTimeout(()=>{localStorage.clear(); location.reload();}, 3000); 
+            }
         } catch(e) {}
     }
 
-    // --- FIX CHART PC ---
     window.addEventListener('resize', () => {
         if(sel) { initChart(); draw(); }
     });
@@ -381,82 +382,31 @@
         return isNaN(n) ? 0 : n;
     }
 
-    // --- LOGIC ---
-    function generateFakeNews() {
-        if(data.length === 0) return;
-        const stock = data[Math.floor(Math.random() * data.length)];
-        const template = FAKE_NEWS_TEMPLATES[Math.floor(Math.random() * FAKE_NEWS_TEMPLATES.length)];
-        const isGood = stock.candle.close >= stock.candle.open;
-        news.unshift({ t: template.replace("{S}", stock.code), b: isGood ? 50 : -50, time: new Date().toLocaleTimeString() });
-        if(news.length > 25) news.pop();
-        if(activeTab === 'news') renderNewsPage(); tick();
-    }
-    function renderNewsPage() { document.getElementById("news-list").innerHTML = news.map(n => `<div class="news-card" style="border-left-color:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#666'}"><span class="news-time">${n.time}</span><div style="font-size:10px;color:#888;font-weight:bold;margin-bottom:2px;">${n.b>0?'TÍCH CỰC':n.b<0?'TIÊU CỰC':'THỊ TRƯỜNG'}</div><div style="color:#ddd;">${n.t}</div></div>`).join(''); }
-
-    function renderMail() {
-        const div = document.getElementById("mail-list"), empty = document.getElementById("empty-mail"), badge = document.getElementById("mail-badge");
-        if(!wallet.inbox.length) { div.innerHTML=""; empty.style.display="block"; badge.style.display="none"; return; }
-        empty.style.display="none"; const unread = wallet.inbox.filter(m=>!m.read).length;
-        badge.style.display = unread>0 ? "flex" : "none"; badge.innerText = unread;
-        div.innerHTML = wallet.inbox.map((m, i) => `<div class="mail-item ${m.read?'':'unread'}" onclick="openMail(${i})"><div class="mail-icon">${m.from[0].toUpperCase()}</div><div class="mail-content"><div style="display:flex;justify-content:space-between"><div class="mail-sender">${m.from}</div></div><div class="mail-subject">${m.title}</div></div></div>`).join('');
-    }
-    function openMail(idx) {
-        currentMailIdx = idx; const m = wallet.inbox[idx]; m.read = true;
-        document.getElementById("mail-body-content").innerHTML = `<h3 style="margin-top:0">${m.title}</h3><div style="font-size:12px;color:#888;margin-bottom:20px">Từ: ${m.from} - ${new Date(m.time).toLocaleString()}</div><div>${m.body}</div>`;
-        document.getElementById("mail-detail").style.display="flex"; localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); renderMail();
-    }
-    function closeMail() { document.getElementById("mail-detail").style.display="none"; }
-    function deleteCurrentMail() { if(currentMailIdx > -1) { wallet.inbox.splice(currentMailIdx, 1); localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); closeMail(); renderMail(); } }
-    function openCompose() { document.getElementById("compose-modal").style.display="flex"; }
-    
-    async function sendP2PMail() {
-        const to = document.getElementById("mail-to").value.trim(), sub = document.getElementById("mail-subj").value.trim(), body = document.getElementById("mail-content").value.trim();
-        if(!to || !sub || !body) return showToast("THÔNG BÁO", "Nhập đủ thông tin");
-        if(wallet.cash < 10) return showToast("LỖI", "Không đủ tiền ($10)");
-        
-        const r = await fetch(`${SERVER}user/send-mail`, {method:"POST", body:JSON.stringify({to, from:me, title:sub, body})});
-        if(r.ok) { wallet.cash -= 10; showToast("THÀNH CÔNG", "Đã gửi!"); document.getElementById("compose-modal").style.display="none"; } else showToast("LỖI", "Gửi thất bại");
-    }
-
-    async function checkP2PMail() {
-        try {
-            const r = await fetch(`${SERVER}user/check-mail?u=${encodeURIComponent(me)}`); const mails = await r.json();
-            if(mails.length > 0) {
-                mails.forEach(m => {
-                    if(!wallet.inbox.some(existing => existing.id === m.id)) {
-                        wallet.inbox.unshift({...m, read:false});
-                    }
-                });
-                localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); showToast("MAIL", "Bạn có thư mới!"); renderMail();
-            }
-        } catch(e){}
-    }
-
-    function checkBankruptcy() {
-        if(data.length === 0) return; let t = wallet.cash; data.forEach(s=>{ if(wallet.stocks[s.code]) t += wallet.stocks[s.code]*s.price });
-        if(t < 10 && !wallet.inbox.some(m => m.title === "CẢNH BÁO PHÁ SẢN" && (Date.now() - m.time < 60000))) {
-            wallet.inbox.unshift({id:`sys_${Date.now()}`, from:"Terminal X", title:"CẢNH BÁO PHÁ SẢN", body:`Tài sản dưới $10.<br><button class="reset-btn" onclick="resetAccount()">RESET ($250)</button>`, time:Date.now(), read:false});
-            renderMail();
-        }
-    }
-    window.resetAccount = async function() { 
-        const c = await askInput("Gõ 'RESET' để xác nhận:");
-        if(c === 'RESET') { wallet.cash=250; wallet.stocks={}; wallet.inbox=[]; localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); closeMail(); renderMail(); } 
-    }
-    async function forgotPass() { const c = await askInput("Gõ 'DEL' để xóa dữ liệu:"); if(c==='DEL') { localStorage.clear(); location.reload(); } }
-    async function changePassword() {
-        const o = await askInput("Mật khẩu cũ:");
-        const n = await askInput("Mật khẩu mới:");
-        if(!o || !n) return;
-        if(o !== wallet.pass) return showToast("LỖI", "Mật khẩu cũ sai");
-        wallet.pass = n; localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); showToast("THÀNH CÔNG", "Đã đổi!"); logout();
-    }
-
+    // --- MAIN LOOP ---
     async function loop() {
         const start = Date.now();
         try {
             const res = await fetch(SERVER); updatePing(Date.now() - start); const json = await res.json();
             data = json.stocks;
+            
+            // XỬ LÝ TIN TỨC A.I TỪ SERVER
+            if (json.news) {
+                // Kiểm tra xem tin này đã có chưa (để không spam tin giống hệt nhau)
+                if (news.length === 0 || news[0].t !== json.news.t) {
+                    news.unshift(json.news);
+                    if (news.length > 25) news.pop();
+                    
+                    // Nếu đang xem tab tin tức thì render lại ngay
+                    if (activeTab === 'news') renderNewsPage();
+                    tick(); // Cập nhật dòng chạy chữ
+
+                    // Báo Toast nếu là tin quan trọng (Tăng/Giảm mạnh)
+                    if (json.news.b !== 0) {
+                        showToast(json.news.b > 0 ? "TIN TỐT" : "TIN XẤU", json.news.t);
+                    }
+                }
+            }
+
             data.forEach(s => {
                 if(!candles[s.code]) candles[s.code] = [];
                 const l = candles[s.code];
@@ -466,6 +416,7 @@
             if(sel) { updateD(); draw(); } renderList(); document.getElementById("cash").innerText = wallet.cash.toFixed(2);
         } catch(e){ updatePing(-1); }
     }
+    
     function updatePing(ms) { const d=document.getElementById("ping-dot"), t=document.getElementById("ping-val"); if(ms===-1){t.innerText="ERR";d.className="dot lag";}else{t.innerText=ms;d.className=ms<100?"dot online":"dot lag";} }
 
     function renderList() {
@@ -476,6 +427,8 @@
             data.forEach(s => { const el = document.getElementById(`st-${s.code}`); if(el) { const up = s.candle.close >= s.candle.open; const p = el.querySelector(".price-val"); p.innerText = s.price.toFixed(2); p.style.color = up ? "var(--green)" : "var(--red)"; } });
         }
     }
+    
+    function renderNewsPage() { document.getElementById("news-list").innerHTML = news.map(n => `<div class="news-card" style="border-left-color:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#666'}"><span class="news-time">${n.time}</span><div style="font-size:10px;color:#888;font-weight:bold;margin-bottom:2px;">${n.b>0?'TÍCH CỰC':n.b<0?'TIÊU CỰC':'THỊ TRƯỜNG'}</div><div style="color:#ddd;">${n.t}</div></div>`).join(''); }
 
     async function checkBroadcast() {
         try { 
@@ -487,7 +440,6 @@
                 showToast("THÔNG BÁO", "Tin nhắn từ hệ thống"); renderMail(); 
                 localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); 
             } 
-            checkBan(); 
         } catch(e){}
     }
 
@@ -532,7 +484,6 @@
     function initChart() { 
         const c=document.getElementById("chart"); 
         const rect = c.parentElement.getBoundingClientRect();
-        // Fix DPI
         const dpr = window.devicePixelRatio || 1;
         c.width = rect.width * dpr;
         c.height = rect.height * dpr;
