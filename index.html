@@ -219,6 +219,7 @@
 
         <h4 style="color:#888; margin:0 0 10px 0;">QUẢN LÝ USER</h4>
         <button onclick="loadAdminUsers()" style="width:100%; padding:10px; margin-bottom:10px;">Làm mới</button>
+        <button onclick="resetAllUsers()" style="width:100%; padding:10px; margin-bottom:10px; background:#500; color:white; border:none; font-weight:bold;">🗑️ XÓA TOÀN BỘ TÀI KHOẢN</button>
         <div id="admin-user-list" style="background:#111; padding:10px; height:200px; overflow:auto;"></div>
     </div>
 </div>
@@ -240,7 +241,7 @@
 </div>
 
 <script>
-    const SERVER = "https://cs.duongminhminh46.workers.dev/"; 
+    const SERVER = "https://terc.duongminhminh46.workers.dev/"; 
     const FAKE_NEWS_TEMPLATES = ["{S} báo cáo lãi khủng.", "Cá mập gom {S}.", "{S} gặp khó khăn pháp lý.", "Tin đồn: {S} sắp sáp nhập.", "{S} dẫn đầu thị trường.", "Chủ tịch {S} mua vào."];
     let me = null, wallet = {cash:250, stocks:{}, inbox:[], lastBC:0}, data = [], candles = {}, sel = null, news = [];
     let activeTab = 'market'; let chartType = localStorage.getItem("chart_type") || "candle"; document.getElementById("chart-type-select").value = chartType;
@@ -348,11 +349,32 @@
                 sfx('ok'); msg.innerText="OK!"; msg.style.color="var(--green)";
             } catch(e){ msg.innerText="Lỗi mạng"; }
         } else {
-            const d=JSON.parse(localStorage.getItem(k)); if(!d||d.pass!==p){ sfx('err'); msg.innerText="Sai mật khẩu"; return; }
-            me=u; wallet=d; 
-            if(!wallet.inbox) wallet.inbox=[]; 
-            if(!wallet.lastBC) wallet.lastBC=0;
-            localStorage.setItem("sess", u); enter();
+            // Kiểm tra local trước
+            const d = localStorage.getItem(k) ? JSON.parse(localStorage.getItem(k)) : null;
+            if (d && d.pass === p) {
+                // Tài khoản thường - xác thực local
+                me=u; wallet=d;
+                if(!wallet.inbox) wallet.inbox=[];
+                if(!wallet.lastBC) wallet.lastBC=0;
+                localStorage.setItem("sess", u); enter();
+            } else if (!d) {
+                // Có thể là tài khoản được seed từ server - xác thực qua server
+                try {
+                    const vr = await fetch(`${SERVER}verify-pass`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({user:u, pass:p})});
+                    const vj = await vr.json();
+                    if (vj.ok) {
+                        // Tạo localStorage từ data server
+                        const ir = await fetch(`${SERVER}init-account?u=${encodeURIComponent(u)}`);
+                        const ij = await ir.json();
+                        const initWallet = {pass:p, cash: parseFloat(ij.asset)||250, stocks:{}, inbox:[{id:`sys_0`, from:"Terminal X", title:"Chào mừng", body:"Xin chào! Chúc bạn đầu tư thành công.", time:Date.now(), read:false}], lastBC:Date.now()};
+                        localStorage.setItem(k, JSON.stringify(initWallet));
+                        me=u; wallet=initWallet;
+                        localStorage.setItem("sess", u); enter();
+                    } else { sfx('err'); msg.innerText="Sai mật khẩu"; }
+                } catch(e) { sfx('err'); msg.innerText="Lỗi mạng"; }
+            } else {
+                sfx('err'); msg.innerText="Sai mật khẩu";
+            }
         }
     }
 
@@ -591,7 +613,15 @@
         }catch(e){d.innerHTML="Lỗi";} 
     }
     
-    async function delUser(n) { 
+    async function resetAllUsers() { 
+        const c = await askInput(`Gõ "XOAHET" để xóa TOÀN BỘ tài khoản:`);
+        if(c === 'XOAHET') {
+            const r = await fetch(`${SERVER}admin/reset-all`, {method:"POST", headers:{'X-Admin-Pass':adminPass, 'Content-Type':'application/json'}, body:JSON.stringify({})});
+            const j = await r.json();
+            showToast("THÔNG BÁO", `Đã xóa ${j.deleted} keys`);
+            loadAdminUsers();
+        }
+    }
         const c = await askInput(`Gõ "BAN" để ban ${n}`);
         if(c === 'BAN') {
             await fetch(`${SERVER}admin/delete-user`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n})}); 
