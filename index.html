@@ -449,6 +449,7 @@
         }
     }
 
+    // --- BROADCAST FIX: persist lastBC to user wallet ---
     async function checkBroadcast() {
         try { 
             const r = await fetch(`${SERVER}get-broadcast`); 
@@ -519,10 +520,73 @@
     }
     function tick() { if(!news.length) return; const n=news[0]; const el=document.getElementById("mini-news-ticker"); el.innerText=`📰 ${n.t}`; el.className = `mini-news ${n.b > 0 ? 'pos' : 'neg'}`; }
 
+    // --- ADMIN FUNCTIONS USING CUSTOM GUI ---
     async function openAdmin() { 
         if(me.toLowerCase()!=='minh') return; 
-        adminPass = await askInput("NHẬP MẬT KHẨU:"); 
+        adminPass = await askInput("NHẬP MẬT KHẨU ADMIN:"); 
         if(!adminPass) return; 
         document.getElementById("admin-view").style.display="flex"; 
         loadAdminUsers(); 
     }
+    
+    async function loadAdminUsers() { 
+        const d=document.getElementById("admin-user-list"); d.innerHTML="Loading..."; 
+        try{
+            const r=await fetch(`${SERVER}admin/users`, {headers: {'X-Admin-Pass': adminPass}});
+            if(r.status === 401) { showMsg("Sai mật khẩu"); return document.getElementById("admin-view").style.display="none"; }
+            const u=await r.json(); 
+            d.innerHTML=u.map(x=>`
+            <div class="mail-item" style="padding:10px; cursor:default;">
+                <div style="flex:1"><b>${x.name}</b><br><small>$${parseFloat(x.asset).toLocaleString()}</small></div>
+                <div style="display:flex; gap:5px;">
+                    <button onclick="grantCash('${x.name}')" style="background:var(--blue);color:white;border:none;padding:5px;width:30px;border-radius:4px;">+</button>
+                    <button onclick="taxUser('${x.name}')" style="background:var(--gold);color:black;border:none;padding:5px;width:30px;border-radius:4px;">-</button>
+                    <button onclick="delUser('${x.name}')" style="background:var(--red);color:white;border:none;padding:5px;border-radius:4px;">BAN</button>
+                </div>
+            </div>`).join('');
+        }catch(e){d.innerHTML="Lỗi";} 
+    }
+    
+    async function delUser(n) { 
+        const c = await askInput(`Gõ 'BAN' để xóa ${n}:`);
+        if(c === 'BAN') {
+            await fetch(`${SERVER}admin/delete-user`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n})}); 
+            loadAdminUsers();
+        }
+    }
+    
+    async function grantCash(n) { 
+        const a = await askInput(`Tặng tiền cho ${n}:`); 
+        if(a) {
+            await fetch(`${SERVER}admin/grant-cash`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n, amount:Math.abs(parseFloat(a))})}); 
+            showMsg("Đã tặng!"); 
+        }
+    }
+    
+    async function taxUser(n) { 
+        const a = await askInput(`Thu thuế ${n} (Trừ tiền):`); 
+        if(a) {
+            await fetch(`${SERVER}admin/grant-cash`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n, amount: -Math.abs(parseFloat(a))})}); 
+            showMsg("Đã thu thuế!"); 
+        }
+    }
+    
+    async function adminBroadcast() { 
+        const t = document.getElementById("bc-title").value;
+        const b = document.getElementById("bc-body").value;
+        if(t&&b) {
+            await fetch(`${SERVER}admin/broadcast`, {method:"POST", headers:{'X-Admin-Pass':adminPass}, body:JSON.stringify({title:t, body:b})}); 
+            showMsg("Đã gửi thông báo toàn server!"); 
+        }
+    }
+
+    async function sync() { if(!me) return; let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price}); await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:me, asset:t})}); }
+    async function getRank() { if(activeTab !== 'rank') return; const r=await fetch(`${SERVER}get-rank`); const l=await r.json(); document.getElementById("rank-list").innerHTML=l.map((p,i)=>`<div class="rank-item ${p.name===me?'rank-me':''}"><div style="width:30px;text-align:center;font-weight:bold">${i+1}</div><div style="flex:1;margin-left:10px"><div style="font-weight:bold;color:white">${p.name} ${i==0?'👑':''}</div><div style="font-size:12px;color:#888">$${p.total.toLocaleString(undefined,{maximumFractionDigits:0})}</div></div></div>`).join(''); }
+
+    function tab(id) { document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active')); document.getElementById(`tab-${id}`).classList.remove('hidden'); event.target.classList.add('active'); sfx('click'); activeTab = id; if(id==='rank') getRank(); if(id==='news') renderNewsPage(); }
+    function logout() { localStorage.removeItem("sess"); location.reload(); }
+    function changeChartType() { chartType = document.getElementById("chart-type-select").value; localStorage.setItem("chart_type", chartType); if(sel) draw(); }
+    function openSettings() { document.getElementById("settings-modal").style.display='flex'; }
+</script>
+</body>
+</html>
