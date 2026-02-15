@@ -240,7 +240,7 @@
 </div>
 
 <script>
-    const SERVER = "https://terc.duongminhminh46.workers.dev/"; 
+    const SERVER = "https://cs.duongminhminh46.workers.dev/"; 
     const FAKE_NEWS_TEMPLATES = ["{S} báo cáo lãi khủng.", "Cá mập gom {S}.", "{S} gặp khó khăn pháp lý.", "Tin đồn: {S} sắp sáp nhập.", "{S} dẫn đầu thị trường.", "Chủ tịch {S} mua vào."];
     let me = null, wallet = {cash:250, stocks:{}, inbox:[], lastBC:0}, data = [], candles = {}, sel = null, news = [];
     let activeTab = 'market'; let chartType = localStorage.getItem("chart_type") || "candle"; document.getElementById("chart-type-select").value = chartType;
