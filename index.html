@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X - Stable Release</title>
-    
+    <title>Terminal X</title>
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.onkeydown = function(e) {
@@ -12,71 +11,49 @@
             if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
         }
     </script>
-
     <style>
         :root { --bg:#050505; --panel:#121212; --border:#2a2a2a; --green:#00ff88; --red:#ff3b3b; --gold:#ffd700; --text:#e0e0e0; --blue:#1f6feb; }
         body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow:hidden; height:100dvh; }
         * { box-sizing:border-box; user-select:none; -webkit-tap-highlight-color:transparent; }
         button { cursor:pointer; transition:0.1s; } button:active { transform:scale(0.95); }
         select, input, textarea { background:#222; color:white; border:1px solid #444; padding:8px; border-radius:4px; outline:none; width: 100%; font-family: inherit; }
-        
         #app { display:none; height:100dvh; flex-direction:column; }
-
-        /* STATUS BAR */
         .status-bar { height: 25px; background: #080808; border-top: 1px solid #333; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; font-size: 10px; color: #666; font-family: monospace; z-index: 5000; }
         .ping-indicator { display: flex; align-items: center; gap: 5px; }
         .dot { width: 6px; height: 6px; border-radius: 50%; background: #444; }
         .dot.online { background: var(--green); box-shadow: 0 0 5px var(--green); }
         .dot.lag { background: var(--gold); }
-        
-        /* LOGIN */
         #login-screen { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:center; align-items:center; }
         .login-box { background:var(--panel); border:1px solid var(--border); padding:30px; border-radius:16px; width:85%; max-width:350px; text-align:center; box-shadow:0 0 50px rgba(0,255,136,0.1); }
         .inp-auth { width:100%; padding:15px; margin:10px 0; background:#1a1a1a; border:1px solid #333; color:white; border-radius:8px; font-size:16px; text-align:center; outline:none; }
         .btn-auth { width:100%; padding:15px; margin-top:10px; border:none; border-radius:8px; font-weight:bold; font-size:16px; color:white; }
-
-        /* HEADER & TABS */
         .header { padding:12px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; height:60px; z-index: 10; }
         .tab-bar { display:flex; border-bottom:1px solid var(--border); background:var(--panel); height:50px; z-index: 10; }
         .tab-btn { flex:1; padding:15px 5px; text-align:center; font-size:11px; font-weight:bold; color:#666; border-bottom:3px solid transparent; position: relative; white-space: nowrap; }
         .tab-btn.active { color:var(--green); border-bottom-color:var(--green); background:#1a1a1a; color:white; }
         .badge { position: absolute; top: 5px; right: 10px; background: var(--red); color: white; border-radius: 50%; width: 14px; height: 14px; font-size: 9px; display: flex; align-items: center; justify-content: center; font-weight: bold; display: none; }
-        
-        /* CONTENT */
-        .view-content { flex:1; overflow-y:auto; position:relative; padding-bottom: 300px; } 
+        .view-content { flex:1; overflow-y:auto; position:relative; padding-bottom: 300px; }
         .hidden { display:none!important; }
-
-        /* LIST ITEMS */
         .stock-item { display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:16px; margin:10px; border-radius:10px; border:1px solid var(--border); }
-        
         .rank-item { display:flex; align-items:center; background:#161616; padding:12px; margin:8px 10px; border-radius:8px; border:1px solid var(--border); color: white; }
         .rank-me { border:1px solid var(--green); background:#0f3318; }
-        
         .news-card { background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin:10px; border-left:4px solid #555; }
         .news-time { font-size: 10px; color: #666; margin-bottom: 4px; display: block; }
-        
-        /* MAIL UI */
         .mail-item { background:#161616; padding:15px; border-bottom:1px solid #333; cursor: pointer; display: flex; gap: 10px; align-items: center; }
         .mail-item.unread { background:#222; border-left: 3px solid var(--green); }
         .mail-icon { width: 35px; height: 35px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #888; flex-shrink: 0; font-size: 12px; }
         .mail-content { flex: 1; overflow: hidden; }
         .mail-sender { font-size: 11px; color: #aaa; }
         .mail-subject { font-size: 13px; color: #ccc; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-        /* MODALS (Popup) */
         #mail-detail, #compose-modal, #custom-prompt { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; flex-direction: column; justify-content:center; align-items:center; }
         #mail-detail { background: #101010; justify-content: flex-start; z-index: 3000; }
         #compose-modal { background: #101010; justify-content: flex-start; z-index: 3000; }
-
         .modal-box { background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
         .modal-title { font-weight: bold; margin-bottom: 10px; color: var(--green); font-size: 16px; }
         .modal-btn { width: 100%; padding: 10px; background: #444; border: none; border-radius: 6px; color: white; font-weight: bold; margin-top: 5px; }
         .modal-btn.primary { background: var(--green); color: black; }
-        
         .mail-header { padding: 15px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 15px; width:100%; }
         .mail-body { padding: 20px; flex: 1; overflow-y: auto; line-height: 1.6; color: #ddd; width:100%; }
-
-        /* TOAST NOTIFICATION */
         #toast-container { position: fixed; bottom: 35px; right: 0; left: 0; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 9999; }
         .toast-box { background: #111; border: 1px solid #333; color: white; width: 90%; max-width: 300px; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.5); animation: slideUp 0.3s ease-out; position: relative; pointer-events: auto; }
         .toast-content { padding: 12px 15px; display: flex; align-items: center; gap: 10px; }
@@ -85,19 +62,15 @@
         .toast-progress { height: 3px; background: var(--green); width: 100%; position: absolute; bottom: 0; left: 0; animation: timeRun linear forwards; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes timeRun { from { width: 100%; } to { width: 0%; } }
-
-        /* CHART */
         #detail-view { position: fixed; bottom: 25px; left: 0; right: 0; height: 55%; background: #101010; border-top: 1px solid var(--green); box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 2000; display: flex; flex-direction: column; transform: translateY(110%); transition: transform 0.3s; }
-        #detail-view.active { transform: translateY(0); } 
-
+        #detail-view.active { transform: translateY(0); }
         .chart-header { padding:10px 15px; display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; border-bottom:1px solid #333; }
         .chart-container { flex:1; width:100%; position:relative; background: #080808; overflow: hidden; }
         canvas { display:block; width:100%; height:100%; }
         .controls-area { padding:10px; background:#151515; border-top:1px solid #333; padding-bottom: 20px; }
         .mini-news { font-size: 11px; padding: 5px 15px; color: #888; border-bottom: 1px solid #222; white-space: nowrap; overflow: hidden; background: #0f0f0f; font-weight: bold; }
         .mini-news.pos { color: var(--green); } .mini-news.neg { color: var(--red); }
-
-        #admin-view { position:fixed; inset:0; background:#000; z-index:6000; display:none; flex-direction:column; }
+        #admin-view { position:fixed; inset:0; background:#000; z-index:6000; display:none; flex-direction:column; overflow-y:auto; }
         #settings-modal { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; }
         .settings-box { background:var(--panel); padding:20px; border-radius:12px; width:80%; max-width:300px; }
         .up{color:var(--green)} .down{color:var(--red)}
@@ -128,16 +101,13 @@
             <button onclick="openSettings()" style="background:none; border:none; padding:0; font-size:20px;">⚙️</button>
         </div>
     </div>
-    
     <div class="tab-bar">
         <div class="tab-btn active" onclick="tab('market')">THỊ TRƯỜNG</div>
         <div class="tab-btn" onclick="tab('mail')">HỘP THƯ <div class="badge" id="mail-badge">0</div></div>
         <div class="tab-btn" onclick="tab('news')">TIN TỨC</div>
         <div class="tab-btn" onclick="tab('rank')">XẾP HẠNG</div>
     </div>
-    
     <div id="tab-market" class="view-content"><div id="list"></div></div>
-    
     <div id="tab-mail" class="view-content hidden">
         <div style="padding:10px;">
             <button onclick="openCompose()" style="width:100%; background:#333; color:white; border:1px solid #444; padding:10px; border-radius:5px; font-weight:bold;">+ SOẠN THƯ ($10)</button>
@@ -145,10 +115,8 @@
         <div id="mail-list"></div>
         <div style="text-align:center; padding:20px; color:#444; font-size:12px;" id="empty-mail">Hòm thư trống</div>
     </div>
-    
     <div id="tab-news" class="view-content hidden"><div id="news-list" style="padding:10px;"></div></div>
     <div id="tab-rank" class="view-content hidden"><div id="rank-list" style="padding:10px;"></div></div>
-
     <div class="status-bar">
         <div class="ping-indicator"><div class="dot" id="ping-dot"></div> PING: <span id="ping-val">--</span>ms</div>
         <div id="system-time">00:00:00</div>
@@ -210,17 +178,16 @@
 </div>
 
 <div id="admin-view">
-    <div style="padding:15px; background:#200; color:red; display:flex; justify-content:space-between;"><b>ADMIN PANEL</b><button onclick="document.getElementById('admin-view').style.display='none'">ĐÓNG</button></div>
+    <div style="padding:15px; background:#200; color:red; display:flex; justify-content:space-between; align-items:center;"><b>ADMIN PANEL</b><button onclick="document.getElementById('admin-view').style.display='none'" style="background:#333;color:white;border:none;padding:5px 10px;border-radius:4px;">ĐÓNG</button></div>
     <div style="padding:15px;">
         <h4 style="color:#888; margin:0 0 10px 0;">THÔNG BÁO HỆ THỐNG</h4>
         <input type="text" id="bc-title" class="inp-auth" placeholder="Tiêu đề" style="margin-bottom:5px;">
         <textarea id="bc-body" class="inp-auth" placeholder="Nội dung" style="height:50px; margin-bottom:10px;"></textarea>
         <button onclick="adminBroadcast()" style="width:100%; background:#444; color:white; padding:8px; border:none; font-weight:bold; margin-bottom:20px;">PHÁT LOA</button>
-
         <h4 style="color:#888; margin:0 0 10px 0;">QUẢN LÝ USER</h4>
-        <button onclick="loadAdminUsers()" style="width:100%; padding:10px; margin-bottom:10px;">Làm mới</button>
-        <button onclick="resetAllUsers()" style="width:100%; padding:10px; margin-bottom:10px; background:#500; color:white; border:none; font-weight:bold;">🗑️ XÓA TOÀN BỘ TÀI KHOẢN</button>
-        <div id="admin-user-list" style="background:#111; padding:10px; height:200px; overflow:auto;"></div>
+        <button onclick="loadAdminUsers()" style="width:100%; padding:10px; margin-bottom:10px; background:#333; color:white; border:none; border-radius:4px;">Làm mới</button>
+        <button onclick="resetAllUsers()" style="width:100%; padding:10px; margin-bottom:10px; background:#500; color:white; border:none; font-weight:bold; border-radius:4px;">🗑️ XÓA TOÀN BỘ TÀI KHOẢN</button>
+        <div id="admin-user-list" style="background:#111; padding:10px; height:300px; overflow:auto;"></div>
     </div>
 </div>
 
@@ -229,9 +196,9 @@
         <h3>CÀI ĐẶT</h3>
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
             <span>🎵 Nhạc nền</span>
-            <input type="checkbox" id="toggle-bgm" onchange="toggleBGM()">
+            <input type="checkbox" id="toggle-bgm" onchange="toggleBGM()" style="width:auto;">
         </div>
-        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;"><span>Biểu đồ</span><select id="chart-type-select" onchange="changeChartType()"><option value="candle">Nến</option><option value="line">Đường</option></select></div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;"><span>Biểu đồ</span><select id="chart-type-select" onchange="changeChartType()" style="width:auto;"><option value="candle">Nến</option><option value="line">Đường</option></select></div>
         <hr style="border-color:#333; margin:15px 0;">
         <input type="password" id="old-pass" class="inp-auth" placeholder="Mật khẩu cũ" style="margin-bottom:5px;">
         <input type="password" id="new-pass" class="inp-auth" placeholder="Mật khẩu mới" style="margin-bottom:10px;">
@@ -241,442 +208,515 @@
 </div>
 
 <script>
-    const SERVER = "https://terc.duongminhminh46.workers.dev/"; 
-    const FAKE_NEWS_TEMPLATES = ["{S} báo cáo lãi khủng.", "Cá mập gom {S}.", "{S} gặp khó khăn pháp lý.", "Tin đồn: {S} sắp sáp nhập.", "{S} dẫn đầu thị trường.", "Chủ tịch {S} mua vào."];
-    let me = null, wallet = {cash:250, stocks:{}, inbox:[], lastBC:0}, data = [], candles = {}, sel = null, news = [];
-    let activeTab = 'market'; let chartType = localStorage.getItem("chart_type") || "candle"; document.getElementById("chart-type-select").value = chartType;
-    let isBgmOn = localStorage.getItem("bgm_state") !== "off"; 
-    document.getElementById("toggle-bgm").checked = isBgmOn; 
-    let adminPass = ""; let currentMailIdx = -1;
+    // ============================================================
+    // SUPABASE CONFIG — gọi thẳng, không qua Cloudflare
+    // ============================================================
+    const SB_URL = "https://mtdbpmezysuwxbxgxasc.supabase.co";
+    const SB_KEY = "sb_publishable_W-Q-MzuBfxjHsG4ia_x68A_fNF26q32";
+    const ADMIN_SECRET = "minh@depzai36";
 
-    // --- MUSIC MANAGER ---
-    const bgm = document.getElementById("bgm"); 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
-    let unlocked = false;
-
-    function unlockAudio() { 
-        if(!unlocked) { 
-            audioCtx.resume().then(()=>{ 
-                unlocked=true; 
-                if(isBgmOn) bgm.play().catch(e=>console.log("Auto-play blocked")); 
-            }); 
-        } 
+    async function sb(path, method = "GET", body = null, extra = {}) {
+        const opts = {
+            method,
+            headers: {
+                "apikey": SB_KEY,
+                "Authorization": `Bearer ${SB_KEY}`,
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates,return=minimal",
+                ...extra
+            }
+        };
+        if (body) opts.body = JSON.stringify(body);
+        const res = await fetch(`${SB_URL}/rest/v1/${path}`, opts);
+        if (res.status === 204 || res.headers.get("content-length") === "0") return { ok: res.ok, data: [] };
+        const text = await res.text();
+        try { return { ok: res.ok, status: res.status, data: JSON.parse(text) }; }
+        catch { return { ok: res.ok, status: res.status, data: text }; }
     }
-    
-    function toggleBGM() { 
+
+    // ============================================================
+    // MARKET ENGINE — tính local theo timestamp (không cần server)
+    // ============================================================
+    const STOCKS = [
+        { code: "VN-INDEX", base: 1200, volatility: 20, speed: 0.5 },
+        { code: "VIN",      base: 45,   volatility: 5,  speed: 1.2 },
+        { code: "FPT",      base: 95,   volatility: 8,  speed: 0.8 },
+        { code: "HPG",      base: 28,   volatility: 4,  speed: 1.5 },
+        { code: "DIG",      base: 18,   volatility: 8,  speed: 2.5 },
+        { code: "VTB",      base: 36,   volatility: 3,  speed: 1.0 },
+    ];
+    function seededRandom(seed) {
+        var t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+    function getPriceAtBlock(stock, block) {
+        const rng = seededRandom(block + stock.base);
+        const macro = Math.sin(block / 200 * stock.speed) * stock.volatility * 2;
+        const micro = Math.cos(block / 15  * stock.speed) * stock.volatility;
+        const noise = (rng - 0.5) * (stock.volatility / 2);
+        return Math.max(1.0, stock.base + macro + micro + noise);
+    }
+    function getMarketData() {
+        const block = Math.floor(Date.now() / 3000);
+        return STOCKS.map(s => {
+            const close = getPriceAtBlock(s, block);
+            const open  = getPriceAtBlock(s, block - 1);
+            const rng   = seededRandom(block + s.base);
+            return { code: s.code, price: close, candle: { open, close, high: Math.max(open,close)+rng*(s.volatility/10), low: Math.min(open,close)-rng*(s.volatility/10), time: block } };
+        });
+    }
+
+    // ============================================================
+    // STATE
+    // ============================================================
+    const FAKE_NEWS_TEMPLATES = ["{S} báo cáo lãi khủng.", "Cá mập gom {S}.", "{S} gặp khó khăn pháp lý.", "Tin đồn: {S} sắp sáp nhập.", "{S} dẫn đầu thị trường.", "Chủ tịch {S} mua vào."];
+    let me = null, wallet = {cash:250, stocks:{}, inbox:[], lastBC:0};
+    let data = [], candles = {}, sel = null, news = [];
+    let activeTab = 'market';
+    let chartType = localStorage.getItem("chart_type") || "candle";
+    document.getElementById("chart-type-select").value = chartType;
+    let isBgmOn = localStorage.getItem("bgm_state") !== "off";
+    document.getElementById("toggle-bgm").checked = isBgmOn;
+    let currentMailIdx = -1;
+    let lastSyncedAsset = null;
+
+    // ============================================================
+    // AUDIO
+    // ============================================================
+    const bgm = document.getElementById("bgm");
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let unlocked = false;
+    function unlockAudio() {
+        if (!unlocked) audioCtx.resume().then(() => { unlocked=true; if(isBgmOn) bgm.play().catch(()=>{}); });
+    }
+    function toggleBGM() {
         isBgmOn = document.getElementById("toggle-bgm").checked;
         localStorage.setItem("bgm_state", isBgmOn?"on":"off");
-        if(isBgmOn) bgm.play().catch(()=>{}); 
-        else bgm.pause();
+        if(isBgmOn) bgm.play().catch(()=>{}); else bgm.pause();
     }
-    
     function sfx(t) {
         if(audioCtx.state==='suspended') audioCtx.resume();
         const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
         if(t==='click'){o.frequency.value=600;g.gain.value=0.05;o.start();o.stop(audioCtx.currentTime+0.05);}
         if(t==='ok'){o.type='square';o.frequency.setValueAtTime(400,audioCtx.currentTime);o.frequency.linearRampToValueAtTime(800,audioCtx.currentTime+0.1);g.gain.value=0.05;o.start();o.stop(audioCtx.currentTime+0.2);}
         if(t==='err'){o.type='sawtooth';o.frequency.value=150;g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.3);o.start();o.stop(audioCtx.currentTime+0.3);}
-        if(t==='mail'){o.frequency.setValueAtTime(800,audioCtx.currentTime); o.frequency.linearRampToValueAtTime(1200,audioCtx.currentTime+0.1); g.gain.value=0.1; o.start(); o.stop(audioCtx.currentTime+0.3);}
+        if(t==='mail'){o.frequency.setValueAtTime(800,audioCtx.currentTime);o.frequency.linearRampToValueAtTime(1200,audioCtx.currentTime+0.1);g.gain.value=0.1;o.start();o.stop(audioCtx.currentTime+0.3);}
     }
 
-    // --- TOAST MANAGER ---
-    function showToast(title, msg, duration = 3000) {
-        const c = document.getElementById("toast-container");
-        const el = document.createElement("div");
-        el.className = "toast-box";
-        el.innerHTML = `
-            <div class="toast-content">
-                <div class="toast-icon">🔔</div>
-                <div class="toast-text">
-                    <div style="color:var(--green);font-size:11px;margin-bottom:2px;">${title}</div>
-                    <div>${msg}</div>
-                </div>
-            </div>
-            <div class="toast-progress" style="animation-duration:${duration}ms"></div>
-        `;
-        c.appendChild(el);
-        sfx('mail');
-        setTimeout(() => {
-            el.style.opacity = "0";
-            el.style.transform = "translateY(20px)";
-            setTimeout(() => el.remove(), 300);
-        }, duration);
+    // ============================================================
+    // TOAST & PROMPT
+    // ============================================================
+    function showToast(title, msg, duration=3000) {
+        const c=document.getElementById("toast-container"), el=document.createElement("div");
+        el.className="toast-box";
+        el.innerHTML=`<div class="toast-content"><div class="toast-icon">🔔</div><div class="toast-text"><div style="color:var(--green);font-size:11px;margin-bottom:2px;">${title}</div><div>${msg}</div></div></div><div class="toast-progress" style="animation-duration:${duration}ms"></div>`;
+        c.appendChild(el); sfx('mail');
+        setTimeout(()=>{el.style.opacity="0";el.style.transform="translateY(20px)";setTimeout(()=>el.remove(),300);},duration);
     }
-
-    // --- PROMPT MANAGER ---
     let promptResolver = null;
     function askInput(title) {
-        document.getElementById("prompt-title").innerText = title;
-        document.getElementById("prompt-input").value = "";
-        document.getElementById("custom-prompt").style.display = "flex";
+        document.getElementById("prompt-title").innerText=title;
+        document.getElementById("prompt-input").value="";
+        document.getElementById("custom-prompt").style.display="flex";
         document.getElementById("prompt-input").focus();
-        return new Promise(resolve => {
-            promptResolver = resolve;
-        });
+        return new Promise(r=>{promptResolver=r;});
     }
     function resolvePrompt(val) {
-        document.getElementById("custom-prompt").style.display = "none";
+        document.getElementById("custom-prompt").style.display="none";
         if(promptResolver) promptResolver(val);
     }
+    function safeFloat(v) { const n=parseFloat(v); return isNaN(n)?0:n; }
 
-    setInterval(() => { document.getElementById("system-time").innerText = new Date().toLocaleTimeString('vi-VN'); }, 1000);
+    setInterval(()=>{document.getElementById("system-time").innerText=new Date().toLocaleTimeString('vi-VN');},1000);
 
-    // --- APP START ---
-    (function(){ 
-        const s=localStorage.getItem("sess"); 
-        if(s && localStorage.getItem(`u_${s}`)) { 
-            me=s; 
-            wallet=JSON.parse(localStorage.getItem(`u_${s}`)); 
-            if(!wallet.inbox) wallet.inbox=[]; 
-            if(!wallet.lastBC) wallet.lastBC=0; 
-            enter(); 
-        } 
+    // ============================================================
+    // AUTH — gọi thẳng Supabase
+    // ============================================================
+    (function(){
+        const s=localStorage.getItem("sess");
+        if(s && localStorage.getItem(`u_${s}`)){
+            me=s; wallet=JSON.parse(localStorage.getItem(`u_${s}`));
+            if(!wallet.inbox) wallet.inbox=[];
+            if(!wallet.lastBC) wallet.lastBC=0;
+            enter();
+        }
     })();
 
     async function auth(t) {
         unlockAudio();
-        const u = document.getElementById("user").value.trim(), p = document.getElementById("pass").value.trim(), msg = document.getElementById("msg");
-        if(!u||!p) { sfx('err'); msg.innerText="Thiếu thông tin"; return; }
-        const k=`u_${u}`;
-        if(t==='reg') {
+        const u=document.getElementById("user").value.trim(), p=document.getElementById("pass").value.trim(), msg=document.getElementById("msg");
+        if(!u||!p){sfx('err');msg.innerText="Thiếu thông tin";return;}
+        msg.innerText="Đang xử lý..."; msg.style.color="#888";
+
+        if(t==='reg'){
             try {
-                const r=await fetch(`${SERVER}check-user?u=${encodeURIComponent(u)}`); const j=await r.json();
-                if(j.exists||localStorage.getItem(k)) { sfx('err'); msg.innerText="Tên đã tồn tại"; return; }
-                const firstMail = {id:`sys_${Date.now()}`, from:"Terminal X", title:"Chào mừng", body:"Chào mừng bạn đến với thị trường chứng khoán ảo.", time:Date.now(), read:false};
-                localStorage.setItem(k, JSON.stringify({pass:p, cash:250, stocks:{}, inbox:[firstMail], lastBC: Date.now()})); 
-                // CRITICAL FIX: Gửi dữ liệu lên server ngay lập tức để tránh bị ban
-                await fetch(`${SERVER}update-rank`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({user:u, asset:250})});
-                sfx('ok'); msg.innerText="OK!"; msg.style.color="var(--green)";
-            } catch(e){ msg.innerText="Lỗi mạng"; }
+                // Kiểm tra tên đã tồn tại chưa
+                const chk = await sb(`users?name=eq.${encodeURIComponent(u)}&select=name`);
+                if((chk.ok && chk.data.length>0) || localStorage.getItem(`u_${u}`)){
+                    sfx('err'); msg.innerText="Tên đã tồn tại"; msg.style.color="var(--red)"; return;
+                }
+                // Tạo user trên Supabase
+                const ins = await sb("users", "POST", {name:u, asset:250, pass:p});
+                if(!ins.ok && ins.status !== 201 && ins.status !== 200){
+                    sfx('err'); msg.innerText="Lỗi tạo tài khoản"; msg.style.color="var(--red)"; return;
+                }
+                const firstMail={id:`sys_${Date.now()}`,from:"Terminal X",title:"Chào mừng",body:"Chào mừng bạn đến với Terminal X!",time:Date.now(),read:false};
+                localStorage.setItem(`u_${u}`, JSON.stringify({pass:p,cash:250,stocks:{},inbox:[firstMail],lastBC:Date.now()}));
+                sfx('ok'); msg.innerText="Đăng ký thành công!"; msg.style.color="var(--green)";
+            } catch(e){ sfx('err'); msg.innerText="Lỗi mạng: "+e.message; msg.style.color="var(--red)"; }
         } else {
-            // Kiểm tra local trước
-            const d = localStorage.getItem(k) ? JSON.parse(localStorage.getItem(k)) : null;
-            if (d && d.pass === p) {
-                // Tài khoản thường - xác thực local
-                me=u; wallet=d;
+            try {
+                // Xác thực qua Supabase
+                const r = await sb(`users?name=eq.${encodeURIComponent(u)}&select=name,pass,asset`);
+                if(!r.ok || !r.data.length){ sfx('err'); msg.innerText="Tài khoản không tồn tại"; msg.style.color="var(--red)"; return; }
+                const srv = r.data[0];
+                if(srv.pass !== p){ sfx('err'); msg.innerText="Sai mật khẩu"; msg.style.color="var(--red)"; return; }
+                // Sync wallet từ server nếu chưa có local
+                let w = localStorage.getItem(`u_${u}`) ? JSON.parse(localStorage.getItem(`u_${u}`)) : null;
+                if(!w) w = {pass:p, cash:safeFloat(srv.asset), stocks:{}, inbox:[{id:`sys_0`,from:"Terminal X",title:"Chào mừng trở lại",body:"Dữ liệu được khôi phục từ server.",time:Date.now(),read:false}], lastBC:Date.now()};
+                w.pass = p;
+                localStorage.setItem(`u_${u}`, JSON.stringify(w));
+                me=u; wallet=w;
                 if(!wallet.inbox) wallet.inbox=[];
                 if(!wallet.lastBC) wallet.lastBC=0;
                 localStorage.setItem("sess", u); enter();
-            } else if (!d) {
-                // Có thể là tài khoản được seed từ server - xác thực qua server
-                try {
-                    const vr = await fetch(`${SERVER}verify-pass`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({user:u, pass:p})});
-                    const vj = await vr.json();
-                    if (vj.ok) {
-                        // Tạo localStorage từ data server
-                        const ir = await fetch(`${SERVER}init-account?u=${encodeURIComponent(u)}`);
-                        const ij = await ir.json();
-                        const initWallet = {pass:p, cash: parseFloat(ij.asset)||250, stocks:{}, inbox:[{id:`sys_0`, from:"Terminal X", title:"Chào mừng", body:"Xin chào! Chúc bạn đầu tư thành công.", time:Date.now(), read:false}], lastBC:Date.now()};
-                        localStorage.setItem(k, JSON.stringify(initWallet));
-                        me=u; wallet=initWallet;
-                        localStorage.setItem("sess", u); enter();
-                    } else { sfx('err'); msg.innerText="Sai mật khẩu"; }
-                } catch(e) { sfx('err'); msg.innerText="Lỗi mạng"; }
-            } else {
-                sfx('err'); msg.innerText="Sai mật khẩu";
-            }
+            } catch(e){ sfx('err'); msg.innerText="Lỗi mạng: "+e.message; msg.style.color="var(--red)"; }
         }
     }
 
     function enter() {
-        sfx('ok'); document.getElementById("login-screen").style.display="none"; document.getElementById("app").style.display="flex"; document.getElementById("u-name").innerText=me;
+        sfx('ok');
+        document.getElementById("login-screen").style.display="none";
+        document.getElementById("app").style.display="flex";
+        document.getElementById("u-name").innerText=me;
         if(me.toLowerCase()==='minh') document.getElementById("btn-admin").style.display="block";
-        setInterval(loop, 1500); setInterval(sync, 3000); setInterval(checkBroadcast, 10000); setInterval(checkBankruptcy, 5000); setInterval(checkGift, 5000); setInterval(checkP2PMail, 8000);
-        // checkBan chạy sau 30 giây để đảm bảo user mới đã được sync lên server
-        setTimeout(() => { checkBan(); setInterval(checkBan, 30000); }, 30000);
-        generateFakeNews(); setInterval(generateFakeNews, 8000); renderMail();
-        window.dispatchEvent(new Event('resize')); 
+        setInterval(loop, 1500);
+        setInterval(syncIfChanged, 60000); // sync 60 giây 1 lần — tránh vượt limit
+        setInterval(checkBroadcast, 15000);
+        setInterval(checkBankruptcy, 8000);
+        setInterval(checkGift, 20000);
+        setInterval(checkP2PMail, 20000);
+        // checkBan sau 60 giây — đảm bảo data đã lên server
+        setTimeout(()=>{ checkBan(); setInterval(checkBan, 60000); }, 60000);
+        generateFakeNews(); setInterval(generateFakeNews, 8000);
+        renderMail();
+        window.dispatchEvent(new Event('resize'));
     }
 
+    // ============================================================
+    // MARKET LOOP — tính local, không cần gọi server
+    // ============================================================
+    function loop() {
+        const start = Date.now();
+        data = getMarketData();
+        data.forEach(s=>{
+            if(!candles[s.code]) candles[s.code]=[];
+            const l=candles[s.code];
+            if(!l.length||l[l.length-1].time!==s.candle.time){l.push(s.candle);if(l.length>50)l.shift();}
+            else l[l.length-1]=s.candle;
+        });
+        if(sel){updateD();draw();} renderList();
+        document.getElementById("cash").innerText=wallet.cash.toFixed(2);
+        updatePing(Date.now()-start);
+    }
+    function updatePing(ms){const d=document.getElementById("ping-dot"),t=document.getElementById("ping-val");t.innerText=ms;d.className=ms<50?"dot online":"dot lag";}
+
+    // ============================================================
+    // SYNC — chỉ ghi khi asset thay đổi để tiết kiệm writes
+    // ============================================================
+    async function syncIfChanged() {
+        if(!me) return;
+        let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price;});
+        if(lastSyncedAsset !== null && Math.abs(t - lastSyncedAsset) < 1) return; // không đổi thì bỏ qua
+        try {
+            await sb("users", "POST", {name:me, asset:t});
+            lastSyncedAsset = t;
+        } catch(e){}
+    }
+    async function syncNow() {
+        if(!me) return;
+        let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price;});
+        try { await sb("users", "POST", {name:me, asset:t}); lastSyncedAsset=t; } catch(e){}
+    }
+
+    // ============================================================
+    // BAN CHECK
+    // ============================================================
     async function checkBan() {
         try {
-            const r = await fetch(`${SERVER}check-user?u=${encodeURIComponent(me)}`); const j = await r.json();
-            if(!j.exists) { showToast("CẢNH BÁO", "Tài khoản đã bị BAN.", 5000); setTimeout(()=>{localStorage.clear(); location.reload();}, 2000); }
-        } catch(e) {}
-    }
-
-    // --- FIX CHART PC ---
-    window.addEventListener('resize', () => {
-        if(sel) { initChart(); draw(); }
-    });
-
-    function safeFloat(val) {
-        const n = parseFloat(val);
-        return isNaN(n) ? 0 : n;
-    }
-
-    // --- LOGIC ---
-    function generateFakeNews() {
-        if(data.length === 0) return;
-        const stock = data[Math.floor(Math.random() * data.length)];
-        const template = FAKE_NEWS_TEMPLATES[Math.floor(Math.random() * FAKE_NEWS_TEMPLATES.length)];
-        const isGood = stock.candle.close >= stock.candle.open;
-        news.unshift({ t: template.replace("{S}", stock.code), b: isGood ? 50 : -50, time: new Date().toLocaleTimeString() });
-        if(news.length > 25) news.pop();
-        if(activeTab === 'news') renderNewsPage(); tick();
-    }
-    function renderNewsPage() { document.getElementById("news-list").innerHTML = news.map(n => `<div class="news-card" style="border-left-color:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#666'}"><span class="news-time">${n.time}</span><div style="font-size:10px;color:#888;font-weight:bold;margin-bottom:2px;">${n.b>0?'TÍCH CỰC':n.b<0?'TIÊU CỰC':'THỊ TRƯỜNG'}</div><div style="color:#ddd;">${n.t}</div></div>`).join(''); }
-
-    function renderMail() {
-        const div = document.getElementById("mail-list"), empty = document.getElementById("empty-mail"), badge = document.getElementById("mail-badge");
-        if(!wallet.inbox.length) { div.innerHTML=""; empty.style.display="block"; badge.style.display="none"; return; }
-        empty.style.display="none"; const unread = wallet.inbox.filter(m=>!m.read).length;
-        badge.style.display = unread>0 ? "flex" : "none"; badge.innerText = unread;
-        div.innerHTML = wallet.inbox.map((m, i) => `<div class="mail-item ${m.read?'':'unread'}" onclick="openMail(${i})"><div class="mail-icon">${m.from[0].toUpperCase()}</div><div class="mail-content"><div style="display:flex;justify-content:space-between"><div class="mail-sender">${m.from}</div></div><div class="mail-subject">${m.title}</div></div></div>`).join('');
-    }
-    function openMail(idx) {
-        currentMailIdx = idx; const m = wallet.inbox[idx]; m.read = true;
-        document.getElementById("mail-body-content").innerHTML = `<h3 style="margin-top:0">${m.title}</h3><div style="font-size:12px;color:#888;margin-bottom:20px">Từ: ${m.from} - ${new Date(m.time).toLocaleString()}</div><div>${m.body}</div>`;
-        document.getElementById("mail-detail").style.display="flex"; localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); renderMail();
-    }
-    function closeMail() { document.getElementById("mail-detail").style.display="none"; }
-    function deleteCurrentMail() { if(currentMailIdx > -1) { wallet.inbox.splice(currentMailIdx, 1); localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); closeMail(); renderMail(); } }
-    function openCompose() { document.getElementById("compose-modal").style.display="flex"; }
-    
-    async function sendP2PMail() {
-        const to = document.getElementById("mail-to").value.trim(), sub = document.getElementById("mail-subj").value.trim(), body = document.getElementById("mail-content").value.trim();
-        if(!to || !sub || !body) return showToast("THÔNG BÁO", "Nhập đủ thông tin");
-        if(wallet.cash < 10) return showToast("LỖI", "Không đủ tiền ($10)");
-        
-        const r = await fetch(`${SERVER}user/send-mail`, {method:"POST", body:JSON.stringify({to, from:me, title:sub, body})});
-        if(r.ok) { wallet.cash -= 10; showToast("THÀNH CÔNG", "Đã gửi!"); document.getElementById("compose-modal").style.display="none"; } else showToast("LỖI", "Gửi thất bại");
-    }
-
-    async function checkP2PMail() {
-        try {
-            const r = await fetch(`${SERVER}user/check-mail?u=${encodeURIComponent(me)}`); const mails = await r.json();
-            if(mails.length > 0) {
-                mails.forEach(m => {
-                    if(!wallet.inbox.some(existing => existing.id === m.id)) {
-                        wallet.inbox.unshift({...m, read:false});
-                    }
-                });
-                localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); showToast("MAIL", "Bạn có thư mới!"); renderMail();
+            const r = await sb(`users?name=eq.${encodeURIComponent(me)}&select=name`);
+            if(r.ok && r.data.length===0){
+                showToast("CẢNH BÁO","Tài khoản đã bị BAN.",5000);
+                setTimeout(()=>{localStorage.removeItem(`u_${me}`);localStorage.removeItem("sess");location.reload();},3000);
             }
         } catch(e){}
     }
 
-    function checkBankruptcy() {
-        if(data.length === 0) return; let t = wallet.cash; data.forEach(s=>{ if(wallet.stocks[s.code]) t += wallet.stocks[s.code]*s.price });
-        if(t < 10 && !wallet.inbox.some(m => m.title === "CẢNH BÁO PHÁ SẢN" && (Date.now() - m.time < 60000))) {
-            wallet.inbox.unshift({id:`sys_${Date.now()}`, from:"Terminal X", title:"CẢNH BÁO PHÁ SẢN", body:`Tài sản dưới $10.<br><button class="reset-btn" onclick="resetAccount()">RESET ($250)</button>`, time:Date.now(), read:false});
-            renderMail();
-        }
-    }
-    window.resetAccount = async function() { 
-        const c = await askInput("Gõ 'RESET' để xác nhận:");
-        if(c === 'RESET') { wallet.cash=250; wallet.stocks={}; wallet.inbox=[]; localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); closeMail(); renderMail(); } 
-    }
-    async function forgotPass() { const c = await askInput("Gõ 'DEL' để xóa dữ liệu:"); if(c==='DEL') { localStorage.clear(); location.reload(); } }
-    async function changePassword() {
-        const o = await askInput("Mật khẩu cũ:");
-        const n = await askInput("Mật khẩu mới:");
-        if(!o || !n) return;
-        if(o !== wallet.pass) return showToast("LỖI", "Mật khẩu cũ sai");
-        wallet.pass = n; localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); showToast("THÀNH CÔNG", "Đã đổi!"); logout();
-    }
-
-    async function loop() {
-        const start = Date.now();
+    // ============================================================
+    // LEADERBOARD
+    // ============================================================
+    async function getRank() {
+        if(activeTab!=='rank') return;
         try {
-            const res = await fetch(SERVER); updatePing(Date.now() - start); const json = await res.json();
-            data = json.stocks;
-            data.forEach(s => {
-                if(!candles[s.code]) candles[s.code] = [];
-                const l = candles[s.code];
-                if(!l.length || l[l.length-1].time !== s.candle.time) { l.push(s.candle); if(l.length>50) l.shift(); }
-                else l[l.length-1] = s.candle;
-            });
-            if(sel) { updateD(); draw(); } renderList(); document.getElementById("cash").innerText = wallet.cash.toFixed(2);
-        } catch(e){ updatePing(-1); }
-    }
-    function updatePing(ms) { const d=document.getElementById("ping-dot"), t=document.getElementById("ping-val"); if(ms===-1){t.innerText="ERR";d.className="dot lag";}else{t.innerText=ms;d.className=ms<100?"dot online":"dot lag";} }
-
-    function renderList() {
-        const div = document.getElementById("list");
-        if(div.childElementCount !== data.length) {
-            div.innerHTML = data.map(s => `<div class="stock-item" onclick="openDetail('${s.code}')" id="st-${s.code}"><div><div style="font-weight:900;font-size:16px;color:white">${s.code}</div><div style="font-size:11px;color:#888">${(wallet.stocks[s.code]||0).toFixed(0)} CP</div></div><div style="text-align:right"><div class="price-val" style="font-size:16px;font-weight:bold;">${s.price.toFixed(2)}</div></div></div>`).join('');
-        } else {
-            data.forEach(s => { const el = document.getElementById(`st-${s.code}`); if(el) { const up = s.candle.close >= s.candle.open; const p = el.querySelector(".price-val"); p.innerText = s.price.toFixed(2); p.style.color = up ? "var(--green)" : "var(--red)"; } });
-        }
+            const r = await sb("users?select=name,asset&order=asset.desc&limit=50");
+            document.getElementById("rank-list").innerHTML=(r.data||[]).map((p,i)=>`
+                <div class="rank-item ${p.name===me?'rank-me':''}">
+                    <div style="width:30px;text-align:center;font-weight:bold;">${i+1}</div>
+                    <div style="flex:1;margin-left:10px;">
+                        <div style="font-weight:bold;color:white;">${p.name} ${i===0?'👑':''}</div>
+                        <div style="font-size:12px;color:#888;">$${safeFloat(p.asset).toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                    </div>
+                </div>`).join('');
+        } catch(e){}
     }
 
+    // ============================================================
+    // BROADCAST
+    // ============================================================
     async function checkBroadcast() {
-        try { 
-            const r = await fetch(`${SERVER}get-broadcast`); 
-            const m = await r.json(); 
-            if(m.time && m.time > wallet.lastBC) { 
-                wallet.inbox.unshift({id:m.id, from:"Admin", title:m.t, body:m.b, time:m.time, read:false}); 
-                wallet.lastBC = m.time; 
-                showToast("THÔNG BÁO", "Tin nhắn từ hệ thống"); renderMail(); 
-                localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); 
-            } 
+        try {
+            const r = await sb("broadcast?id=eq.bc_latest&select=*");
+            if(r.ok && r.data.length>0){
+                const m=r.data[0];
+                if(m.time && m.time > wallet.lastBC){
+                    wallet.inbox.unshift({id:m.id,from:"Admin",title:m.title,body:m.body,time:m.time,read:false});
+                    wallet.lastBC=m.time;
+                    showToast("THÔNG BÁO","Tin nhắn từ hệ thống"); renderMail();
+                    localStorage.setItem(`u_${me}`,JSON.stringify(wallet));
+                }
+            }
         } catch(e){}
     }
 
+    // ============================================================
+    // GIFT
+    // ============================================================
     async function checkGift() {
-        try { 
-            const r = await fetch(`${SERVER}check-gift?u=${encodeURIComponent(me)}`); 
-            const j = await r.json(); 
-            if(j.amount !== 0) { 
-                wallet.cash = safeFloat(wallet.cash) + safeFloat(j.amount);
-                const type = j.amount > 0 ? "QUÀ TẶNG" : "THU THUẾ";
-                const msg = j.amount > 0 ? `Bạn nhận được: $${j.amount}` : `Bạn bị trừ: $${Math.abs(j.amount)}`;
-                wallet.inbox.unshift({id:`gift_${Date.now()}`, from:"System", title:type, body:msg, time:Date.now(), read:false}); 
-                showToast(type, msg); renderMail(); 
-                localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
-            } 
+        try {
+            const r = await sb(`gifts?to=eq.${encodeURIComponent(me)}&select=id,amount`);
+            if(r.ok && r.data.length>0){
+                let total=0; r.data.forEach(g=>{total+=safeFloat(g.amount);});
+                await sb(`gifts?to=eq.${encodeURIComponent(me)}`,"DELETE");
+                wallet.cash=safeFloat(wallet.cash)+total;
+                const type=total>0?"QUÀ TẶNG":"THU THUẾ";
+                const msgText=total>0?`Bạn nhận được: $${total}`:`Bạn bị trừ: $${Math.abs(total)}`;
+                wallet.inbox.unshift({id:`gift_${Date.now()}`,from:"System",title:type,body:msgText,time:Date.now(),read:false});
+                showToast(type,msgText); renderMail();
+                localStorage.setItem(`u_${me}`,JSON.stringify(wallet));
+                syncNow();
+            }
         } catch(e){}
     }
 
-    document.getElementById("trade-amount").addEventListener("input", function() { const qty = parseFloat(this.value); if(sel && data.length > 0) { const s = data.find(x => x.code === sel); document.getElementById("trade-estimate").innerText = `Ước tính: $${isNaN(qty * s.price) ? '0.00' : (qty * s.price).toFixed(2)}`; } });
-    
-    async function trade(t) {
-        let qty = parseFloat(document.getElementById("trade-amount").value); 
-        if(!qty || qty<=0) {
-            const inp = await askInput("Nhập số lượng:");
-            qty = parseFloat(inp);
-        }
-        if(!qty || qty<=0) return showToast("LỖI", "Số lượng không hợp lệ");
-
-        const s = data.find(x=>x.code===sel); const cost = qty * s.price;
-        if(t==='buy') { if(cost > wallet.cash) return showToast("LỖI", "Thiếu tiền"); wallet.cash -= cost; wallet.stocks[sel] = (wallet.stocks[sel]||0) + qty; }
-        else { if(qty > (wallet.stocks[sel]||0)) return showToast("LỖI", "Thiếu CP"); wallet.stocks[sel] -= qty; wallet.cash += cost; }
-        sfx('ok'); localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); sync();
+    // ============================================================
+    // MAIL P2P
+    // ============================================================
+    async function checkP2PMail() {
+        try {
+            const r = await sb(`mails?to=eq.${encodeURIComponent(me)}&select=*&order=time.asc`);
+            if(r.ok && r.data.length>0){
+                r.data.forEach(m=>{ if(!wallet.inbox.some(x=>x.id===m.id)) wallet.inbox.unshift({...m,read:false}); });
+                await sb(`mails?to=eq.${encodeURIComponent(me)}`,"DELETE");
+                localStorage.setItem(`u_${me}`,JSON.stringify(wallet));
+                showToast("MAIL","Bạn có thư mới!"); renderMail();
+            }
+        } catch(e){}
+    }
+    async function sendP2PMail() {
+        const to=document.getElementById("mail-to").value.trim(), sub=document.getElementById("mail-subj").value.trim(), body=document.getElementById("mail-content").value.trim();
+        if(!to||!sub||!body) return showToast("THÔNG BÁO","Nhập đủ thông tin");
+        if(wallet.cash<10) return showToast("LỖI","Không đủ tiền ($10)");
+        const id=`${Date.now()}-${Math.random().toString(36).substr(2,9)}`;
+        const r = await sb("mails","POST",{id,to,from:me,title:sub,body,time:Date.now()});
+        if(r.ok||r.status===201||r.status===200||r.status===204){
+            wallet.cash-=10; showToast("THÀNH CÔNG","Đã gửi!");
+            document.getElementById("compose-modal").style.display="none";
+            localStorage.setItem(`u_${me}`,JSON.stringify(wallet)); syncNow();
+        } else showToast("LỖI","Gửi thất bại");
     }
 
-    function openDetail(c) { sfx('click'); sel = c; document.getElementById("detail-view").classList.add("active"); initChart(); updateD(); tick(); }
-    function closeDetail() { sfx('click'); sel = null; document.getElementById("detail-view").classList.remove("active"); }
-    function updateD() {
-        const s = data.find(x=>x.code===sel); document.getElementById("d-code").innerText = s.code; document.getElementById("d-price").innerText = s.price.toFixed(2); document.getElementById("d-owned").innerText = (wallet.stocks[sel]||0).toFixed(0); document.getElementById("d-price").style.color = (candles[sel]?.at(-1).close >= candles[sel]?.at(-1).open) ? "var(--green)" : "var(--red)";
+    // ============================================================
+    // MAIL RENDER
+    // ============================================================
+    function renderMail() {
+        const div=document.getElementById("mail-list"),empty=document.getElementById("empty-mail"),badge=document.getElementById("mail-badge");
+        if(!wallet.inbox.length){div.innerHTML="";empty.style.display="block";badge.style.display="none";return;}
+        empty.style.display="none";
+        const unread=wallet.inbox.filter(m=>!m.read).length;
+        badge.style.display=unread>0?"flex":"none"; badge.innerText=unread;
+        div.innerHTML=wallet.inbox.map((m,i)=>`<div class="mail-item ${m.read?'':'unread'}" onclick="openMail(${i})"><div class="mail-icon">${m.from[0].toUpperCase()}</div><div class="mail-content"><div class="mail-sender">${m.from}</div><div class="mail-subject">${m.title}</div></div></div>`).join('');
     }
+    function openMail(idx) {
+        currentMailIdx=idx; const m=wallet.inbox[idx]; m.read=true;
+        document.getElementById("mail-body-content").innerHTML=`<h3 style="margin-top:0">${m.title}</h3><div style="font-size:12px;color:#888;margin-bottom:20px">Từ: ${m.from} - ${new Date(m.time).toLocaleString()}</div><div>${m.body}</div>`;
+        document.getElementById("mail-detail").style.display="flex";
+        localStorage.setItem(`u_${me}`,JSON.stringify(wallet)); renderMail();
+    }
+    function closeMail(){document.getElementById("mail-detail").style.display="none";}
+    function deleteCurrentMail(){if(currentMailIdx>-1){wallet.inbox.splice(currentMailIdx,1);localStorage.setItem(`u_${me}`,JSON.stringify(wallet));closeMail();renderMail();}}
+    function openCompose(){document.getElementById("compose-modal").style.display="flex";}
 
-    let ctx; 
-    function initChart() { 
-        const c=document.getElementById("chart"); 
-        const rect = c.parentElement.getBoundingClientRect();
-        // Fix DPI
-        const dpr = window.devicePixelRatio || 1;
-        c.width = rect.width * dpr;
-        c.height = rect.height * dpr;
-        ctx = c.getContext("2d");
-        ctx.scale(dpr, dpr);
+    // ============================================================
+    // ADMIN
+    // ============================================================
+    async function openAdmin() {
+        if(me.toLowerCase()!=='minh') return;
+        const p = await askInput("NHẬP MẬT KHẨU ADMIN:");
+        if(p !== ADMIN_SECRET) return showToast("LỖI","Sai mật khẩu");
+        document.getElementById("admin-view").style.display="flex";
+        loadAdminUsers();
     }
-    
-    function calculateSmartGrid(min, max) { const range = max - min; const roughStep = range / 5; const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep))); const normalizedStep = roughStep / magnitude; return (normalizedStep < 1.5 ? 1 : normalizedStep < 3 ? 2 : normalizedStep < 7 ? 5 : 10) * magnitude; }
-    
-    function draw() {
-        if(!sel || !candles[sel]) return; const d = candles[sel]; if(!d.length) return;
-        const rect = document.getElementById("chart").parentElement.getBoundingClientRect();
-        const W = rect.width;
-        const H = rect.height;
-        ctx.clearRect(0,0,W,H);
-        let min=Infinity, max=-Infinity; d.forEach(x => { if(x.low<min) min=x.low; if(x.high>max) max=x.high; });
-        const padding = (max - min) * 0.1; min -= padding; max += padding; const step = calculateSmartGrid(min, max); const startY = Math.ceil(min / step) * step; const py = 20; const gy = v => H - py - ((v - min) / (max - min)) * (H - py * 2);
-        ctx.fillStyle = "#444"; ctx.font = "10px monospace"; ctx.textAlign = "right"; ctx.strokeStyle="#222"; ctx.lineWidth=1;
-        for (let v = startY; v <= max; v += step) { const y = gy(v); ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); ctx.fillText(v.toFixed(step < 1 ? 2 : 0), W - 5, y - 2); }
-        
-        const maxCandleWidth = 40;
-        let cw = (W-30)/50;
-        if(cw > maxCandleWidth) cw = maxCandleWidth;
-
-        if(chartType === 'candle') { d.forEach((c,i) => { const x = i*cw+10, col = c.close >= c.open ? "#00ff88" : "#ff3b3b"; ctx.strokeStyle = col; ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x+cw/2, gy(c.high)); ctx.lineTo(x+cw/2, gy(c.low)); ctx.stroke(); const h = Math.abs(gy(c.open)-gy(c.close)) || 1; ctx.fillRect(x+1, Math.min(gy(c.open), gy(c.close)), cw-2, h); }); }
-        else { ctx.lineWidth = 2; for (let i = 0; i < d.length - 1; i++) { const x1 = i * cw + 10 + cw/2; const y1 = gy(d[i].close); const x2 = (i + 1) * cw + 10 + cw/2; const y2 = gy(d[i+1].close); ctx.beginPath(); ctx.strokeStyle = d[i+1].close >= d[i].close ? "#00ff88" : "#ff3b3b"; ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); } }
-        const ly = gy(d[d.length-1].close); ctx.strokeStyle="rgba(255,255,255,0.4)"; ctx.setLineDash([2,2]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle = d[d.length-1].close >= d[d.length-1].open ? "#00ff88" : "#ff3b3b"; ctx.fillRect(W-35, ly-8, 35, 16); ctx.fillStyle = "black"; ctx.fillText(d[d.length-1].close.toFixed(2), W-2, ly+3);
-    }
-    function tick() { if(!news.length) return; const n=news[0]; const el=document.getElementById("mini-news-ticker"); el.innerText=`📰 ${n.t}`; el.className = `mini-news ${n.b > 0 ? 'pos' : 'neg'}`; }
-
-    async function openAdmin() { 
-        if(me.toLowerCase()!=='minh') return; 
-        adminPass = await askInput("NHẬP MẬT KHẨU ADMIN:"); 
-        if(!adminPass) return; 
-        document.getElementById("admin-view").style.display="flex"; 
-        loadAdminUsers(); 
-    }
-    
-    async function loadAdminUsers() { 
-        const d=document.getElementById("admin-user-list"); d.innerHTML="Loading..."; 
-        try{
-            const r=await fetch(`${SERVER}admin/users`, {headers: {'X-Admin-Pass': adminPass}});
-            if(r.status === 401) { showToast("LỖI", "Sai mật khẩu"); return document.getElementById("admin-view").style.display="none"; }
-            const u=await r.json(); 
-            d.innerHTML=u.map(x=>`
-            <div class="mail-item" style="padding:10px; cursor:default;">
+    async function loadAdminUsers() {
+        const d=document.getElementById("admin-user-list"); d.innerHTML="Loading...";
+        try {
+            const r = await sb("users?select=name,asset&order=asset.desc");
+            d.innerHTML=(r.data||[]).map(x=>`
+            <div class="mail-item" style="padding:10px;cursor:default;">
                 <div style="flex:1"><b>${x.name}</b><br><small>$${safeFloat(x.asset).toLocaleString()}</small></div>
-                <div style="display:flex; gap:5px;">
+                <div style="display:flex;gap:5px;">
                     <button onclick="grantCash('${x.name}')" style="background:var(--blue);color:white;border:none;padding:5px;width:30px;border-radius:4px;">+</button>
                     <button onclick="taxUser('${x.name}')" style="background:var(--gold);color:black;border:none;padding:5px;width:30px;border-radius:4px;">-</button>
                     <button onclick="delUser('${x.name}')" style="background:var(--red);color:white;border:none;padding:5px;border-radius:4px;">BAN</button>
                 </div>
             </div>`).join('');
-        }catch(e){d.innerHTML="Lỗi";} 
+        } catch(e){d.innerHTML="Lỗi";}
     }
-    
-    async function resetAllUsers() { 
-        const c = await askInput(`Gõ "XOAHET" để xóa TOÀN BỘ tài khoản:`);
-        if(c === 'XOAHET') {
-            const r = await fetch(`${SERVER}admin/reset-all`, {method:"POST", headers:{'X-Admin-Pass':adminPass, 'Content-Type':'application/json'}, body:JSON.stringify({})});
-            const j = await r.json();
-            showToast("THÔNG BÁO", `Đã xóa ${j.deleted} keys`);
-            loadAdminUsers();
+    async function delUser(n) {
+        const c=await askInput(`Gõ "BAN" để ban ${n}`);
+        if(c==='BAN'){
+            await sb(`users?name=eq.${encodeURIComponent(n)}`,"DELETE");
+            showToast("THÔNG BÁO",`Đã ban ${n}`); loadAdminUsers();
         }
     }
-        const c = await askInput(`Gõ "BAN" để ban ${n}`);
-        if(c === 'BAN') {
-            await fetch(`${SERVER}admin/delete-user`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n})}); 
-            showToast("THÔNG BÁO", `Đã ban ${n}`);
-            loadAdminUsers();
+    async function grantCash(n) {
+        const a=await askInput(`Tặng tiền cho ${n}:`);
+        if(a&&!isNaN(a)){
+            const id=`gift_${n}_${Date.now()}`;
+            await sb("gifts","POST",{id,to:n,amount:Math.abs(parseFloat(a))});
+            showToast("THÀNH CÔNG","Đã tặng!");
         }
     }
-    
-    async function grantCash(n) { 
-        const a = await askInput(`Tặng tiền cho ${n}:`); 
-        if(a && !isNaN(a)) {
-            await fetch(`${SERVER}admin/grant-cash`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n, amount:Math.abs(parseFloat(a))})}); 
-            showToast("THÀNH CÔNG", "Đã tặng!"); 
+    async function taxUser(n) {
+        const a=await askInput(`Thu thuế ${n} (Trừ tiền):`);
+        if(a&&!isNaN(a)){
+            const id=`tax_${n}_${Date.now()}`;
+            await sb("gifts","POST",{id,to:n,amount:-Math.abs(parseFloat(a))});
+            showToast("THÀNH CÔNG","Đã thu thuế!");
         }
     }
-    
-    async function taxUser(n) { 
-        const a = await askInput(`Thu thuế ${n} (Trừ tiền):`); 
-        if(a && !isNaN(a)) {
-            await fetch(`${SERVER}admin/grant-cash`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n, amount: -Math.abs(parseFloat(a))})}); 
-            showToast("THÀNH CÔNG", "Đã thu thuế!"); 
-        }
+    async function adminBroadcast() {
+        const t=document.getElementById("bc-title").value, b=document.getElementById("bc-body").value;
+        if(t&&b){ await sb("broadcast","POST",{id:"bc_latest",title:t,body:b,time:Date.now()}); showToast("THÀNH CÔNG","Đã gửi thông báo!"); }
     }
-    
-    async function adminBroadcast() { 
-        const t = document.getElementById("bc-title").value;
-        const b = document.getElementById("bc-body").value;
-        if(t&&b) {
-            await fetch(`${SERVER}admin/broadcast`, {method:"POST", headers:{'X-Admin-Pass':adminPass}, body:JSON.stringify({title:t, body:b})}); 
-            showToast("THÀNH CÔNG", "Đã gửi thông báo!"); 
+    async function resetAllUsers() {
+        const c=await askInput(`Gõ "XOAHET" để xóa TOÀN BỘ:`);
+        if(c==='XOAHET'){
+            await sb("users?name=neq.____x____","DELETE");
+            await sb("mails?id=neq.____x____","DELETE");
+            await sb("gifts?id=neq.____x____","DELETE");
+            await sb("broadcast?id=neq.____x____","DELETE");
+            showToast("THÔNG BÁO","Đã xóa toàn bộ"); loadAdminUsers();
         }
     }
 
-    async function sync() { if(!me) return; let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price}); await fetch(`${SERVER}update-rank`, {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({user:me, asset:t})}); }
-    
-    async function getRank() { 
-        if(activeTab !== 'rank') return; 
-        try {
-            const r=await fetch(`${SERVER}get-rank`); 
-            const l=await r.json(); 
-            document.getElementById("rank-list").innerHTML=l.map((p,i)=>`
-                <div class="rank-item ${p.name===me?'rank-me':''}">
-                    <div style="width:30px;text-align:center;font-weight:bold">${i+1}</div>
-                    <div style="flex:1;margin-left:10px">
-                        <div style="font-weight:bold;color:white">${p.name} ${i==0?'👑':''}</div>
-                        <div style="font-size:12px;color:#888">$${safeFloat(p.total).toLocaleString(undefined,{maximumFractionDigits:0})}</div>
-                    </div>
-                </div>`).join(''); 
-        } catch(e) { console.error(e); }
+    // ============================================================
+    // BANKRUPTCY & ACCOUNT UTILS
+    // ============================================================
+    function checkBankruptcy() {
+        if(!data.length) return;
+        let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price;});
+        if(t<10&&!wallet.inbox.some(m=>m.title==="CẢNH BÁO PHÁ SẢN"&&(Date.now()-m.time<60000))){
+            wallet.inbox.unshift({id:`sys_${Date.now()}`,from:"Terminal X",title:"CẢNH BÁO PHÁ SẢN",body:`Tài sản dưới $10.<br><button onclick="resetAccount()">RESET ($250)</button>`,time:Date.now(),read:false});
+            renderMail();
+        }
+    }
+    window.resetAccount = async function() {
+        const c=await askInput("Gõ 'RESET' để xác nhận:");
+        if(c==='RESET'){wallet.cash=250;wallet.stocks={};wallet.inbox=[];localStorage.setItem(`u_${me}`,JSON.stringify(wallet));closeMail();renderMail();syncNow();}
+    }
+    async function forgotPass(){const c=await askInput("Gõ 'DEL' để xóa dữ liệu:");if(c==='DEL'){localStorage.clear();location.reload();}}
+    async function changePassword() {
+        const o=document.getElementById("old-pass").value, n=document.getElementById("new-pass").value;
+        if(!o||!n) return;
+        if(o!==wallet.pass) return showToast("LỖI","Mật khẩu cũ sai");
+        wallet.pass=n;
+        await sb("users","POST",{name:me,pass:n});
+        localStorage.setItem(`u_${me}`,JSON.stringify(wallet));
+        showToast("THÀNH CÔNG","Đã đổi mật khẩu!"); logout();
     }
 
-    function tab(id) { document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active')); document.getElementById(`tab-${id}`).classList.remove('hidden'); event.target.classList.add('active'); sfx('click'); activeTab = id; if(id==='rank') getRank(); if(id==='news') renderNewsPage(); }
-    function logout() { localStorage.removeItem("sess"); location.reload(); }
-    function changeChartType() { chartType = document.getElementById("chart-type-select").value; localStorage.setItem("chart_type", chartType); if(sel) draw(); }
-    function openSettings() { document.getElementById("settings-modal").style.display='flex'; }
+    // ============================================================
+    // TRADE
+    // ============================================================
+    document.getElementById("trade-amount").addEventListener("input",function(){
+        const qty=parseFloat(this.value);
+        if(sel&&data.length){const s=data.find(x=>x.code===sel);document.getElementById("trade-estimate").innerText=`Ước tính: $${isNaN(qty*s.price)?'0.00':(qty*s.price).toFixed(2)}`;}
+    });
+    async function trade(t) {
+        let qty=parseFloat(document.getElementById("trade-amount").value);
+        if(!qty||qty<=0){const inp=await askInput("Nhập số lượng:");qty=parseFloat(inp);}
+        if(!qty||qty<=0) return showToast("LỖI","Số lượng không hợp lệ");
+        const s=data.find(x=>x.code===sel), cost=qty*s.price;
+        if(t==='buy'){if(cost>wallet.cash) return showToast("LỖI","Thiếu tiền");wallet.cash-=cost;wallet.stocks[sel]=(wallet.stocks[sel]||0)+qty;}
+        else{if(qty>(wallet.stocks[sel]||0)) return showToast("LỖI","Thiếu CP");wallet.stocks[sel]-=qty;wallet.cash+=cost;}
+        sfx('ok'); localStorage.setItem(`u_${me}`,JSON.stringify(wallet)); syncNow();
+    }
+
+    // ============================================================
+    // CHART & RENDER
+    // ============================================================
+    function renderList() {
+        const div=document.getElementById("list");
+        if(div.childElementCount!==data.length){
+            div.innerHTML=data.map(s=>`<div class="stock-item" onclick="openDetail('${s.code}')" id="st-${s.code}"><div><div style="font-weight:900;font-size:16px;color:white">${s.code}</div><div style="font-size:11px;color:#888">${(wallet.stocks[s.code]||0).toFixed(0)} CP</div></div><div style="text-align:right"><div class="price-val" style="font-size:16px;font-weight:bold;">${s.price.toFixed(2)}</div></div></div>`).join('');
+        } else {
+            data.forEach(s=>{const el=document.getElementById(`st-${s.code}`);if(el){const up=s.candle.close>=s.candle.open;const p=el.querySelector(".price-val");p.innerText=s.price.toFixed(2);p.style.color=up?"var(--green)":"var(--red)";}});
+        }
+    }
+    function generateFakeNews() {
+        if(!data.length) return;
+        const stock=data[Math.floor(Math.random()*data.length)];
+        const tmpl=FAKE_NEWS_TEMPLATES[Math.floor(Math.random()*FAKE_NEWS_TEMPLATES.length)];
+        const isGood=stock.candle.close>=stock.candle.open;
+        news.unshift({t:tmpl.replace("{S}",stock.code),b:isGood?50:-50,time:new Date().toLocaleTimeString()});
+        if(news.length>25) news.pop();
+        if(activeTab==='news') renderNewsPage(); tick();
+    }
+    function renderNewsPage(){document.getElementById("news-list").innerHTML=news.map(n=>`<div class="news-card" style="border-left-color:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#666'}"><span class="news-time">${n.time}</span><div style="font-size:10px;color:#888;font-weight:bold;margin-bottom:2px;">${n.b>0?'TÍCH CỰC':n.b<0?'TIÊU CỰC':'THỊ TRƯỜNG'}</div><div style="color:#ddd;">${n.t}</div></div>`).join('');}
+    function tick(){if(!news.length)return;const n=news[0];const el=document.getElementById("mini-news-ticker");el.innerText=`📰 ${n.t}`;el.className=`mini-news ${n.b>0?'pos':'neg'}`;}
+    function openDetail(c){sfx('click');sel=c;document.getElementById("detail-view").classList.add("active");initChart();updateD();tick();}
+    function closeDetail(){sfx('click');sel=null;document.getElementById("detail-view").classList.remove("active");}
+    function updateD(){const s=data.find(x=>x.code===sel);document.getElementById("d-code").innerText=s.code;document.getElementById("d-price").innerText=s.price.toFixed(2);document.getElementById("d-owned").innerText=(wallet.stocks[sel]||0).toFixed(0);document.getElementById("d-price").style.color=(candles[sel]?.at(-1).close>=candles[sel]?.at(-1).open)?"var(--green)":"var(--red)";}
+    window.addEventListener('resize',()=>{if(sel){initChart();draw();}});
+    let ctx;
+    function initChart(){const c=document.getElementById("chart");const rect=c.parentElement.getBoundingClientRect();const dpr=window.devicePixelRatio||1;c.width=rect.width*dpr;c.height=rect.height*dpr;ctx=c.getContext("2d");ctx.scale(dpr,dpr);}
+    function calculateSmartGrid(min,max){const range=max-min;const roughStep=range/5;const magnitude=Math.pow(10,Math.floor(Math.log10(roughStep)));const normalizedStep=roughStep/magnitude;return(normalizedStep<1.5?1:normalizedStep<3?2:normalizedStep<7?5:10)*magnitude;}
+    function draw(){
+        if(!sel||!candles[sel]) return; const d=candles[sel]; if(!d.length) return;
+        const rect=document.getElementById("chart").parentElement.getBoundingClientRect();
+        const W=rect.width,H=rect.height; ctx.clearRect(0,0,W,H);
+        let min=Infinity,max=-Infinity; d.forEach(x=>{if(x.low<min)min=x.low;if(x.high>max)max=x.high;});
+        const padding=(max-min)*0.1; min-=padding; max+=padding;
+        const step=calculateSmartGrid(min,max); const startY=Math.ceil(min/step)*step; const py=20;
+        const gy=v=>H-py-((v-min)/(max-min))*(H-py*2);
+        ctx.fillStyle="#444"; ctx.font="10px monospace"; ctx.textAlign="right"; ctx.strokeStyle="#222"; ctx.lineWidth=1;
+        for(let v=startY;v<=max;v+=step){const y=gy(v);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();ctx.fillText(v.toFixed(step<1?2:0),W-5,y-2);}
+        let cw=(W-30)/50; if(cw>40) cw=40;
+        if(chartType==='candle'){d.forEach((c,i)=>{const x=i*cw+10,col=c.close>=c.open?"#00ff88":"#ff3b3b";ctx.strokeStyle=col;ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(x+cw/2,gy(c.high));ctx.lineTo(x+cw/2,gy(c.low));ctx.stroke();const h=Math.abs(gy(c.open)-gy(c.close))||1;ctx.fillRect(x+1,Math.min(gy(c.open),gy(c.close)),cw-2,h);});}
+        else{ctx.lineWidth=2;for(let i=0;i<d.length-1;i++){const x1=i*cw+10+cw/2,y1=gy(d[i].close),x2=(i+1)*cw+10+cw/2,y2=gy(d[i+1].close);ctx.beginPath();ctx.strokeStyle=d[i+1].close>=d[i].close?"#00ff88":"#ff3b3b";ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}}
+        const ly=gy(d[d.length-1].close); ctx.strokeStyle="rgba(255,255,255,0.4)"; ctx.setLineDash([2,2]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle=d[d.length-1].close>=d[d.length-1].open?"#00ff88":"#ff3b3b"; ctx.fillRect(W-35,ly-8,35,16); ctx.fillStyle="black"; ctx.fillText(d[d.length-1].close.toFixed(2),W-2,ly+3);
+    }
+
+    // ============================================================
+    // UTILS
+    // ============================================================
+    function tab(id){document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden'));document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));document.getElementById(`tab-${id}`).classList.remove('hidden');event.target.classList.add('active');sfx('click');activeTab=id;if(id==='rank')getRank();if(id==='news')renderNewsPage();}
+    function logout(){localStorage.removeItem("sess");location.reload();}
+    function changeChartType(){chartType=document.getElementById("chart-type-select").value;localStorage.setItem("chart_type",chartType);if(sel)draw();}
+    function openSettings(){document.getElementById("settings-modal").style.display='flex';}
 </script>
 </body>
 </html>
