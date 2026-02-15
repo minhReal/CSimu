@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X - Custom GUI</title>
+    <title>Terminal X - Ultimate UI</title>
     
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
@@ -48,8 +48,11 @@
 
         /* LIST ITEMS */
         .stock-item { display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:16px; margin:10px; border-radius:10px; border:1px solid var(--border); }
-        .rank-item { display:flex; align-items:center; background:#161616; padding:12px; margin:8px 10px; border-radius:8px; border:1px solid var(--border); }
+        
+        /* RANK ITEM FIX */
+        .rank-item { display:flex; align-items:center; background:#161616; padding:12px; margin:8px 10px; border-radius:8px; border:1px solid var(--border); color: white; }
         .rank-me { border:1px solid var(--green); background:#0f3318; }
+        
         .news-card { background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin:10px; border-left:4px solid #555; }
         .news-time { font-size: 10px; color: #666; margin-bottom: 4px; display: block; }
         
@@ -61,28 +64,46 @@
         .mail-sender { font-size: 11px; color: #aaa; }
         .mail-subject { font-size: 13px; color: #ccc; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* MODALS (Custom GUI) */
-        #mail-detail, #compose-modal, #custom-alert, #custom-prompt { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; flex-direction: column; justify-content:center; align-items:center; }
+        /* MODALS (Popup) */
+        #mail-detail, #compose-modal, #custom-prompt { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; flex-direction: column; justify-content:center; align-items:center; }
         #mail-detail { background: #101010; justify-content: flex-start; z-index: 3000; }
         #compose-modal { background: #101010; justify-content: flex-start; z-index: 3000; }
 
         .modal-box { background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
         .modal-title { font-weight: bold; margin-bottom: 10px; color: var(--green); font-size: 16px; }
-        .modal-text { font-size: 14px; color: #ccc; margin-bottom: 20px; line-height: 1.5; }
         .modal-btn { width: 100%; padding: 10px; background: #444; border: none; border-radius: 6px; color: white; font-weight: bold; margin-top: 5px; }
         .modal-btn.primary { background: var(--green); color: black; }
-        .modal-btn.danger { background: var(--red); color: white; }
-
+        
         .mail-header { padding: 15px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 15px; width:100%; }
         .mail-body { padding: 20px; flex: 1; overflow-y: auto; line-height: 1.6; color: #ddd; width:100%; }
-        .reset-btn { width: 100%; background: var(--red); color: white; padding: 15px; border: none; border-radius: 8px; font-weight: bold; margin-top: 20px; cursor: pointer; }
 
-        /* BOTTOM SHEET CHART */
+        /* ROBLOX STYLE NOTIFICATION (TOAST) */
+        #toast-container {
+            position: fixed; bottom: 35px; right: 0; left: 0; pointer-events: none;
+            display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 9999;
+        }
+        .toast-box {
+            background: #111; border: 1px solid #333; color: white; width: 90%; max-width: 300px;
+            border-radius: 8px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            animation: slideUp 0.3s ease-out; position: relative; pointer-events: auto;
+        }
+        .toast-content { padding: 12px 15px; display: flex; align-items: center; gap: 10px; }
+        .toast-icon { font-size: 20px; }
+        .toast-text { font-size: 13px; font-weight: 500; }
+        .toast-progress {
+            height: 3px; background: var(--green); width: 100%;
+            position: absolute; bottom: 0; left: 0;
+            animation: timeRun linear forwards;
+        }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes timeRun { from { width: 100%; } to { width: 0%; } }
+
+        /* CHART SHEET */
         #detail-view { position: fixed; bottom: 25px; left: 0; right: 0; height: 55%; background: #101010; border-top: 1px solid var(--green); box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 2000; display: flex; flex-direction: column; transform: translateY(110%); transition: transform 0.3s; }
         #detail-view.active { transform: translateY(0); } 
 
         .chart-header { padding:10px 15px; display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; border-bottom:1px solid #333; }
-        .chart-container { flex:1; width:100%; position:relative; background: #080808; }
+        .chart-container { flex:1; width:100%; position:relative; background: #080808; overflow: hidden; }
         canvas { display:block; width:100%; height:100%; }
         .controls-area { padding:10px; background:#151515; border-top:1px solid #333; padding-bottom: 20px; }
         .mini-news { font-size: 11px; padding: 5px 15px; color: #888; border-bottom: 1px solid #222; white-space: nowrap; overflow: hidden; background: #0f0f0f; font-weight: bold; }
@@ -92,7 +113,6 @@
         #admin-view { position:fixed; inset:0; background:#000; z-index:6000; display:none; flex-direction:column; }
         #settings-modal { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; }
         .settings-box { background:var(--panel); padding:20px; border-radius:12px; width:80%; max-width:300px; }
-        
         .up{color:var(--green)} .down{color:var(--red)}
     </style>
 </head>
@@ -116,7 +136,6 @@
     <div class="header">
         <div style="font-weight:bold; display:flex; align-items:center; gap:5px;">👤 <span id="u-name" style="color:#ccc">...</span></div>
         <div style="display:flex; gap:15px; align-items:center;">
-            <button id="btn-music" onclick="toggleBGM()" style="background:none; border:none; font-size:16px;">🎵</button>
             <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;">ADMIN</button>
             <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;">$<span id="cash">0.00</span></div>
             <button onclick="openSettings()" style="background:none; border:none; padding:0; font-size:20px;">⚙️</button>
@@ -149,13 +168,7 @@
     </div>
 </div>
 
-<div id="custom-alert">
-    <div class="modal-box">
-        <div class="modal-title">THÔNG BÁO</div>
-        <div class="modal-text" id="alert-msg">...</div>
-        <button class="modal-btn primary" onclick="closeAlert()">ĐÃ HIỂU</button>
-    </div>
-</div>
+<div id="toast-container"></div>
 
 <div id="custom-prompt">
     <div class="modal-box">
@@ -226,6 +239,10 @@
 <div id="settings-modal" onclick="if(event.target.id==='settings-modal') this.style.display='none'">
     <div class="settings-box">
         <h3>CÀI ĐẶT</h3>
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+            <span>🎵 Nhạc nền</span>
+            <input type="checkbox" id="toggle-bgm" onchange="toggleBGM()">
+        </div>
         <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;"><span>Biểu đồ</span><select id="chart-type-select" onchange="changeChartType()"><option value="candle">Nến</option><option value="line">Đường</option></select></div>
         <hr style="border-color:#333; margin:15px 0;">
         <input type="password" id="old-pass" class="inp-auth" placeholder="Mật khẩu cũ" style="margin-bottom:5px;">
@@ -241,9 +258,10 @@
     let me = null, wallet = {cash:250, stocks:{}, inbox:[], lastBC:0}, data = [], candles = {}, sel = null, news = [];
     let activeTab = 'market'; let chartType = localStorage.getItem("chart_type") || "candle"; document.getElementById("chart-type-select").value = chartType;
     let isBgmOn = localStorage.getItem("bgm_state") !== "off"; 
+    document.getElementById("toggle-bgm").checked = isBgmOn; // Sync checkbox state
     let adminPass = ""; let currentMailIdx = -1;
 
-    // --- MUSIC FIX ---
+    // --- MUSIC MANAGER (Settings only) ---
     const bgm = document.getElementById("bgm"); 
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
     let unlocked = false;
@@ -258,20 +276,12 @@
     }
     
     function toggleBGM() { 
-        isBgmOn = !isBgmOn;
+        isBgmOn = document.getElementById("toggle-bgm").checked;
         localStorage.setItem("bgm_state", isBgmOn?"on":"off");
-        const btn = document.getElementById("btn-music");
-        if(isBgmOn) {
-            bgm.play().catch(()=>{});
-            btn.style.opacity = "1";
-        } else {
-            bgm.pause();
-            btn.style.opacity = "0.5";
-        }
+        if(isBgmOn) bgm.play().catch(()=>{}); 
+        else bgm.pause();
     }
-    // Init Music Button State
-    document.getElementById("btn-music").style.opacity = isBgmOn ? "1" : "0.5";
-
+    
     function sfx(t) {
         if(audioCtx.state==='suspended') audioCtx.resume();
         const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
@@ -281,15 +291,31 @@
         if(t==='mail'){o.frequency.setValueAtTime(800,audioCtx.currentTime); o.frequency.linearRampToValueAtTime(1200,audioCtx.currentTime+0.1); g.gain.value=0.1; o.start(); o.stop(audioCtx.currentTime+0.3);}
     }
 
-    // --- CUSTOM GUI (NO ALERT/PROMPT) ---
-    function showMsg(text) {
-        document.getElementById("alert-msg").innerHTML = text;
-        document.getElementById("custom-alert").style.display = "flex";
+    // --- NEW NOTIFICATION SYSTEM (TOAST) ---
+    function showToast(title, msg, duration = 3000) {
+        const c = document.getElementById("toast-container");
+        const el = document.createElement("div");
+        el.className = "toast-box";
+        el.innerHTML = `
+            <div class="toast-content">
+                <div class="toast-icon">🔔</div>
+                <div class="toast-text">
+                    <div style="color:var(--green);font-size:11px;margin-bottom:2px;">${title}</div>
+                    <div>${msg}</div>
+                </div>
+            </div>
+            <div class="toast-progress" style="animation-duration:${duration}ms"></div>
+        `;
+        c.appendChild(el);
+        sfx('mail');
+        setTimeout(() => {
+            el.style.opacity = "0";
+            el.style.transform = "translateY(20px)";
+            setTimeout(() => el.remove(), 300);
+        }, duration);
     }
-    function closeAlert() {
-        document.getElementById("custom-alert").style.display = "none";
-    }
-    
+
+    // --- CUSTOM GUI MANAGER ---
     let promptResolver = null;
     function askInput(title) {
         document.getElementById("prompt-title").innerText = title;
@@ -307,13 +333,14 @@
 
     setInterval(() => { document.getElementById("system-time").innerText = new Date().toLocaleTimeString('vi-VN'); }, 1000);
 
+    // --- MAIN APP ---
     (function(){ 
         const s=localStorage.getItem("sess"); 
         if(s && localStorage.getItem(`u_${s}`)) { 
             me=s; 
             wallet=JSON.parse(localStorage.getItem(`u_${s}`)); 
             if(!wallet.inbox) wallet.inbox=[]; 
-            if(!wallet.lastBC) wallet.lastBC=0; // Init lastBC if missing
+            if(!wallet.lastBC) wallet.lastBC=0; 
             enter(); 
         } 
     })();
@@ -345,15 +372,27 @@
         if(me.toLowerCase()==='minh') document.getElementById("btn-admin").style.display="block";
         setInterval(loop, 1500); setInterval(sync, 3000); setInterval(checkBroadcast, 10000); setInterval(checkBankruptcy, 5000); setInterval(checkGift, 5000); setInterval(checkP2PMail, 8000);
         generateFakeNews(); setInterval(generateFakeNews, 8000); renderMail();
+        window.dispatchEvent(new Event('resize')); // Fix chart init
     }
 
     async function checkBan() {
         try {
             const r = await fetch(`${SERVER}check-user?u=${encodeURIComponent(me)}`); const j = await r.json();
-            if(!j.exists) { showMsg("Tài khoản đã bị BAN."); setTimeout(()=>{localStorage.clear(); location.reload();}, 2000); }
+            if(!j.exists) { showToast("CẢNH BÁO", "Tài khoản đã bị BAN.", 5000); setTimeout(()=>{localStorage.clear(); location.reload();}, 2000); }
         } catch(e) {}
     }
 
+    // --- FIX CHART STRETCHING ---
+    window.addEventListener('resize', () => {
+        if(sel) { initChart(); draw(); }
+    });
+
+    function safeFloat(val) {
+        const n = parseFloat(val);
+        return isNaN(n) ? 0 : n;
+    }
+
+    // --- DATA LOGIC ---
     function generateFakeNews() {
         if(data.length === 0) return;
         const stock = data[Math.floor(Math.random() * data.length)];
@@ -383,11 +422,11 @@
     
     async function sendP2PMail() {
         const to = document.getElementById("mail-to").value.trim(), sub = document.getElementById("mail-subj").value.trim(), body = document.getElementById("mail-content").value.trim();
-        if(!to || !sub || !body) return showMsg("Nhập đủ thông tin");
-        if(wallet.cash < 10) return showMsg("Không đủ tiền ($10)");
+        if(!to || !sub || !body) return showToast("THÔNG BÁO", "Nhập đủ thông tin");
+        if(wallet.cash < 10) return showToast("LỖI", "Không đủ tiền ($10)");
         
         const r = await fetch(`${SERVER}user/send-mail`, {method:"POST", body:JSON.stringify({to, from:me, title:sub, body})});
-        if(r.ok) { wallet.cash -= 10; showMsg("Đã gửi!"); document.getElementById("compose-modal").style.display="none"; } else showMsg("Lỗi gửi thư");
+        if(r.ok) { wallet.cash -= 10; showToast("THÀNH CÔNG", "Đã gửi!"); document.getElementById("compose-modal").style.display="none"; } else showToast("LỖI", "Gửi thất bại");
     }
 
     async function checkP2PMail() {
@@ -399,7 +438,7 @@
                         wallet.inbox.unshift({...m, read:false});
                     }
                 });
-                localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); sfx('mail'); renderMail();
+                localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); showToast("MAIL", "Bạn có thư mới!"); renderMail();
             }
         } catch(e){}
     }
@@ -420,8 +459,8 @@
         const o = await askInput("Mật khẩu cũ:");
         const n = await askInput("Mật khẩu mới:");
         if(!o || !n) return;
-        if(o !== wallet.pass) return showMsg("Mật khẩu cũ sai");
-        wallet.pass = n; localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); showMsg("Đã đổi!"); logout();
+        if(o !== wallet.pass) return showToast("LỖI", "Mật khẩu cũ sai");
+        wallet.pass = n; localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); showToast("THÀNH CÔNG", "Đã đổi!"); logout();
     }
 
     async function loop() {
@@ -449,17 +488,15 @@
         }
     }
 
-    // --- BROADCAST FIX: persist lastBC to user wallet ---
     async function checkBroadcast() {
         try { 
             const r = await fetch(`${SERVER}get-broadcast`); 
             const m = await r.json(); 
-            // So sánh với lastBC đã lưu trong ví
             if(m.time && m.time > wallet.lastBC) { 
                 wallet.inbox.unshift({id:m.id, from:"Admin", title:m.t, body:m.b, time:m.time, read:false}); 
-                wallet.lastBC = m.time; // Cập nhật timestamp mới nhất
-                sfx('mail'); renderMail(); 
-                localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); // Lưu ngay
+                wallet.lastBC = m.time; 
+                showToast("THÔNG BÁO", "Tin nhắn từ hệ thống"); renderMail(); 
+                localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); 
             } 
             checkBan(); 
         } catch(e){}
@@ -470,11 +507,11 @@
             const r = await fetch(`${SERVER}check-gift?u=${encodeURIComponent(me)}`); 
             const j = await r.json(); 
             if(j.amount !== 0) { 
-                wallet.cash = parseFloat(wallet.cash) + parseFloat(j.amount);
+                wallet.cash = safeFloat(wallet.cash) + safeFloat(j.amount);
                 const type = j.amount > 0 ? "QUÀ TẶNG" : "THU THUẾ";
                 const msg = j.amount > 0 ? `Bạn nhận được: $${j.amount}` : `Bạn bị trừ: $${Math.abs(j.amount)}`;
                 wallet.inbox.unshift({id:`gift_${Date.now()}`, from:"System", title:type, body:msg, time:Date.now(), read:false}); 
-                sfx('ok'); renderMail(); 
+                showToast(type, msg); renderMail(); 
                 localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
             } 
         } catch(e){}
@@ -485,15 +522,14 @@
     async function trade(t) {
         let qty = parseFloat(document.getElementById("trade-amount").value); 
         if(!qty || qty<=0) {
-            // Fallback to prompt if input empty
             const inp = await askInput("Nhập số lượng:");
             qty = parseFloat(inp);
         }
-        if(!qty || qty<=0) return showMsg("Số lượng không hợp lệ");
+        if(!qty || qty<=0) return showToast("LỖI", "Số lượng không hợp lệ");
 
         const s = data.find(x=>x.code===sel); const cost = qty * s.price;
-        if(t==='buy') { if(cost > wallet.cash) return showMsg("Thiếu tiền"); wallet.cash -= cost; wallet.stocks[sel] = (wallet.stocks[sel]||0) + qty; }
-        else { if(qty > (wallet.stocks[sel]||0)) return showMsg("Thiếu CP"); wallet.stocks[sel] -= qty; wallet.cash += cost; }
+        if(t==='buy') { if(cost > wallet.cash) return showToast("LỖI", "Thiếu tiền"); wallet.cash -= cost; wallet.stocks[sel] = (wallet.stocks[sel]||0) + qty; }
+        else { if(qty > (wallet.stocks[sel]||0)) return showToast("LỖI", "Thiếu CP"); wallet.stocks[sel] -= qty; wallet.cash += cost; }
         sfx('ok'); localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); sync();
     }
 
@@ -503,16 +539,35 @@
         const s = data.find(x=>x.code===sel); document.getElementById("d-code").innerText = s.code; document.getElementById("d-price").innerText = s.price.toFixed(2); document.getElementById("d-owned").innerText = (wallet.stocks[sel]||0).toFixed(0); document.getElementById("d-price").style.color = (candles[sel]?.at(-1).close >= candles[sel]?.at(-1).open) ? "var(--green)" : "var(--red)";
     }
 
-    let ctx; function initChart() { const c=document.getElementById("chart"); c.width=c.parentElement.clientWidth*2; c.height=c.parentElement.clientHeight*2; ctx=c.getContext("2d"); ctx.scale(2,2); }
+    let ctx; 
+    function initChart() { 
+        const c=document.getElementById("chart"); 
+        const rect = c.parentElement.getBoundingClientRect();
+        // Fix DPI for PC
+        const dpr = window.devicePixelRatio || 1;
+        c.width = rect.width * dpr;
+        c.height = rect.height * dpr;
+        ctx = c.getContext("2d");
+        ctx.scale(dpr, dpr);
+    }
+    
     function calculateSmartGrid(min, max) { const range = max - min; const roughStep = range / 5; const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep))); const normalizedStep = roughStep / magnitude; return (normalizedStep < 1.5 ? 1 : normalizedStep < 3 ? 2 : normalizedStep < 7 ? 5 : 10) * magnitude; }
+    
     function draw() {
         if(!sel || !candles[sel]) return; const d = candles[sel]; if(!d.length) return;
-        const W = ctx.canvas.width/2, H = ctx.canvas.height/2; ctx.clearRect(0,0,W,H);
+        const rect = document.getElementById("chart").parentElement.getBoundingClientRect();
+        const W = rect.width;
+        const H = rect.height;
+        ctx.clearRect(0,0,W,H);
         let min=Infinity, max=-Infinity; d.forEach(x => { if(x.low<min) min=x.low; if(x.high>max) max=x.high; });
         const padding = (max - min) * 0.1; min -= padding; max += padding; const step = calculateSmartGrid(min, max); const startY = Math.ceil(min / step) * step; const py = 20; const gy = v => H - py - ((v - min) / (max - min)) * (H - py * 2);
         ctx.fillStyle = "#444"; ctx.font = "10px monospace"; ctx.textAlign = "right"; ctx.strokeStyle="#222"; ctx.lineWidth=1;
         for (let v = startY; v <= max; v += step) { const y = gy(v); ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); ctx.fillText(v.toFixed(step < 1 ? 2 : 0), W - 5, y - 2); }
-        const cw = (W-30)/50;
+        
+        const maxCandleWidth = 40;
+        let cw = (W-30)/50;
+        if(cw > maxCandleWidth) cw = maxCandleWidth;
+
         if(chartType === 'candle') { d.forEach((c,i) => { const x = i*cw+10, col = c.close >= c.open ? "#00ff88" : "#ff3b3b"; ctx.strokeStyle = col; ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(x+cw/2, gy(c.high)); ctx.lineTo(x+cw/2, gy(c.low)); ctx.stroke(); const h = Math.abs(gy(c.open)-gy(c.close)) || 1; ctx.fillRect(x+1, Math.min(gy(c.open), gy(c.close)), cw-2, h); }); }
         else { ctx.lineWidth = 2; for (let i = 0; i < d.length - 1; i++) { const x1 = i * cw + 10 + cw/2; const y1 = gy(d[i].close); const x2 = (i + 1) * cw + 10 + cw/2; const y2 = gy(d[i+1].close); ctx.beginPath(); ctx.strokeStyle = d[i+1].close >= d[i].close ? "#00ff88" : "#ff3b3b"; ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke(); } }
         const ly = gy(d[d.length-1].close); ctx.strokeStyle="rgba(255,255,255,0.4)"; ctx.setLineDash([2,2]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
@@ -520,7 +575,6 @@
     }
     function tick() { if(!news.length) return; const n=news[0]; const el=document.getElementById("mini-news-ticker"); el.innerText=`📰 ${n.t}`; el.className = `mini-news ${n.b > 0 ? 'pos' : 'neg'}`; }
 
-    // --- ADMIN FUNCTIONS USING CUSTOM GUI ---
     async function openAdmin() { 
         if(me.toLowerCase()!=='minh') return; 
         adminPass = await askInput("NHẬP MẬT KHẨU ADMIN:"); 
@@ -533,11 +587,11 @@
         const d=document.getElementById("admin-user-list"); d.innerHTML="Loading..."; 
         try{
             const r=await fetch(`${SERVER}admin/users`, {headers: {'X-Admin-Pass': adminPass}});
-            if(r.status === 401) { showMsg("Sai mật khẩu"); return document.getElementById("admin-view").style.display="none"; }
+            if(r.status === 401) { showToast("LỖI", "Sai mật khẩu"); return document.getElementById("admin-view").style.display="none"; }
             const u=await r.json(); 
             d.innerHTML=u.map(x=>`
             <div class="mail-item" style="padding:10px; cursor:default;">
-                <div style="flex:1"><b>${x.name}</b><br><small>$${parseFloat(x.asset).toLocaleString()}</small></div>
+                <div style="flex:1"><b>${x.name}</b><br><small>$${safeFloat(x.asset).toLocaleString()}</small></div>
                 <div style="display:flex; gap:5px;">
                     <button onclick="grantCash('${x.name}')" style="background:var(--blue);color:white;border:none;padding:5px;width:30px;border-radius:4px;">+</button>
                     <button onclick="taxUser('${x.name}')" style="background:var(--gold);color:black;border:none;padding:5px;width:30px;border-radius:4px;">-</button>
@@ -548,26 +602,28 @@
     }
     
     async function delUser(n) { 
-        const c = await askInput(`Gõ 'BAN' để xóa ${n}:`);
+        // DYNAMIC PROMPT FOR BAN
+        const c = await askInput(`Gõ "BAN" để ban ${n}`);
         if(c === 'BAN') {
             await fetch(`${SERVER}admin/delete-user`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n})}); 
+            showToast("THÔNG BÁO", `Đã ban ${n}`);
             loadAdminUsers();
         }
     }
     
     async function grantCash(n) { 
         const a = await askInput(`Tặng tiền cho ${n}:`); 
-        if(a) {
+        if(a && !isNaN(a)) {
             await fetch(`${SERVER}admin/grant-cash`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n, amount:Math.abs(parseFloat(a))})}); 
-            showMsg("Đã tặng!"); 
+            showToast("THÀNH CÔNG", "Đã tặng!"); 
         }
     }
     
     async function taxUser(n) { 
         const a = await askInput(`Thu thuế ${n} (Trừ tiền):`); 
-        if(a) {
+        if(a && !isNaN(a)) {
             await fetch(`${SERVER}admin/grant-cash`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n, amount: -Math.abs(parseFloat(a))})}); 
-            showMsg("Đã thu thuế!"); 
+            showToast("THÀNH CÔNG", "Đã thu thuế!"); 
         }
     }
     
@@ -576,12 +632,28 @@
         const b = document.getElementById("bc-body").value;
         if(t&&b) {
             await fetch(`${SERVER}admin/broadcast`, {method:"POST", headers:{'X-Admin-Pass':adminPass}, body:JSON.stringify({title:t, body:b})}); 
-            showMsg("Đã gửi thông báo toàn server!"); 
+            showToast("THÀNH CÔNG", "Đã gửi thông báo!"); 
         }
     }
 
     async function sync() { if(!me) return; let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price}); await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:me, asset:t})}); }
-    async function getRank() { if(activeTab !== 'rank') return; const r=await fetch(`${SERVER}get-rank`); const l=await r.json(); document.getElementById("rank-list").innerHTML=l.map((p,i)=>`<div class="rank-item ${p.name===me?'rank-me':''}"><div style="width:30px;text-align:center;font-weight:bold">${i+1}</div><div style="flex:1;margin-left:10px"><div style="font-weight:bold;color:white">${p.name} ${i==0?'👑':''}</div><div style="font-size:12px;color:#888">$${p.total.toLocaleString(undefined,{maximumFractionDigits:0})}</div></div></div>`).join(''); }
+    
+    // FIX RANK RENDER
+    async function getRank() { 
+        if(activeTab !== 'rank') return; 
+        try {
+            const r=await fetch(`${SERVER}get-rank`); 
+            const l=await r.json(); 
+            document.getElementById("rank-list").innerHTML=l.map((p,i)=>`
+                <div class="rank-item ${p.name===me?'rank-me':''}">
+                    <div style="width:30px;text-align:center;font-weight:bold">${i+1}</div>
+                    <div style="flex:1;margin-left:10px">
+                        <div style="font-weight:bold;color:white">${p.name} ${i==0?'👑':''}</div>
+                        <div style="font-size:12px;color:#888">$${safeFloat(p.total).toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                    </div>
+                </div>`).join(''); 
+        } catch(e) { console.error(e); }
+    }
 
     function tab(id) { document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden')); document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active')); document.getElementById(`tab-${id}`).classList.remove('hidden'); event.target.classList.add('active'); sfx('click'); activeTab = id; if(id==='rank') getRank(); if(id==='news') renderNewsPage(); }
     function logout() { localStorage.removeItem("sess"); location.reload(); }
