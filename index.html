@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X - Final Fix</title>
+    <title>Terminal X - Stable Release</title>
     
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
@@ -22,26 +22,31 @@
         
         #app { display:none; height:100dvh; flex-direction:column; }
 
+        /* STATUS BAR */
         .status-bar { height: 25px; background: #080808; border-top: 1px solid #333; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; font-size: 10px; color: #666; font-family: monospace; z-index: 5000; }
         .ping-indicator { display: flex; align-items: center; gap: 5px; }
         .dot { width: 6px; height: 6px; border-radius: 50%; background: #444; }
         .dot.online { background: var(--green); box-shadow: 0 0 5px var(--green); }
         .dot.lag { background: var(--gold); }
         
+        /* LOGIN */
         #login-screen { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:center; align-items:center; }
         .login-box { background:var(--panel); border:1px solid var(--border); padding:30px; border-radius:16px; width:85%; max-width:350px; text-align:center; box-shadow:0 0 50px rgba(0,255,136,0.1); }
         .inp-auth { width:100%; padding:15px; margin:10px 0; background:#1a1a1a; border:1px solid #333; color:white; border-radius:8px; font-size:16px; text-align:center; outline:none; }
         .btn-auth { width:100%; padding:15px; margin-top:10px; border:none; border-radius:8px; font-weight:bold; font-size:16px; color:white; }
 
+        /* HEADER & TABS */
         .header { padding:12px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; height:60px; z-index: 10; }
         .tab-bar { display:flex; border-bottom:1px solid var(--border); background:var(--panel); height:50px; z-index: 10; }
         .tab-btn { flex:1; padding:15px 5px; text-align:center; font-size:11px; font-weight:bold; color:#666; border-bottom:3px solid transparent; position: relative; white-space: nowrap; }
         .tab-btn.active { color:var(--green); border-bottom-color:var(--green); background:#1a1a1a; color:white; }
         .badge { position: absolute; top: 5px; right: 10px; background: var(--red); color: white; border-radius: 50%; width: 14px; height: 14px; font-size: 9px; display: flex; align-items: center; justify-content: center; font-weight: bold; display: none; }
         
+        /* CONTENT */
         .view-content { flex:1; overflow-y:auto; position:relative; padding-bottom: 300px; } 
         .hidden { display:none!important; }
 
+        /* LIST ITEMS */
         .stock-item { display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:16px; margin:10px; border-radius:10px; border:1px solid var(--border); }
         
         .rank-item { display:flex; align-items:center; background:#161616; padding:12px; margin:8px 10px; border-radius:8px; border:1px solid var(--border); color: white; }
@@ -50,6 +55,7 @@
         .news-card { background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin:10px; border-left:4px solid #555; }
         .news-time { font-size: 10px; color: #666; margin-bottom: 4px; display: block; }
         
+        /* MAIL UI */
         .mail-item { background:#161616; padding:15px; border-bottom:1px solid #333; cursor: pointer; display: flex; gap: 10px; align-items: center; }
         .mail-item.unread { background:#222; border-left: 3px solid var(--green); }
         .mail-icon { width: 35px; height: 35px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #888; flex-shrink: 0; font-size: 12px; }
@@ -57,6 +63,7 @@
         .mail-sender { font-size: 11px; color: #aaa; }
         .mail-subject { font-size: 13px; color: #ccc; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
+        /* MODALS (Popup) */
         #mail-detail, #compose-modal, #custom-prompt { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; flex-direction: column; justify-content:center; align-items:center; }
         #mail-detail { background: #101010; justify-content: flex-start; z-index: 3000; }
         #compose-modal { background: #101010; justify-content: flex-start; z-index: 3000; }
@@ -69,6 +76,7 @@
         .mail-header { padding: 15px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 15px; width:100%; }
         .mail-body { padding: 20px; flex: 1; overflow-y: auto; line-height: 1.6; color: #ddd; width:100%; }
 
+        /* TOAST NOTIFICATION */
         #toast-container { position: fixed; bottom: 35px; right: 0; left: 0; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 9999; }
         .toast-box { background: #111; border: 1px solid #333; color: white; width: 90%; max-width: 300px; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.5); animation: slideUp 0.3s ease-out; position: relative; pointer-events: auto; }
         .toast-content { padding: 12px 15px; display: flex; align-items: center; gap: 10px; }
@@ -78,6 +86,7 @@
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes timeRun { from { width: 100%; } to { width: 0%; } }
 
+        /* CHART */
         #detail-view { position: fixed; bottom: 25px; left: 0; right: 0; height: 55%; background: #101010; border-top: 1px solid var(--green); box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 2000; display: flex; flex-direction: column; transform: translateY(110%); transition: transform 0.3s; }
         #detail-view.active { transform: translateY(0); } 
 
@@ -334,7 +343,7 @@
                 if(j.exists||localStorage.getItem(k)) { sfx('err'); msg.innerText="Tên đã tồn tại"; return; }
                 const firstMail = {id:`sys_${Date.now()}`, from:"Terminal X", title:"Chào mừng", body:"Chào mừng bạn đến với thị trường chứng khoán ảo.", time:Date.now(), read:false};
                 localStorage.setItem(k, JSON.stringify({pass:p, cash:250, stocks:{}, inbox:[firstMail], lastBC: Date.now()})); 
-                // CRITICAL: SYNC TO SERVER IMMEDIATELY
+                // CRITICAL FIX: Gửi dữ liệu lên server ngay lập tức để tránh bị ban
                 await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:u, asset:250})});
                 sfx('ok'); msg.innerText="OK!"; msg.style.color="var(--green)";
             } catch(e){ msg.innerText="Lỗi mạng"; }
@@ -362,7 +371,7 @@
         } catch(e) {}
     }
 
-    // --- FIX CHART STRETCHING ---
+    // --- FIX CHART PC ---
     window.addEventListener('resize', () => {
         if(sel) { initChart(); draw(); }
     });
@@ -372,7 +381,7 @@
         return isNaN(n) ? 0 : n;
     }
 
-    // --- DATA LOGIC ---
+    // --- LOGIC ---
     function generateFakeNews() {
         if(data.length === 0) return;
         const stock = data[Math.floor(Math.random() * data.length)];
