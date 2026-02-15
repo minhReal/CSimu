@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminal X - Full Version</title>
+    <title>Terminal X - Admin Power</title>
     
     <script>
         document.addEventListener('contextmenu', e => e.preventDefault());
@@ -239,7 +239,8 @@
             try {
                 const r=await fetch(`${SERVER}check-user?u=${encodeURIComponent(u)}`); const j=await r.json();
                 if(j.exists||localStorage.getItem(k)) { sfx('err'); msg.innerText="Tên đã tồn tại"; return; }
-                localStorage.setItem(k, JSON.stringify({pass:p, cash:250, stocks:{}, inbox:[{from:"Terminal X", title:"Chào mừng", body:"Chào mừng bạn đến với thị trường chứng khoán ảo.", time:Date.now(), read:false}]})); 
+                const firstMail = {id:`sys_${Date.now()}`, from:"Terminal X", title:"Chào mừng", body:"Chào mừng bạn đến với thị trường chứng khoán ảo.", time:Date.now(), read:false};
+                localStorage.setItem(k, JSON.stringify({pass:p, cash:250, stocks:{}, inbox:[firstMail]})); 
                 sfx('ok'); msg.innerText="OK!"; msg.style.color="var(--green)";
             } catch(e){ msg.innerText="Lỗi mạng"; }
         } else {
@@ -250,7 +251,7 @@
 
     function enter() {
         sfx('ok'); document.getElementById("login-screen").style.display="none"; document.getElementById("app").style.display="flex"; document.getElementById("u-name").innerText=me;
-        if(me.toLowerCase()==='minh' || me.toLowerCase()==='fan') document.getElementById("btn-admin").style.display="block";
+        if(me.toLowerCase()==='minh') document.getElementById("btn-admin").style.display="block";
         setInterval(loop, 1500); setInterval(sync, 3000); setInterval(checkBroadcast, 10000); setInterval(checkBankruptcy, 5000); setInterval(checkGift, 5000); setInterval(checkP2PMail, 8000);
         generateFakeNews(); setInterval(generateFakeNews, 8000); renderMail();
     }
@@ -302,7 +303,11 @@
         try {
             const r = await fetch(`${SERVER}user/check-mail?u=${encodeURIComponent(me)}`); const mails = await r.json();
             if(mails.length > 0) {
-                mails.forEach(m => wallet.inbox.unshift({...m, read:false}));
+                mails.forEach(m => {
+                    if(!wallet.inbox.some(existing => existing.id === m.id)) {
+                        wallet.inbox.unshift({...m, read:false});
+                    }
+                });
                 localStorage.setItem(`u_${me}`, JSON.stringify(wallet)); sfx('mail'); renderMail();
             }
         } catch(e){}
@@ -311,7 +316,7 @@
     function checkBankruptcy() {
         if(data.length === 0) return; let t = wallet.cash; data.forEach(s=>{ if(wallet.stocks[s.code]) t += wallet.stocks[s.code]*s.price });
         if(t < 10 && !wallet.inbox.some(m => m.title === "CẢNH BÁO PHÁ SẢN" && (Date.now() - m.time < 60000))) {
-            wallet.inbox.unshift({from:"Terminal X", title:"CẢNH BÁO PHÁ SẢN", body:`Tài sản dưới $10.<br><button class="reset-btn" onclick="resetAccount()">RESET ($250)</button>`, time:Date.now(), read:false});
+            wallet.inbox.unshift({id:`sys_${Date.now()}`, from:"Terminal X", title:"CẢNH BÁO PHÁ SẢN", body:`Tài sản dưới $10.<br><button class="reset-btn" onclick="resetAccount()">RESET ($250)</button>`, time:Date.now(), read:false});
             renderMail();
         }
     }
@@ -350,10 +355,28 @@
 
     let lastBC = 0;
     async function checkBroadcast() {
-        try { const r = await fetch(`${SERVER}get-broadcast`); const m = await r.json(); if(m.time && m.time > lastBC) { if(!wallet.inbox.some(x=>x.time===m.time)) { wallet.inbox.unshift({from:"Admin", title:m.t, body:m.b, time:m.time, read:false}); sfx('mail'); renderMail(); lastBC=m.time; } } checkBan(); } catch(e){}
+        try { const r = await fetch(`${SERVER}get-broadcast`); const m = await r.json(); 
+        if(m.time && m.time > lastBC) { 
+            if(!wallet.inbox.some(x=>x.id===m.id)) { 
+                wallet.inbox.unshift({id:m.id, from:"Admin", title:m.t, body:m.b, time:m.time, read:false}); 
+                sfx('mail'); renderMail(); lastBC=m.time; 
+            } 
+        } 
+        checkBan(); } catch(e){}
     }
     async function checkGift() {
-        try { const r = await fetch(`${SERVER}check-gift?u=${encodeURIComponent(me)}`); const j = await r.json(); if(j.amount>0) { wallet.cash += j.amount; wallet.inbox.unshift({from:"System", title:"QUÀ TẶNG", body:`Nhận gói cứu trợ: $${j.amount}`, time:Date.now(), read:false}); sfx('ok'); renderMail(); } } catch(e){}
+        try { 
+            const r = await fetch(`${SERVER}check-gift?u=${encodeURIComponent(me)}`); 
+            const j = await r.json(); 
+            if(j.amount !== 0) { 
+                wallet.cash = parseFloat(wallet.cash) + parseFloat(j.amount);
+                const type = j.amount > 0 ? "QUÀ TẶNG" : "THU THUẾ";
+                const msg = j.amount > 0 ? `Bạn nhận được gói cứu trợ: $${j.amount}` : `Bạn bị trừ: $${Math.abs(j.amount)}`;
+                wallet.inbox.unshift({id:`gift_${Date.now()}`, from:"System", title:type, body:msg, time:Date.now(), read:false}); 
+                sfx('ok'); renderMail(); 
+                localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
+            } 
+        } catch(e){}
     }
 
     document.getElementById("trade-amount").addEventListener("input", function() { const qty = parseFloat(this.value); if(sel && data.length > 0) { const s = data.find(x => x.code === sel); document.getElementById("trade-estimate").innerText = `Ước tính: $${isNaN(qty * s.price) ? '0.00' : (qty * s.price).toFixed(2)}`; } });
@@ -388,17 +411,36 @@
     }
     function tick() { if(!news.length) return; const n=news[0]; const el=document.getElementById("mini-news-ticker"); el.innerText=`📰 ${n.t}`; el.className = `mini-news ${n.b > 0 ? 'pos' : 'neg'}`; }
 
-    function openAdmin() { if(me.toLowerCase()!=='minh' && me.toLowerCase()!=='fan') return; adminPass = prompt("PASS:"); if(!adminPass) return; document.getElementById("admin-view").style.display="flex"; loadAdminUsers(); }
+    function openAdmin() { if(me.toLowerCase()!=='minh') return; adminPass = prompt("PASS:"); if(!adminPass) return; document.getElementById("admin-view").style.display="flex"; loadAdminUsers(); }
     async function loadAdminUsers() { 
         const d=document.getElementById("admin-user-list"); d.innerHTML="Loading..."; 
         try{
             const r=await fetch(`${SERVER}admin/users`, {headers: {'X-Admin-Pass': adminPass}});
             if(r.status === 401) { alert("Sai pass"); return document.getElementById("admin-view").style.display="none"; }
-            const u=await r.json(); d.innerHTML=u.map(x=>`<div class="mail-item" style="padding:10px; cursor:default;"><div style="flex:1"><b>${x.name}</b><br><small>$${parseFloat(x.asset).toLocaleString()}</small></div><div><button onclick="grantCash('${x.name}')" style="background:var(--blue);color:white;border:none;padding:5px;margin-right:5px;font-size:10px;width:30px;">$</button><button onclick="delUser('${x.name}')" style="background:var(--red);color:white;border:none;padding:5px;font-size:10px;">BAN</button></div></div>`).join('');
+            const u=await r.json(); d.innerHTML=u.map(x=>`
+            <div class="mail-item" style="padding:10px; cursor:default;">
+                <div style="flex:1"><b>${x.name}</b><br><small>$${parseFloat(x.asset).toLocaleString()}</small></div>
+                <div style="display:flex; gap:5px;">
+                    <button onclick="grantCash('${x.name}')" style="background:var(--blue);color:white;border:none;padding:5px;width:30px;" title="Tặng tiền">+</button>
+                    <button onclick="taxUser('${x.name}')" style="background:var(--gold);color:black;border:none;padding:5px;width:30px;" title="Thu thuế">-</button>
+                    <button onclick="delUser('${x.name}')" style="background:var(--red);color:white;border:none;padding:5px;">BAN</button>
+                </div>
+            </div>`).join('');
         }catch(e){d.innerHTML="Lỗi";} 
     }
     async function delUser(n) { if(confirm("BAN "+n+"?")) await fetch(`${SERVER}admin/delete-user`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n})}); loadAdminUsers(); }
-    async function grantCash(n) { const a = prompt(`Tặng tiền ${n}:`); if(a) await fetch(`${SERVER}admin/grant-cash`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n, amount:parseFloat(a)})}); alert("Đã tặng"); }
+    async function grantCash(n) { 
+        const a = prompt(`Tặng tiền ${n}:`); 
+        if(a) await fetch(`${SERVER}admin/grant-cash`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n, amount:Math.abs(parseFloat(a))})}); 
+        alert("Đã tặng"); 
+    }
+    async function taxUser(n) { 
+        const a = prompt(`Thu thuế ${n} (Trừ tiền):`); 
+        if(a) {
+            await fetch(`${SERVER}admin/grant-cash`,{method:"POST",headers:{'X-Admin-Pass':adminPass},body:JSON.stringify({user:n, amount: -Math.abs(parseFloat(a))})}); 
+            alert("Đã thu thuế"); 
+        }
+    }
     async function adminBroadcast() { const t=document.getElementById("bc-title").value, b=document.getElementById("bc-body").value; if(t&&b) await fetch(`${SERVER}admin/broadcast`, {method:"POST", headers:{'X-Admin-Pass':adminPass}, body:JSON.stringify({title:t, body:b})}); alert("Đã gửi"); }
 
     async function sync() { if(!me) return; let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price}); await fetch(`${SERVER}update-rank`, {method:"POST", body:JSON.stringify({user:me, asset:t})}); }
