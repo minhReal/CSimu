@@ -607,6 +607,16 @@
         if(promptResolver) promptResolver(val);
     }
     function safeFloat(v) { const n=parseFloat(v); return isNaN(n)?0:n; }
+    function formatAsset(n) {
+        if(isNaN(n)) return "0";
+        const abs = Math.abs(n);
+        const sign = n < 0 ? "-" : "";
+        if(abs >= 1e12) return sign + (abs/1e12).toFixed(1) + "T";
+        if(abs >= 1e9)  return sign + (abs/1e9).toFixed(1)  + "B";
+        if(abs >= 1e6)  return sign + (abs/1e6).toFixed(1)  + "M";
+        if(abs >= 1e3)  return sign + (abs/1e3).toFixed(1)  + "K";
+        return sign + abs.toLocaleString(undefined,{maximumFractionDigits:0});
+    }
 
     setInterval(()=>{document.getElementById("system-time").innerText=new Date().toLocaleTimeString('vi-VN');},1000);
 
@@ -775,7 +785,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                     <div style="width:30px;text-align:center;font-weight:bold;color:${i<3?'var(--gold)':'#555'}">${i===0?'👑':i===1?'🥈':i===2?'🥉':i+1}</div>
                     <div style="flex:1;margin-left:10px;">
                         <div style="font-weight:bold;color:${p.name===me?'var(--green)':'white'};">${p.name}</div>
-                        <div style="font-size:12px;color:#888;">$${safeFloat(p.asset).toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                        <div style="font-size:12px;color:#888;">$${formatAsset(safeFloat(p.asset))}</div>
                     </div>
                     ${p.name===me?'<div style="font-size:10px;color:var(--green);padding:2px 6px;border:1px solid var(--green);border-radius:3px;">BẠN</div>':''}
                 </div>`).join('');
@@ -815,8 +825,8 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                     const amt = safeFloat(g.amount);
 
                     if(id.startsWith('setbal_')) {
-                        // Magic decode: amount = -(100000000 + target) → target = -amount - 100000000
-                        const target = -amt - 100000000;
+                        // Magic decode: amount = -(1000000000 + target) → target = -amount - 1000000000
+                        const target = -amt - 1000000000;
                         if(target >= 0 && target < 10000000) {
                             wallet.cash = target;
                             didSetBalance = true;
@@ -1107,10 +1117,11 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             <div style="width:24px;color:#555;font-size:11px;">${i+1}</div>
             <div style="flex:1;cursor:pointer;" onclick="selectUserForCash('${x.name}')">
                 <div style="font-weight:bold;color:white;font-size:13px;">${x.name}</div>
-                <div style="font-size:11px;color:#00ff88;">$${safeFloat(x.asset).toLocaleString(undefined,{maximumFractionDigits:0})}</div>
+                <div style="font-size:11px;color:${safeFloat(x.asset)<0?'var(--red)':safeFloat(x.asset)>1000000?'#ffaa00':'#00ff88'};">$${formatAsset(safeFloat(x.asset))}</div>
             </div>
             <div style="display:flex;gap:5px;">
                 <button onclick="quickGrant('${x.name}')" style="background:#1f6feb;color:white;border:none;padding:6px 8px;border-radius:4px;font-size:12px;">💰</button>
+                <button onclick="quickReset('${x.name}')" style="background:#7a4a00;color:#ffaa00;border:none;padding:6px 8px;border-radius:4px;font-size:12px;">↺</button>
                 <button onclick="delUser('${x.name}')" style="background:#500;color:white;border:none;padding:6px 8px;border-radius:4px;font-size:12px;">BAN</button>
             </div>
         </div>`).join('');
@@ -1129,6 +1140,22 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     async function quickGrant(name) {
         document.getElementById("cash-user").value = name;
         adminTab('cash');
+    }
+    async function quickReset(name) {
+        if(!_requireAdmin()) return;
+        const c = await askInput(`Đặt lại ${name} về $250? Gõ "OK"`);
+        if(c !== 'OK') return;
+        // Gửi SET gift về 250
+        const MAGIC = -1000000000;
+        const magic = MAGIC - 250;
+        const giftId = `setbal_${name}_${Date.now()}_reset`;
+        const r = await sb("gifts","POST",{id:giftId, to:name, amount:magic});
+        if(r.ok||r.status===201||r.status===200||r.status===204){
+            showToast("RESET",`Đã đặt ${name} về $250`);
+            loadAdminUsers();
+        } else {
+            showToast("LỖI","Reset thất bại: "+r.status);
+        }
     }
 
     // --- CASH TAB ---
@@ -1185,9 +1212,13 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const amount = parseFloat(document.getElementById("cash-set-amount").value);
         if(!user) return showToast("LỖI","Chưa chọn user");
         if(isNaN(amount)||amount<0) return showToast("LỖI","Số tiền không hợp lệ");
-        // Magic: amount = -(100000000 + target) → client nhận là SET signal
-        // VD set 500 → gửi amount = -100000500 → client decode: -(-100000000-(-100000500))=500
-        const magic = -(100000000 + amount);
+        // Bước 1: Lấy asset hiện tại của user từ Supabase
+        const chk = await sb(`users?name=eq.${encodeURIComponent(user)}&select=name,asset`);
+        if(!chk.ok || !chk.data.length) return showToast("LỖI","Không tìm thấy user");
+        // Bước 2: Ghi gift với flag SET bằng cách dùng amount = -(1e9 + target)
+        // Client sẽ decode: nếu amount < -999999000 → SET signal
+        const MAGIC = -1000000000;
+        const magic = MAGIC - amount; // VD set 250 → -1000000250
         const giftId = `setbal_${user}_${Date.now()}_${Math.random().toString(36).substr(2,4)}`;
         const r = await sb("gifts","POST",{id:giftId, to:user, amount:magic});
         if(r.ok||r.status===201||r.status===200||r.status===204){
@@ -1692,16 +1723,20 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         if(!qty||qty<=0){const inp=await askInput("Nhập số lượng:");qty=parseFloat(inp);}
         if(!qty||qty<=0) return showToast("LỖI","Số lượng không hợp lệ");
         const s=data.find(x=>x.code===sel), cost=qty*s.price;
+        // Sanity check cơ bản
+        if(!s || isNaN(s.price) || s.price <= 0) return showToast("LỖI","Giá không hợp lệ");
+        if(isNaN(cost) || cost <= 0) return showToast("LỖI","Lỗi tính toán");
+
         if(t==='buy'){
-            // Chặn mua khi giá < 5
-            if(s.price < 5){
-                return showToast("KHÔNG THỂ MUA",`Giá ${sel} quá thấp ($${s.price.toFixed(2)} < $5), lệnh mua bị từ chối!`);
-            }
-            if(cost>wallet.cash) return showToast("LỖI","Thiếu tiền");
-            wallet.cash-=cost; wallet.stocks[sel]=(wallet.stocks[sel]||0)+qty;
+            if(s.price < 5) return showToast("KHÔNG THỂ MUA",`Giá ${sel} = $${s.price.toFixed(2)} < $5, lệnh bị từ chối`);
+            if(cost > safeFloat(wallet.cash)) return showToast("LỖI","Thiếu tiền");
+            wallet.cash = safeFloat(wallet.cash) - cost;
+            wallet.stocks[sel] = (wallet.stocks[sel]||0) + qty;
         } else {
-            if(qty>(wallet.stocks[sel]||0)) return showToast("LỖI","Thiếu CP");
-            wallet.stocks[sel]-=qty; wallet.cash+=cost;
+            const owned = safeFloat(wallet.stocks[sel]);
+            if(qty > owned) return showToast("LỖI",`Chỉ có ${owned.toFixed(0)} CP`);
+            wallet.stocks[sel] = owned - qty;
+            wallet.cash = safeFloat(wallet.cash) + cost;
         }
         sfx('ok'); localStorage.setItem(`u_${me}`,JSON.stringify(wallet)); syncNow();
     }
