@@ -165,15 +165,20 @@
 
 <div id="compose-modal">
     <div class="mail-header">
-        <button onclick="document.getElementById('compose-modal').style.display='none'" style="background:none; border:none; color:white; font-size:20px;">✕</button>
+        <button onclick="closeCompose()" style="background:none; border:none; color:white; font-size:20px;">✕</button>
         <div style="font-weight:bold;">Soạn thư mới</div>
         <div style="width:20px;"></div>
     </div>
     <div style="padding:20px;">
-        <input type="text" id="mail-to" placeholder="Người nhận (Username)" style="margin-bottom:10px;">
+        <div style="position:relative; margin-bottom:10px;">
+            <input type="text" id="mail-to" placeholder="Người nhận (gõ tên...)" autocomplete="off"
+                oninput="filterMailTo()" onfocus="filterMailTo()"
+                style="margin-bottom:0;">
+            <div id="mail-to-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #444;border-top:none;border-radius:0 0 6px 6px;max-height:160px;overflow-y:auto;z-index:200;"></div>
+        </div>
         <input type="text" id="mail-subj" placeholder="Tiêu đề" style="margin-bottom:10px;">
-        <textarea id="mail-content" placeholder="Nội dung..." style="height:150px; margin-bottom:10px;"></textarea>
-        <div style="font-size:11px; color:#666; margin-bottom:15px;">Phí gửi: $10</div>
+        <textarea id="mail-content" placeholder="Nội dung..." style="height:140px; margin-bottom:10px;resize:none;"></textarea>
+        <div style="font-size:11px; color:#666; margin-bottom:12px;">Phí gửi: $10 · Số dư: <span id="compose-balance">--</span></div>
         <button onclick="sendP2PMail()" style="width:100%; background:var(--blue); color:white; padding:12px; border:none; border-radius:5px; font-weight:bold;">GỬI THƯ</button>
     </div>
 </div>
@@ -362,7 +367,12 @@
                 <!-- Thêm phụ admin -->
                 <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">THÊM PHỤ ADMIN</div>
                 <div style="display:flex;gap:8px;margin-bottom:12px;">
-                    <input type="text" id="subadmin-name-inp" placeholder="Tên user..." style="flex:1;margin-bottom:0;">
+                    <div style="flex:1;position:relative;">
+                        <input type="text" id="subadmin-name-inp" placeholder="Tên user..." autocomplete="off"
+                            oninput="filterSubAdminInput()" onfocus="filterSubAdminInput()"
+                            style="margin-bottom:0;width:100%;box-sizing:border-box;">
+                        <div id="subadmin-name-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #444;border-top:none;border-radius:0 0 6px 6px;max-height:150px;overflow-y:auto;z-index:200;"></div>
+                    </div>
                     <button onclick="addSubAdmin()" style="padding:8px 12px;background:#1f6feb;color:white;border:none;border-radius:6px;font-weight:bold;white-space:nowrap;">THÊM</button>
                 </div>
                 <!-- Phân quyền mặc định -->
@@ -464,7 +474,7 @@
         const macro = Math.sin(block / 200 * stock.speed) * stock.volatility * 2;
         const micro = Math.cos(block / 15  * stock.speed) * stock.volatility;
         const noise = (rng - 0.5) * (stock.volatility / 2);
-        return Math.max(1.0, stock.base + macro + micro + noise);
+        return stock.base + macro + micro + noise; // cho phép âm
     }
     function getMarketData() {
         const block = Math.floor(Date.now() / 3000);
@@ -751,16 +761,51 @@
         } catch(e){}
     }
     async function sendP2PMail() {
-        const to=document.getElementById("mail-to").value.trim(), sub=document.getElementById("mail-subj").value.trim(), body=document.getElementById("mail-content").value.trim();
-        if(!to||!sub||!body) return showToast("THÔNG BÁO","Nhập đủ thông tin");
-        if(wallet.cash<10) return showToast("LỖI","Không đủ tiền ($10)");
-        const id=`${Date.now()}-${Math.random().toString(36).substr(2,9)}`;
-        const r = await sb("mails","POST",{id,to,from:me,title:sub,body,time:Date.now()});
-        if(r.ok||r.status===201||r.status===200||r.status===204){
-            wallet.cash-=10; showToast("THÀNH CÔNG","Đã gửi!");
-            document.getElementById("compose-modal").style.display="none";
-            localStorage.setItem(`u_${me}`,JSON.stringify(wallet)); syncNow();
-        } else showToast("LỖI","Gửi thất bại");
+        const to   = document.getElementById("mail-to").value.trim();
+        const sub  = document.getElementById("mail-subj").value.trim();
+        const body = document.getElementById("mail-content").value.trim();
+        if(!to)  return showToast("LỖI","Chưa nhập người nhận");
+        if(!sub) return showToast("LỖI","Chưa nhập tiêu đề");
+        if(!body) return showToast("LỖI","Chưa nhập nội dung");
+        if(to === me) return showToast("LỖI","Không thể gửi cho chính mình");
+        if(safeFloat(wallet.cash) < 10) return showToast("LỖI",`Không đủ tiền (cần $10, có $${safeFloat(wallet.cash).toFixed(0)})`);
+
+        // Kiểm tra người nhận tồn tại
+        const sendBtn = document.querySelector('#compose-modal button[onclick="sendP2PMail()"]');
+        if(sendBtn){ sendBtn.disabled=true; sendBtn.innerText="Đang gửi..."; }
+        try {
+            const chk = await sb(`users?name=eq.${encodeURIComponent(to)}&select=name`);
+            if(!chk.ok || !Array.isArray(chk.data) || !chk.data.length){
+                showToast("LỖI",`Người dùng "${to}" không tồn tại`);
+                if(sendBtn){ sendBtn.disabled=false; sendBtn.innerText="GỬI THƯ"; }
+                return;
+            }
+        } catch(e) {
+            showToast("LỖI","Lỗi mạng khi kiểm tra người nhận");
+            if(sendBtn){ sendBtn.disabled=false; sendBtn.innerText="GỬI THƯ"; }
+            return;
+        }
+
+        const id = `mail_${Date.now()}_${Math.random().toString(36).substr(2,6)}`;
+        try {
+            const r = await sb("mails","POST",{id, to, from:me, title:sub, body, time:Date.now()});
+            if(r.ok || r.status===201 || r.status===200 || r.status===204){
+                wallet.cash = safeFloat(wallet.cash) - 10;
+                localStorage.setItem(`u_${me}`,JSON.stringify(wallet));
+                showToast("THÀNH CÔNG",`Đã gửi thư cho ${to}!`);
+                document.getElementById("compose-modal").style.display="none";
+                document.getElementById("mail-to-dropdown").style.display="none";
+                document.getElementById("mail-to").value="";
+                document.getElementById("mail-subj").value="";
+                document.getElementById("mail-content").value="";
+                syncNow();
+            } else {
+                showToast("LỖI",`Gửi thất bại (${r.status}) — thử lại`);
+            }
+        } catch(e){
+            showToast("LỖI","Lỗi mạng khi gửi: "+e.message);
+        }
+        if(sendBtn){ sendBtn.disabled=false; sendBtn.innerText="GỬI THƯ"; }
     }
 
     // ============================================================
@@ -782,7 +827,48 @@
     }
     function closeMail(){document.getElementById("mail-detail").style.display="none";}
     function deleteCurrentMail(){if(currentMailIdx>-1){wallet.inbox.splice(currentMailIdx,1);localStorage.setItem(`u_${me}`,JSON.stringify(wallet));closeMail();renderMail();}}
-    function openCompose(){document.getElementById("compose-modal").style.display="flex";}
+    function openCompose(){
+        document.getElementById("compose-modal").style.display="flex";
+        document.getElementById("compose-balance").innerText = "$"+safeFloat(wallet.cash).toFixed(0);
+        // Load users nếu chưa có
+        if(!allUsersCache.length) sb("users?select=name,asset&order=asset.desc").then(r=>{ allUsersCache=r.data||[]; });
+        setTimeout(()=>document.getElementById("mail-to").focus(), 100);
+    }
+    function closeCompose(){
+        document.getElementById("compose-modal").style.display="none";
+        document.getElementById("mail-to-dropdown").style.display="none";
+    }
+    function filterMailTo(){
+        const q = document.getElementById("mail-to").value.toLowerCase();
+        const dd = document.getElementById("mail-to-dropdown");
+        if(!allUsersCache.length){
+            sb("users?select=name,asset&order=asset.desc").then(r=>{
+                allUsersCache=r.data||[];
+                filterMailTo();
+            });
+            return;
+        }
+        const filtered = allUsersCache.filter(u => u.name.toLowerCase().includes(q) && u.name !== me);
+        if(!filtered.length){ dd.style.display="none"; return; }
+        dd.style.display="block";
+        dd.innerHTML = filtered.slice(0,8).map(u=>`
+            <div onclick="selectMailTo('${u.name}')"
+                style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #2a2a2a;font-size:13px;"
+                onmouseover="this.style.background='#2a2a2a'" onmouseout="this.style.background='transparent'">
+                <span style="color:white;font-weight:bold;">${u.name}</span>
+                <span style="color:#555;font-size:11px;margin-left:6px;">$${safeFloat(u.asset).toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+            </div>`).join('');
+        setTimeout(()=>{ document.addEventListener('click', closeMailToDD, {once:true}); }, 0);
+    }
+    function closeMailToDD(e){
+        const dd=document.getElementById("mail-to-dropdown");
+        if(dd && !dd.contains(e.target)) dd.style.display="none";
+    }
+    function selectMailTo(name){
+        document.getElementById("mail-to").value=name;
+        document.getElementById("mail-to-dropdown").style.display="none";
+        document.getElementById("mail-subj").focus();
+    }
 
     // ============================================================
     // ADMIN
@@ -1012,6 +1098,14 @@
         else { btn.style.background='#333'; dot.style.left='2px'; dot.style.background='#666'; }
     }
 
+    // Khi click 1 tin trong tab news → ticker nhảy tới tin đó
+    function jumpToTickerNews(newsId){
+        const idx = news.findIndex(n => n.id === newsId);
+        if(idx === -1) return;
+        tickIdx = idx;
+        tick(); // hiện ngay
+    }
+
     function setNewsSentiment(impact, vol, dur) {
         document.getElementById("news-impact-val").value = impact;
         document.getElementById("news-vol-val").value = vol;
@@ -1178,7 +1272,14 @@
     // --- USER DROPDOWN cho cash tab ---
     function showUserDropdown() {
         if(!_requireAdmin()) return;
-        filterCashUsers();
+        if(!allUsersCache.length){
+            sb("users?select=name,asset&order=asset.desc").then(r=>{
+                allUsersCache=r.data||[];
+                filterCashUsers();
+            });
+        } else {
+            filterCashUsers();
+        }
     }
     function filterCashUsers() {
         const q = document.getElementById("cash-user").value.toLowerCase();
@@ -1263,6 +1364,39 @@
         saveSubAdmins();
         renderSubAdminList();
         showToast("PHỤ ADMIN", subAdminSystemOn ? "Hệ thống phụ admin: BẬT" : "Hệ thống phụ admin: TẮT");
+    }
+
+    function filterSubAdminInput() {
+        if(!_requireAdmin()) return;
+        const q = (document.getElementById("subadmin-name-inp").value||'').toLowerCase();
+        const dd = document.getElementById("subadmin-name-dropdown");
+        if(!allUsersCache.length){
+            // Load nếu chưa có
+            sb("users?select=name,asset&order=asset.desc").then(r=>{
+                allUsersCache=r.data||[];
+                filterSubAdminInput();
+            });
+            return;
+        }
+        const filtered = allUsersCache.filter(u =>
+            u.name.toLowerCase().includes(q) &&
+            u.name !== 'minh' &&
+            !subAdminList.includes(u.name)
+        );
+        if(!filtered.length){ dd.style.display='none'; return; }
+        dd.style.display='block';
+        dd.innerHTML = filtered.slice(0,8).map(u=>`
+            <div onclick="selectSubAdminUser('${u.name}')"
+                style="padding:7px 12px;cursor:pointer;border-bottom:1px solid #2a2a2a;font-size:12px;"
+                onmouseover="this.style.background='#2a2a2a'" onmouseout="this.style.background='transparent'">
+                <span style="color:white;font-weight:bold;">${u.name}</span>
+                <span style="color:#555;font-size:10px;margin-left:6px;">$${safeFloat(u.asset).toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+            </div>`).join('');
+        setTimeout(()=>{ document.addEventListener('click', ()=>dd.style.display='none', {once:true}); }, 0);
+    }
+    function selectSubAdminUser(name){
+        document.getElementById("subadmin-name-inp").value=name;
+        document.getElementById("subadmin-name-dropdown").style.display='none';
     }
 
     function addSubAdmin() {
@@ -1400,15 +1534,22 @@
         }
         news.unshift(n);
         if(news.length > 30) news.pop();
-        if(activeTab==='news') renderNewsPage();
-        tick();
+        tickIdx = 0; // Reset về tin mới nhất
+        if(activeTab==='news'){
+            renderNewsPage();
+            setTimeout(()=>highlightTickerNews(n.id), 30);
+        }
+        tick(); // Cập nhật ticker ngay
     }
 
     // Tick đếm thời gian và loại bỏ tin hết hạn
     function cleanExpiredNews() {
         const now = Date.now();
         activeNewsEvents = activeNewsEvents.filter(n => n.expiresAt > now);
-        if(activeTab==='news') renderNewsPage(); // update timers
+        if(activeTab==='news'){
+            renderNewsPage();
+            setTimeout(()=>{ if(currentTickNewsId) highlightTickerNews(currentTickNewsId); }, 30);
+        }
     }
     function renderNewsPage(){
         const now = Date.now();
@@ -1448,7 +1589,7 @@
                 n.aiGen ? `<span style="font-size:8px;background:#1a1a3a;color:#7777ff;padding:1px 4px;border-radius:2px;">AI</span>` : '',
                 (n.isCustom && showCustomBadge) ? `<span style="font-size:8px;background:#2a1a00;color:var(--gold);padding:1px 4px;border-radius:2px;">CUSTOM</span>` : '',
             ].filter(Boolean).join(' ');
-            return `<div class="news-card" style="border-left-color:${impactColor};border-left-width:3px;">
+            return `<div class="news-card" data-id="${n.id||''}" style="border-left-color:${impactColor};border-left-width:3px;cursor:pointer;" onclick="jumpToTickerNews('${n.id||''}')">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
                     <div style="display:flex;align-items:center;gap:5px;">
                         <span class="news-time">${n.time}</span>
@@ -1464,14 +1605,41 @@
         }).join('') || '<div style="text-align:center;color:#444;padding:30px;font-size:13px;">Chưa có tin tức</div>';
     }
     let tickIdx = 0;
+    let currentTickNewsId = null;
+
     function tick(){
-        if(!news.length)return;
+        if(!news.length) return;
         tickIdx = tickIdx % news.length;
-        const n=news[tickIdx];
-        const el=document.getElementById("mini-news-ticker");
-        el.innerText=n.t;
-        el.className=`mini-news ${n.b>0?'pos':n.b<0?'neg':''}`;
+        const n = news[tickIdx];
+        currentTickNewsId = n.id;
+
+        // Cập nhật ticker dưới biểu đồ
+        const el = document.getElementById("mini-news-ticker");
+        if(el){
+            el.innerText = n.t;
+            el.className = `mini-news ${n.b>0?'pos':n.b<0?'neg':''}`;
+        }
+
+        // Nếu đang ở tab tin tức → highlight tin đang chạy ở ticker
+        if(activeTab==='news') highlightTickerNews(n.id);
+
         tickIdx++;
+    }
+
+    function highlightTickerNews(newsId){
+        // Bỏ highlight cũ
+        document.querySelectorAll('.news-card').forEach(c => {
+            c.style.outline = 'none';
+            c.style.boxShadow = 'none';
+        });
+        // Highlight card đang chạy ở ticker
+        const card = document.querySelector(`.news-card[data-id="${newsId}"]`);
+        if(card){
+            card.style.outline = '1px solid #555';
+            card.style.boxShadow = '0 0 8px rgba(255,255,255,0.05)';
+            // Scroll vào view nếu cần
+            card.scrollIntoView({behavior:'smooth', block:'nearest'});
+        }
     }
     function openDetail(c){sfx('click');sel=c;document.getElementById("detail-view").classList.add("active");initChart();updateD();tick();}
     function closeDetail(){sfx('click');sel=null;document.getElementById("detail-view").classList.remove("active");}
@@ -1479,7 +1647,13 @@
     window.addEventListener('resize',()=>{if(sel){initChart();draw();}});
     let ctx;
     function initChart(){const c=document.getElementById("chart");const rect=c.parentElement.getBoundingClientRect();const dpr=window.devicePixelRatio||1;c.width=rect.width*dpr;c.height=rect.height*dpr;ctx=c.getContext("2d");ctx.scale(dpr,dpr);}
-    function calculateSmartGrid(min,max){const range=max-min;const roughStep=range/5;const magnitude=Math.pow(10,Math.floor(Math.log10(roughStep)));const normalizedStep=roughStep/magnitude;return(normalizedStep<1.5?1:normalizedStep<3?2:normalizedStep<7?5:10)*magnitude;}
+    function calculateSmartGrid(min,max){
+        const range=Math.abs(max-min)||1;
+        const roughStep=range/5;
+        const magnitude=Math.pow(10,Math.floor(Math.log10(Math.abs(roughStep)||1)));
+        const normalizedStep=roughStep/magnitude;
+        return(normalizedStep<1.5?1:normalizedStep<3?2:normalizedStep<7?5:10)*magnitude;
+    }
     function draw(){
         if(!sel||!candles[sel]) return; const d=candles[sel]; if(!d.length) return;
         const rect=document.getElementById("chart").parentElement.getBoundingClientRect();
@@ -1488,19 +1662,51 @@
         const padding=(max-min)*0.1; min-=padding; max+=padding;
         const step=calculateSmartGrid(min,max); const startY=Math.ceil(min/step)*step; const py=20;
         const gy=v=>H-py-((v-min)/(max-min))*(H-py*2);
-        ctx.fillStyle="#444"; ctx.font="10px monospace"; ctx.textAlign="right"; ctx.strokeStyle="#222"; ctx.lineWidth=1;
-        for(let v=startY;v<=max;v+=step){const y=gy(v);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();ctx.fillText(v.toFixed(step<1?2:0),W-5,y-2);}
+        ctx.font="10px monospace"; ctx.textAlign="right"; ctx.lineWidth=1;
+        for(let v=startY;v<=max;v+=step){
+            const y=gy(v);
+            // Đường zero nổi bật hơn
+            if(Math.abs(v)<step*0.01){ ctx.strokeStyle="#555"; ctx.lineWidth=1.5; }
+            else { ctx.strokeStyle="#1a1a1a"; ctx.lineWidth=1; }
+            ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+            ctx.lineWidth=1;
+            ctx.fillStyle = v<0 ? "#ff6666" : v===0 ? "#888" : "#555";
+            ctx.fillText(v.toFixed(step<1?2:0),W-5,y-2);
+        }
+        // Vẽ đường zero riêng nếu range âm dương
+        if(min<0 && max>0){
+            const zy=gy(0);
+            ctx.strokeStyle="#444"; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+            ctx.beginPath();ctx.moveTo(0,zy);ctx.lineTo(W,zy);ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle="#666"; ctx.fillText("0",W-5,zy-2);
+        }
         let cw=(W-30)/50; if(cw>40) cw=40;
         if(chartType==='candle'){d.forEach((c,i)=>{const x=i*cw+10,col=c.close>=c.open?"#00ff88":"#ff3b3b";ctx.strokeStyle=col;ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(x+cw/2,gy(c.high));ctx.lineTo(x+cw/2,gy(c.low));ctx.stroke();const h=Math.abs(gy(c.open)-gy(c.close))||1;ctx.fillRect(x+1,Math.min(gy(c.open),gy(c.close)),cw-2,h);});}
         else{ctx.lineWidth=2;for(let i=0;i<d.length-1;i++){const x1=i*cw+10+cw/2,y1=gy(d[i].close),x2=(i+1)*cw+10+cw/2,y2=gy(d[i+1].close);ctx.beginPath();ctx.strokeStyle=d[i+1].close>=d[i].close?"#00ff88":"#ff3b3b";ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}}
         const ly=gy(d[d.length-1].close); ctx.strokeStyle="rgba(255,255,255,0.4)"; ctx.setLineDash([2,2]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
-        ctx.fillStyle=d[d.length-1].close>=d[d.length-1].open?"#00ff88":"#ff3b3b"; ctx.fillRect(W-35,ly-8,35,16); ctx.fillStyle="black"; ctx.fillText(d[d.length-1].close.toFixed(2),W-2,ly+3);
+        const lastClose=d[d.length-1].close; const lastColor=lastClose>=d[d.length-1].open?"#00ff88":"#ff3b3b";
+        const lastTxt=lastClose.toFixed(2); const lblW=Math.max(35,lastTxt.length*6+8);
+        ctx.fillStyle=lastColor; ctx.fillRect(W-lblW,ly-8,lblW,16); ctx.fillStyle="black"; ctx.fillText(lastTxt,W-2,ly+3);
     }
 
     // ============================================================
     // UTILS
     // ============================================================
-    function tab(id){document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden'));document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));document.getElementById(`tab-${id}`).classList.remove('hidden');event.target.classList.add('active');sfx('click');activeTab=id;if(id==='rank')getRank();if(id==='news')renderNewsPage();}
+    function tab(id){
+        document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
+        document.getElementById(`tab-${id}`).classList.remove('hidden');
+        event.target.classList.add('active');
+        sfx('click');
+        activeTab=id;
+        if(id==='rank') getRank();
+        if(id==='news'){
+            renderNewsPage();
+            // Highlight tin đang chạy ở ticker ngay sau khi render
+            setTimeout(()=>{ if(currentTickNewsId) highlightTickerNews(currentTickNewsId); }, 50);
+        }
+    }
     function logout(){localStorage.removeItem("sess");location.reload();}
     function changeChartType(){chartType=document.getElementById("chart-type-select").value;localStorage.setItem("chart_type",chartType);if(sel)draw();}
     function openSettings(){document.getElementById("settings-modal").style.display='flex';}
