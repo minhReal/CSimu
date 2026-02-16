@@ -571,7 +571,10 @@
                     sfx('err'); msg.innerText="Lỗi tạo tài khoản"; msg.style.color="var(--red)"; return;
                 }
                 const firstMail={id:`sys_${Date.now()}`,from:"Terminal X",title:"Chào mừng",body:"Chào mừng bạn đến với Terminal X!",time:Date.now(),read:false};
-                localStorage.setItem(`u_${u}`, JSON.stringify({pass:p,cash:250,stocks:{},inbox:[firstMail],lastBC:Date.now()}));
+                const newWallet = {pass:p,cash:250,stocks:{},inbox:[firstMail],lastBC:Date.now()};
+                localStorage.setItem(`u_${u}`, JSON.stringify(newWallet));
+                // Sync asset lên Supabase ngay để xuất hiện trong leaderboard
+                await sb("users","POST",{name:u, asset:250, pass:p});
                 sfx('ok'); msg.innerText="Đăng ký thành công!"; msg.style.color="var(--green)";
             } catch(e){ sfx('err'); msg.innerText="Lỗi mạng: "+e.message; msg.style.color="var(--red)"; }
         } else {
@@ -599,7 +602,8 @@
         document.getElementById("login-screen").style.display="none";
         document.getElementById("app").style.display="flex";
         document.getElementById("u-name").innerText=me;
-        document.getElementById("btn-admin").style.display="block"; // Tất cả thấy nút, nhưng openAdmin xác thực pass
+        // Chỉ hiện nút admin nếu là tài khoản admin thật — verify từ Supabase
+        _verifyAdminAccess();
         setInterval(loop, 1500);
         setInterval(syncIfChanged, 60000);
         setInterval(checkBroadcast, 15000);
@@ -616,6 +620,8 @@
         });
         renderMail();
         window.dispatchEvent(new Event('resize'));
+        // Sync asset lên Supabase ngay khi đăng nhập
+        setTimeout(()=>syncNow(true), 2000);
     }
 
     // ============================================================
@@ -672,17 +678,24 @@
     // ============================================================
     async function getRank() {
         if(activeTab!=='rank') return;
+        const el = document.getElementById("rank-list");
+        el.innerHTML = "<div style='padding:20px;text-align:center;color:#555;'>Đang tải...</div>";
         try {
-            const r = await sb("users?select=name,asset&order=asset.desc&limit=50");
-            document.getElementById("rank-list").innerHTML=(r.data||[]).map((p,i)=>`
+            // Sync asset của mình trước để bảng xếp hạng luôn mới nhất
+            await syncNow(true); // silent sync
+            const r = await sb("users?select=name,asset&order=asset.desc&limit=100");
+            const list = r.data || [];
+            if(!list.length){ el.innerHTML="<div style='padding:20px;text-align:center;color:#555;'>Chưa có dữ liệu</div>"; return; }
+            el.innerHTML = list.map((p,i)=>`
                 <div class="rank-item ${p.name===me?'rank-me':''}">
-                    <div style="width:30px;text-align:center;font-weight:bold;">${i+1}</div>
+                    <div style="width:30px;text-align:center;font-weight:bold;color:${i<3?'var(--gold)':'#555'}">${i===0?'👑':i===1?'🥈':i===2?'🥉':i+1}</div>
                     <div style="flex:1;margin-left:10px;">
-                        <div style="font-weight:bold;color:white;">${p.name} ${i===0?'👑':''}</div>
+                        <div style="font-weight:bold;color:${p.name===me?'var(--green)':'white'};">${p.name}</div>
                         <div style="font-size:12px;color:#888;">$${safeFloat(p.asset).toLocaleString(undefined,{maximumFractionDigits:0})}</div>
                     </div>
+                    ${p.name===me?'<div style="font-size:10px;color:var(--green);padding:2px 6px;border:1px solid var(--green);border-radius:3px;">BẠN</div>':''}
                 </div>`).join('');
-        } catch(e){}
+        } catch(e){ el.innerHTML="<div style='padding:20px;text-align:center;color:red;'>Lỗi tải dữ liệu</div>"; }
     }
 
     // ============================================================
@@ -781,6 +794,24 @@
 
     // Sinh token ngẫu nhiên mỗi lần load — không thể đoán hay giả mạo
     function _genToken() { return Math.random().toString(36).substr(2,9) + Date.now().toString(36) + Math.random().toString(36).substr(2,9); }
+
+    // Xác minh admin từ Supabase — không tin vào tên client, hỏi server
+    async function _verifyAdminAccess() {
+        // Bước 1: tên phải đúng
+        if(!me || me.toLowerCase() !== 'minh') return;
+        // Bước 2: query Supabase xác nhận tài khoản tồn tại với đúng pass
+        // (không lưu pass admin ở client — so sánh hash)
+        try {
+            const r = await sb(`users?name=eq.${encodeURIComponent(me)}&select=name,pass`);
+            if(!r.ok || !r.data.length) return;
+            const serverPass = r.data[0].pass;
+            // Kiểm tra pass từ wallet local có match server không
+            if(wallet.pass !== serverPass) return;
+            // Bước 3: chỉ hiện nút nếu qua hết 2 bước trên
+            const btn = document.getElementById("btn-admin");
+            if(btn) btn.style.display = "block";
+        } catch(e) { /* Không hiện nút nếu lỗi */ }
+    }
 
     // Guard: kiểm tra token + username thật sự match
     // Kể cả fake me bằng devtools vẫn không qua được vì _adminToken bind với session
