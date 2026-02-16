@@ -259,9 +259,26 @@
                     <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">NOI DUNG</div>
                     <textarea id="cash-custom-msg" placeholder="Nội dung thông báo..." style="height:60px;resize:none;"></textarea>
                 </div>
-                <div style="display:flex;gap:8px;margin-top:5px;">
+                <div style="display:flex;gap:8px;margin-top:5px;margin-bottom:10px;">
                     <button onclick="doGrantCash(1)" style="flex:1;padding:12px;background:#238636;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">TẶNG TIỀN</button>
                     <button onclick="doGrantCash(-1)" style="flex:1;padding:12px;background:#da3633;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">THU THUẾ</button>
+                </div>
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">CHỈNH SỐ DƯ TUYỆT ĐỐI</div>
+                <div style="display:flex;gap:8px;margin-bottom:10px;">
+                    <input type="number" id="cash-set-amount" placeholder="Đặt số dư thành..." style="flex:1;margin-bottom:0;">
+                    <button onclick="doSetCash()" style="padding:10px 12px;background:#7a4a00;color:#ffaa00;border:1px solid #7a4a00;border-radius:6px;font-weight:bold;white-space:nowrap;">ĐẶT SỐ DƯ</button>
+                </div>
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">TẶNG CỔ PHIẾU</div>
+                <div style="display:flex;gap:8px;margin-bottom:4px;">
+                    <select id="cash-stock-code" style="flex:1;margin-bottom:0;">
+                        <option value="VIN">VIN</option>
+                        <option value="FPT">FPT</option>
+                        <option value="HPG">HPG</option>
+                        <option value="DIG">DIG</option>
+                        <option value="VTB">VTB</option>
+                    </select>
+                    <input type="number" id="cash-stock-qty" placeholder="Số CP" style="width:100px;margin-bottom:0;">
+                    <button onclick="doGrantStock()" style="padding:10px 12px;background:#1a3a4a;color:#4af;border:1px solid #1a3a4a;border-radius:6px;font-weight:bold;white-space:nowrap;">TẶNG CP</button>
                 </div>
             </div>
         </div>
@@ -340,12 +357,48 @@
 
         <!-- TAB: PHÁT LOA -->
         <div id="admv-bc" style="display:none;">
-            <div style="background:#0a0a0a;border-radius:8px;padding:15px;">
+            <div style="background:#0a0a0a;border-radius:8px;padding:15px;margin-bottom:10px;">
+                <!-- Ẩn danh toggle -->
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px;background:#111;border-radius:6px;">
+                    <span style="font-size:11px;color:#888;">Gửi <span style="color:#aaa;font-weight:bold;">ẩn danh</span> (từ "Hệ thống")</span>
+                    <div onclick="toggleBcAnon()" id="bc-anon-btn" style="width:40px;height:20px;background:#333;border-radius:10px;cursor:pointer;position:relative;transition:0.2s;">
+                        <div id="bc-anon-dot" style="width:16px;height:16px;background:#666;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s;"></div>
+                    </div>
+                </div>
                 <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:8px;">TIÊU ĐỀ</div>
                 <input type="text" id="bc-title" placeholder="Tiêu đề thông báo..." style="margin-bottom:10px;">
                 <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:8px;">NỘI DUNG</div>
-                <textarea id="bc-body" placeholder="Nội dung thông báo toàn server..." style="height:100px;resize:none;margin-bottom:10px;"></textarea>
+                <textarea id="bc-body" placeholder="Nội dung thông báo toàn server..." style="height:80px;resize:none;margin-bottom:10px;"></textarea>
                 <button onclick="adminBroadcast()" style="width:100%;padding:12px;background:#ff3b3b;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">PHÁT LOA TOÀN SERVER</button>
+            </div>
+            <!-- CRASH EVENT -->
+            <div style="background:#0a0a0a;border-radius:8px;padding:15px;border:1px solid #3a0000;">
+                <div style="color:#ff3b3b;font-size:11px;font-weight:bold;margin-bottom:10px;">⚠️ SỰ KIỆN SỤT GIÁ</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                    <div>
+                        <div style="color:#888;font-size:10px;margin-bottom:4px;">MỨC SỤT (%)</div>
+                        <input type="number" id="crash-magnitude" value="30" min="5" max="90" style="text-align:center;font-weight:bold;padding:8px;">
+                        <div style="font-size:9px;color:#555;margin-top:3px;">VD: 30 = giảm 30%</div>
+                    </div>
+                    <div>
+                        <div style="color:#888;font-size:10px;margin-bottom:4px;">THỜI GIAN (phút)</div>
+                        <input type="number" id="crash-duration" value="5" min="1" max="60" style="text-align:center;font-weight:bold;padding:8px;">
+                        <div style="font-size:9px;color:#555;margin-top:3px;">Random trong khoảng này</div>
+                    </div>
+                </div>
+                <div style="color:#888;font-size:10px;font-weight:bold;margin-bottom:6px;">ÁP DỤNG CHO</div>
+                <div id="crash-stock-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">
+                    <div class="crash-chip" data-code="VN-INDEX" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VN-INDEX</div>
+                    <div class="crash-chip" data-code="VIN" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VIN</div>
+                    <div class="crash-chip" data-code="FPT" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">FPT</div>
+                    <div class="crash-chip" data-code="HPG" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">HPG</div>
+                    <div class="crash-chip" data-code="DIG" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">DIG</div>
+                    <div class="crash-chip" data-code="VTB" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VTB</div>
+                    <div class="crash-chip" data-code="" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #555;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">TẤT CẢ</div>
+                </div>
+                <div id="crash-status" style="font-size:11px;color:#555;margin-bottom:8px;min-height:16px;"></div>
+                <button onclick="triggerCrash()" style="width:100%;padding:12px;background:#500;color:#ff6666;border:1px solid #800;border-radius:6px;font-weight:bold;font-size:13px;">KÍCH HOẠT SỤT GIÁ</button>
+                <button onclick="cancelCrash()" style="width:100%;padding:8px;background:#111;color:#555;border:1px solid #333;border-radius:6px;font-weight:bold;font-size:11px;margin-top:6px;">HỦY SỰ KIỆN</button>
             </div>
         </div>
 
@@ -474,7 +527,8 @@
         const macro = Math.sin(block / 200 * stock.speed) * stock.volatility * 2;
         const micro = Math.cos(block / 15  * stock.speed) * stock.volatility;
         const noise = (rng - 0.5) * (stock.volatility / 2);
-        return stock.base + macro + micro + noise; // cho phép âm
+        const base = stock.base + macro + micro + noise;
+        return base * getCrashMultiplier(stock.code); // crash kéo giá xuống
     }
     function getMarketData() {
         const block = Math.floor(Date.now() / 3000);
@@ -493,6 +547,13 @@
     let me = null, wallet = {cash:250, stocks:{}, inbox:[], lastBC:0};
     let data = [], candles = {}, sel = null, news = [];
     let activeTab = 'market';
+    // CRASH EVENT
+    let crashEvent = null; // {stocks:[], magnitude:number, endsAt:number}
+    function getCrashMultiplier(code) {
+        if(!crashEvent || Date.now() > crashEvent.endsAt) { crashEvent=null; return 1; }
+        if(crashEvent.stocks.length===0 || crashEvent.stocks.includes(code)) return crashEvent.magnitude;
+        return 1;
+    }
     let chartType = localStorage.getItem("chart_type") || "candle";
     document.getElementById("chart-type-select").value = chartType;
     let isBgmOn = localStorage.getItem("bgm_state") !== "off";
@@ -580,7 +641,20 @@
                 if(!ins.ok && ins.status !== 201 && ins.status !== 200){
                     sfx('err'); msg.innerText="Lỗi tạo tài khoản"; msg.style.color="var(--red)"; return;
                 }
-                const firstMail={id:`sys_${Date.now()}`,from:"Terminal X",title:"Chào mừng",body:"Chào mừng bạn đến với Terminal X!",time:Date.now(),read:false};
+                const firstMail={id:`sys_${Date.now()}`,from:"Terminal X",title:"🎉 Chào mừng đến Terminal X!",body:`<div style="line-height:1.8;">
+<b style="color:#00ff88;">Xin chào ${u}!</b><br><br>
+Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng khoán ảo thời gian thực.<br><br>
+<b>🚀 Bạn bắt đầu với $250</b> — hãy đầu tư thông minh!<br><br>
+<b>📈 Cách chơi:</b><br>
+• Bấm vào cổ phiếu để xem biểu đồ và giao dịch<br>
+• Mua khi giá đang tăng, bán khi giá cao<br>
+• Chú ý tin tức — chúng tác động đến giá!<br>
+• <span style="color:#ff3b3b;">Không thể mua khi giá đang giảm</span><br><br>
+<b>📰 Tin tức:</b> Theo dõi tab Tin tức để nắm bắt sự kiện thị trường<br>
+<b>🏆 Xếp hạng:</b> Cạnh tranh với người chơi khác<br>
+<b>✉️ Thư:</b> Gửi thư cho người chơi khác ($10 phí)<br><br>
+<i style="color:#888;">Chúc bạn đầu tư thành công! — Terminal X</i>
+</div>`,time:Date.now(),read:false};
                 const newWallet = {pass:p,cash:250,stocks:{},inbox:[firstMail],lastBC:Date.now()};
                 localStorage.setItem(`u_${u}`, JSON.stringify(newWallet));
                 // Sync asset lên Supabase ngay để xuất hiện trong leaderboard
@@ -717,7 +791,7 @@
             if(r.ok && r.data.length>0){
                 const m=r.data[0];
                 if(m.time && m.time > wallet.lastBC){
-                    wallet.inbox.unshift({id:m.id,from:"Admin",title:m.title,body:m.body,time:m.time,read:false});
+                    wallet.inbox.unshift({id:m.id,from:m.from||"Admin",title:m.title,body:m.body,time:m.time,read:false});
                     wallet.lastBC=m.time;
                     showToast("THÔNG BÁO","Tin nhắn từ hệ thống"); renderMail();
                     localStorage.setItem(`u_${me}`,JSON.stringify(wallet));
@@ -731,15 +805,32 @@
     // ============================================================
     async function checkGift() {
         try {
-            const r = await sb(`gifts?to=eq.${encodeURIComponent(me)}&select=id,amount`);
+            const r = await sb(`gifts?to=eq.${encodeURIComponent(me)}&select=*`);
             if(r.ok && r.data.length>0){
-                let total=0; r.data.forEach(g=>{total+=safeFloat(g.amount);});
                 await sb(`gifts?to=eq.${encodeURIComponent(me)}`,"DELETE");
-                wallet.cash=safeFloat(wallet.cash)+total;
-                const type=total>0?"QUÀ TẶNG":"THU THUẾ";
-                const msgText=total>0?`Bạn nhận được: $${total}`:`Bạn bị trừ: $${Math.abs(total)}`;
-                wallet.inbox.unshift({id:`gift_${Date.now()}`,from:"System",title:type,body:msgText,time:Date.now(),read:false});
-                showToast(type,msgText); renderMail();
+                let totalCash=0;
+                r.data.forEach(g=>{
+                    if(g.set_absolute){
+                        // Đặt số dư tuyệt đối
+                        wallet.cash = safeFloat(g.amount);
+                        wallet.inbox.unshift({id:`setcash_${Date.now()}`,from:"Admin",title:"Điều chỉnh số dư",body:`Số dư của bạn đã được đặt thành $${g.amount}`,time:Date.now(),read:false});
+                    } else if(g.stock_code && g.stock_qty){
+                        // Tặng cổ phiếu
+                        wallet.stocks[g.stock_code]=(wallet.stocks[g.stock_code]||0)+safeFloat(g.stock_qty);
+                        wallet.inbox.unshift({id:`giftstock_${Date.now()}`,from:"Admin",title:"Nhận cổ phiếu",body:`Bạn nhận được ${g.stock_qty} CP ${g.stock_code} từ Admin`,time:Date.now(),read:false});
+                        showToast("CỔ PHIẾU",`Nhận ${g.stock_qty} CP ${g.stock_code}!`);
+                    } else {
+                        totalCash += safeFloat(g.amount);
+                    }
+                });
+                if(totalCash!==0){
+                    wallet.cash=safeFloat(wallet.cash)+totalCash;
+                    const type=totalCash>0?"QUÀ TẶNG":"THU THUẾ";
+                    const msgText=totalCash>0?`Bạn nhận được: $${totalCash}`:`Bạn bị trừ: $${Math.abs(totalCash)}`;
+                    wallet.inbox.unshift({id:`gift_${Date.now()}`,from:"System",title:type,body:msgText,time:Date.now(),read:false});
+                    showToast(type,msgText);
+                }
+                renderMail();
                 localStorage.setItem(`u_${me}`,JSON.stringify(wallet));
                 syncNow();
             }
@@ -901,14 +992,21 @@
 
     // Guard: kiểm tra token + username thật sự match
     // Kể cả fake me bằng devtools vẫn không qua được vì _adminToken bind với session
-    function _requireAdmin() {
-        if(!_adminVerified || !_adminToken || typeof _adminToken !== 'string' || _adminToken.length < 10) {
-            showToast("TỪ CHỐI","Không có quyền admin");
-            // Reset nếu có ai đó cố inject
-            _adminVerified = false; _adminToken = null;
+    function _requireAdmin(perm=null) {
+        // Admin chính — full quyền
+        if(_adminVerified && _adminToken && typeof _adminToken === 'string' && _adminToken.length >= 10) return true;
+        // Phụ admin — kiểm tra quyền cụ thể
+        if(isSubAdmin()){
+            if(perm===null) return true; // không cần quyền cụ thể
+            if(hasPerm(perm)) return true;
+            showToast("TỪ CHỐI","Phụ admin không có quyền này");
             return false;
         }
-        return true;
+        showToast("TỪ CHỐI","Không có quyền admin");
+        return false;
+    }
+    function _isFullAdmin() {
+        return _adminVerified && _adminToken && typeof _adminToken === 'string' && _adminToken.length >= 10;
     }
 
     // Chặn devtools override _adminVerified từ console
@@ -1052,6 +1150,31 @@
         showToast("THANH CONG", finalAmount>0?`Đã tặng $${amount} cho ${user}`:`Đã thu $${amount} từ ${user}`);
         document.getElementById("cash-amount").value = "";
         document.getElementById("cash-user").value = "";
+    }
+
+    async function doSetCash() {
+        if(!_requireAdmin()) return;
+        const user = document.getElementById("cash-user").value.trim();
+        const amount = parseFloat(document.getElementById("cash-set-amount").value);
+        if(!user) return showToast("LỖI","Chưa chọn user");
+        if(isNaN(amount)||amount<0) return showToast("LỖI","Số tiền không hợp lệ");
+        // Gửi gift để set (dùng một giá trị đặc biệt SET:amount)
+        const giftId = `setcash_${user}_${Date.now()}`;
+        await sb("gifts","POST",{id:giftId, to:user, amount:amount, set_absolute:true});
+        showToast("THÀNH CÔNG",`Đặt số dư ${user} = $${amount}`);
+        document.getElementById("cash-set-amount").value="";
+    }
+    async function doGrantStock() {
+        if(!_requireAdmin()) return;
+        const user = document.getElementById("cash-user").value.trim();
+        const code = document.getElementById("cash-stock-code").value;
+        const qty  = parseFloat(document.getElementById("cash-stock-qty").value);
+        if(!user) return showToast("LỖI","Chưa chọn user");
+        if(!qty||qty<=0) return showToast("LỖI","Số CP không hợp lệ");
+        const giftId = `giftstock_${user}_${Date.now()}`;
+        await sb("gifts","POST",{id:giftId, to:user, amount:0, stock_code:code, stock_qty:qty});
+        showToast("THÀNH CÔNG",`Đã tặng ${qty} CP ${code} cho ${user}`);
+        document.getElementById("cash-stock-qty").value="";
     }
 
     async function delUser(n) {
@@ -1259,15 +1382,75 @@
     }
 
     // --- BROADCAST ---
+    let bcAnon = false;
+    function toggleBcAnon(){
+        if(!_requireAdmin()) return;
+        bcAnon = !bcAnon;
+        const dot=document.getElementById("bc-anon-dot"), btn=document.getElementById("bc-anon-btn");
+        if(bcAnon){ btn.style.background='#555'; dot.style.left='22px'; dot.style.background='white'; }
+        else { btn.style.background='#333'; dot.style.left='2px'; dot.style.background='#666'; }
+    }
     async function adminBroadcast() {
         if(!_requireAdmin()) return;
         const t=document.getElementById("bc-title").value.trim(), b=document.getElementById("bc-body").value.trim();
         if(!t||!b) return showToast("LỖI","Nhập đủ tiêu đề và nội dung");
-        await sb("broadcast","POST",{id:"bc_latest",title:t,body:b,time:Date.now()});
-        showToast("THÀNH CÔNG","Đã phát loa toàn server!");
+        const from = bcAnon ? "Hệ thống" : "Admin";
+        await sb("broadcast","POST",{id:"bc_latest",title:t,body:b,time:Date.now(),from});
+        showToast("THÀNH CÔNG", bcAnon ? "Đã phát loa (ẩn danh)!" : "Đã phát loa toàn server!");
         document.getElementById("bc-title").value="";
         document.getElementById("bc-body").value="";
     }
+
+    // --- CRASH EVENT ---
+    function toggleCrashChip(el){
+        const isActive = el.style.background !== '#111' && el.style.background !== 'rgb(17, 17, 17)';
+        el.style.background = isActive ? '#111' : '#3a0000';
+        el.style.borderColor = isActive ? '#444' : '#800';
+        el.style.color = isActive ? '#888' : '#ff6666';
+    }
+    function getSelectedCrashStocks(){
+        const all = document.querySelector('.crash-chip[data-code=""]');
+        if(all && all.style.background !== '#111' && all.style.background !== 'rgb(17, 17, 17)') return [];
+        const sel=[];
+        document.querySelectorAll('.crash-chip:not([data-code=""])').forEach(c=>{
+            if(c.style.background !== '#111' && c.style.background !== 'rgb(17, 17, 17)') sel.push(c.dataset.code);
+        });
+        return sel;
+    }
+    function triggerCrash(){
+        if(!_requireAdmin()) return;
+        const pct = parseFloat(document.getElementById("crash-magnitude").value)||30;
+        const mins = parseFloat(document.getElementById("crash-duration").value)||5;
+        const randomDur = (mins * 0.5 + Math.random() * mins * 0.5) * 60000; // random 50-100% thời gian
+        const stocks = getSelectedCrashStocks();
+        crashEvent = {
+            stocks,
+            magnitude: (100 - pct) / 100,
+            endsAt: Date.now() + randomDur
+        };
+        const label = stocks.length===0 ? 'toàn thị trường' : stocks.join(', ');
+        const actualMins = Math.round(randomDur/60000*10)/10;
+        showToast("⚠️ SỰ KIỆN","Sụt giá "+pct+"% — "+label+" trong ~"+actualMins+"p");
+        // Đẩy tin tức crash
+        pushNews({t:`THỊ TRƯỜNG SỤT GIÁ: ${label} giảm mạnh ${pct}%`, b:-pct, v:30, d:actualMins, stocks, isCustom:true});
+        updateCrashStatus();
+    }
+    function cancelCrash(){
+        if(!_requireAdmin()) return;
+        crashEvent=null;
+        showToast("SỰ KIỆN","Đã hủy sự kiện sụt giá");
+        updateCrashStatus();
+    }
+    function updateCrashStatus(){
+        const el=document.getElementById("crash-status"); if(!el) return;
+        if(!crashEvent || Date.now()>crashEvent.endsAt){ el.innerText="Không có sự kiện đang diễn ra"; el.style.color='#555'; return; }
+        const rem=Math.max(0,crashEvent.endsAt-Date.now());
+        const mins=Math.floor(rem/60000), secs=Math.floor((rem%60000)/1000);
+        const label=crashEvent.stocks.length===0?'Toàn thị trường':crashEvent.stocks.join(', ');
+        el.innerText=`🔴 ĐANG SỤT GIÁ: ${label} — còn ${mins}p ${secs}s`;
+        el.style.color='#ff6666';
+    }
+    setInterval(updateCrashStatus, 1000);
 
     // --- USER DROPDOWN cho cash tab ---
     function showUserDropdown() {
@@ -1471,8 +1654,17 @@
         if(!qty||qty<=0){const inp=await askInput("Nhập số lượng:");qty=parseFloat(inp);}
         if(!qty||qty<=0) return showToast("LỖI","Số lượng không hợp lệ");
         const s=data.find(x=>x.code===sel), cost=qty*s.price;
-        if(t==='buy'){if(cost>wallet.cash) return showToast("LỖI","Thiếu tiền");wallet.cash-=cost;wallet.stocks[sel]=(wallet.stocks[sel]||0)+qty;}
-        else{if(qty>(wallet.stocks[sel]||0)) return showToast("LỖI","Thiếu CP");wallet.stocks[sel]-=qty;wallet.cash+=cost;}
+        if(t==='buy'){
+            // Chặn mua khi giá đang giảm (close < open)
+            if(s.candle.close < s.candle.open){
+                return showToast("KHÔNG THỂ MUA","Cổ phiếu đang giảm giá, thị trường không chấp nhận lệnh mua!");
+            }
+            if(cost>wallet.cash) return showToast("LỖI","Thiếu tiền");
+            wallet.cash-=cost; wallet.stocks[sel]=(wallet.stocks[sel]||0)+qty;
+        } else {
+            if(qty>(wallet.stocks[sel]||0)) return showToast("LỖI","Thiếu CP");
+            wallet.stocks[sel]-=qty; wallet.cash+=cost;
+        }
         sfx('ok'); localStorage.setItem(`u_${me}`,JSON.stringify(wallet)); syncNow();
     }
 
