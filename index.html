@@ -628,18 +628,12 @@
     (function(){
         const s=localStorage.getItem("sess");
         if(s && localStorage.getItem(`u_${s}`)){
-            try {
-                me=s;
-                wallet=JSON.parse(localStorage.getItem(`u_${s}`));
-                if(!wallet.inbox) wallet.inbox=[];
-                if(!wallet.lastBC) wallet.lastBC=0;
-                if(!wallet.stocks) wallet.stocks={};
-                enter();
-            } catch(e){
-                // wallet data bị corrupt → xóa và yêu cầu đăng nhập lại
-                localStorage.removeItem(`u_${s}`);
-                localStorage.removeItem("sess");
-            }
+            me=s;
+            wallet=JSON.parse(localStorage.getItem(`u_${s}`));
+            if(!wallet.inbox) wallet.inbox=[];
+            if(!wallet.lastBC) wallet.lastBC=0;
+            if(!wallet.stocks) wallet.stocks={};
+            enter();
         }
     })();
 
@@ -707,13 +701,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         document.getElementById("login-screen").style.display="none";
         document.getElementById("app").style.display="flex";
         document.getElementById("u-name").innerText=me;
-        // Sanitize wallet: phòng số quá lớn/âm từ exploit
-        if(!isFinite(wallet.cash) || wallet.cash > 1e12) wallet.cash = 250;
-        if(wallet.cash < -1e9) wallet.cash = 0;
-        Object.keys(wallet.stocks||{}).forEach(k => {
-            if(!isFinite(wallet.stocks[k]) || wallet.stocks[k] < 0) wallet.stocks[k] = 0;
-        });
-        localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
+
         _verifyAdminAccess();
         // Guard: chỉ start interval 1 lần duy nhất
         if(!_appStarted) {
@@ -1094,21 +1082,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         return _adminVerified && _adminToken && typeof _adminToken === 'string' && _adminToken.length >= 10;
     }
 
-    // Chặn devtools override _adminVerified từ console
-    // Dùng Object.defineProperty để không cho gán lại trực tiếp
-    (function() {
-        let _v = false, _t = null;
-        Object.defineProperty(window, '_adminVerified', {
-            get(){ return _v; },
-            set(val){ if(typeof val === 'boolean') _v = val; },
-            configurable: false
-        });
-        Object.defineProperty(window, '_adminToken', {
-            get(){ return _t; },
-            set(val){ if(typeof val === 'string' || val === null) _t = val; },
-            configurable: false
-        });
-    })();
+    // _adminVerified và _adminToken là biến thường — bảo mật qua server-side check
 
     async function openAdmin() {
         // Bất kể ai click nút ADMIN — đều phải xác thực
