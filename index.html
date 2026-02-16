@@ -74,7 +74,6 @@
         #settings-modal { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; }
         .settings-box { background:var(--panel); padding:20px; border-radius:12px; width:80%; max-width:300px; }
         .up{color:var(--green)} .down{color:var(--red)}
-        /* ADMIN PANEL */
         #admin-view { position:fixed; inset:0; background:#050505; z-index:6000; display:none; flex-direction:column; }
         .adm-tab { transition:0.15s; }
         .adm-tab:hover { background:#1a1a1a; }
@@ -102,7 +101,7 @@
     <div class="login-box">
         <h2 style="margin:0 0 20px 0; color:var(--green); letter-spacing:2px;">TERMINAL X</h2>
         <input type="text" id="user" class="inp-auth" placeholder="Tên hiển thị">
-        <input type="password" id="pass" class="inp-auth" placeholder="Mật mã">
+        <input type="password" id="pass" class="inp-auth" placeholder="Mật khẩu">
         <button onclick="auth('login')" class="btn-auth" style="background:#1f6feb;">ĐĂNG NHẬP</button>
         <button onclick="auth('reg')" class="btn-auth" style="background:#238636;">ĐĂNG KÝ</button>
         <div style="margin-top:15px; font-size:12px;"><span style="color:#666; cursor:pointer;" onclick="forgotPass()">Quên mật khẩu?</span></div>
@@ -119,7 +118,7 @@
                 <option value="en">EN</option>
                 <option value="vi">VI</option>
             </select>
-            <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;">$<span id="cash">0.00</span></div>
+            <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;"><span id="cash">0.00</span></div>
             <button onclick="openSettings()" style="background:none; border:none; padding:0; font-size:20px;">⚙️</button>
         </div>
     </div>
