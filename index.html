@@ -193,8 +193,8 @@
     <div class="controls-area">
         <input type="number" id="trade-amount" class="inp-auth" placeholder="Nhập số lượng (CP)" style="margin-bottom:10px; font-size:18px; font-weight:bold;">
         <div style="display:flex; gap:10px;">
-            <button onclick="trade('buy')" class="btn-auth" style="margin:0; background:#238636; flex:1;">MUA</button>
-            <button onclick="trade('sell')" class="btn-auth" style="margin:0; background:#da3633; flex:1;">BÁN</button>
+            <button id="btn-buy" onclick="trade('buy')" class="btn-auth" style="margin:0; background:#238636; flex:1;">MUA</button>
+            <button id="btn-sell" onclick="trade('sell')" class="btn-auth" style="margin:0; background:#da3633; flex:1;">BÁN</button>
         </div>
         <div id="trade-estimate" style="text-align:center; font-size:11px; color:#888; margin-top:5px;">Ước tính: $0.00</div>
     </div>
@@ -557,9 +557,9 @@
     let activeTab = 'market';
     // (crashEvent đã khai báo ở trên)
     let chartType = localStorage.getItem("chart_type") || "candle";
-    document.getElementById("chart-type-select").value = chartType;
+    try { document.getElementById("chart-type-select").value = chartType; } catch(e){}
     let isBgmOn = localStorage.getItem("bgm_state") !== "off";
-    document.getElementById("toggle-bgm").checked = isBgmOn;
+    try { document.getElementById("toggle-bgm").checked = isBgmOn; } catch(e){}
     let currentMailIdx = -1;
     let lastSyncedAsset = null;
 
@@ -567,17 +567,27 @@
     // AUDIO
     // ============================================================
     const bgm = document.getElementById("bgm");
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioCtx = null;
     let unlocked = false;
+    function _getAudioCtx() {
+        if(!audioCtx) {
+            try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+            catch(e) { audioCtx = null; }
+        }
+        return audioCtx;
+    }
     function unlockAudio() {
-        if (!unlocked) audioCtx.resume().then(() => { unlocked=true; if(isBgmOn) bgm.play().catch(()=>{}); });
+        const ctx = _getAudioCtx();
+        if(ctx && !unlocked) ctx.resume().then(() => { unlocked=true; if(isBgmOn) bgm.play().catch(()=>{}); });
     }
     function toggleBGM() {
         isBgmOn = document.getElementById("toggle-bgm").checked;
         localStorage.setItem("bgm_state", isBgmOn?"on":"off");
         if(isBgmOn) bgm.play().catch(()=>{}); else bgm.pause();
+        _getAudioCtx(); // init nếu chưa có
     }
     function sfx(t) {
+        const audioCtx=_getAudioCtx(); if(!audioCtx) return;
         if(audioCtx.state==='suspended') audioCtx.resume();
         const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
         if(t==='click'){o.frequency.value=600;g.gain.value=0.05;o.start();o.stop(audioCtx.currentTime+0.05);}
@@ -746,8 +756,8 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             updateD(); draw();
             // Update nút mua/bán theo giá hiện tại
             const s=data.find(x=>x.code===sel);
-            const buyBtn=document.querySelector('button[onclick="trade('buy')"]');
-            const sellBtn=document.querySelector('button[onclick="trade('sell')"]');
+            const buyBtn=document.getElementById('btn-buy');
+            const sellBtn=document.getElementById('btn-sell');
             if(buyBtn && s){
                 if(s.price < 1){
                     buyBtn.style.cssText="flex:1;margin:0;background:#2a0000;color:#555;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";
@@ -1749,10 +1759,10 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     // ============================================================
     // TRADE
     // ============================================================
-    document.getElementById("trade-amount").addEventListener("input",function(){
+    try{document.getElementById("trade-amount").addEventListener("input",function(){
         const qty=parseFloat(this.value);
         if(sel&&data.length){const s=data.find(x=>x.code===sel);document.getElementById("trade-estimate").innerText=`Ước tính: $${isNaN(qty*s.price)?'0.00':(qty*s.price).toFixed(2)}`;}
-    });
+    });}catch(e){}
     async function trade(t) {
         let qty=parseFloat(document.getElementById("trade-amount").value);
         if(!qty||qty<=0){const inp=await askInput("Nhập số lượng:");qty=parseFloat(inp);}
@@ -2017,6 +2027,21 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     function logout(){localStorage.removeItem("sess");location.reload();}
     function changeChartType(){chartType=document.getElementById("chart-type-select").value;localStorage.setItem("chart_type",chartType);if(sel)draw();}
     function openSettings(){document.getElementById("settings-modal").style.display='flex';}
+
+    // Export hàm ra window bằng cách an toàn — dùng eval để tránh ReferenceError
+    ['unlockAudio','auth','trade','openAdmin','closeAdmin','adminTab','doGrantCash',
+     'doSetCash','doGrantStock','sendP2PMail','openMail','closeMail','openSettings',
+     'logout','forgotPass','changePassword','toggleBGM','changeChartType','openDetail',
+     'closeDetail','filterMailTo','selectMailTo','closeCompose','resolvePrompt',
+     'generateAINews','deleteNews','clearAllNews','setNewsSentiment','toggleCustomBadge',
+     'adminBroadcast','toggleBcAnon','triggerCrash','cancelCrash','toggleCrashChip',
+     'toggleSubAdminSystem','addSubAdmin','removeSubAdmin','savePerms','renderSubAdminList',
+     'filterSubAdminInput','selectSubAdminUser','loadAdminUsers','delUser','quickGrant',
+     'quickReset','showUserDropdown','filterCashUsers','selectCashUser','setCashMsg',
+     'jumpToTickerNews','resetAccount','getRank','adminPushNews','highlightTickerNews'
+    ].forEach(name=>{
+        try{ if(typeof eval(name)==='function') window[name]=eval(name); }catch(e){}
+    });
 </script>
 </body>
 </html>
