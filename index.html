@@ -197,66 +197,66 @@
 
 <div id="admin-view">
     <div style="padding:12px 15px; background:#1a0000; border-bottom:2px solid #ff3b3b; display:flex; justify-content:space-between; align-items:center;">
-        <div style="color:#ff3b3b; font-weight:900; font-size:14px; letter-spacing:2px;">⚡ ADMIN PANEL</div>
+        <div style="color:#ff3b3b; font-weight:900; font-size:14px; letter-spacing:2px;">🛠️ ADMIN PANEL</div>
         <button onclick="closeAdmin()" style="background:#333;color:white;border:none;padding:6px 12px;border-radius:4px;font-weight:bold;">✕ ĐÓNG</button>
     </div>
     <!-- ADMIN TABS -->
     <div style="display:flex; background:#111; border-bottom:1px solid #333;">
-        <div class="adm-tab active" id="admt-users" onclick="adminTab('users')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:white;border-bottom:2px solid var(--red);cursor:pointer;">👥 USERS</div>
-        <div class="adm-tab" id="admt-cash" onclick="adminTab('cash')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:#666;border-bottom:2px solid transparent;cursor:pointer;">💰 TIỀN</div>
-        <div class="adm-tab" id="admt-news" onclick="adminTab('news')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:#666;border-bottom:2px solid transparent;cursor:pointer;">📰 TIN TỨC</div>
-        <div class="adm-tab" id="admt-bc" onclick="adminTab('bc')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:#666;border-bottom:2px solid transparent;cursor:pointer;">PHAT LOA</div>
-        <div class="adm-tab" id="admt-subadmin" onclick="adminTab('subadmin')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:#666;border-bottom:2px solid transparent;cursor:pointer;">PHU ADMIN</div>
+        <div class="adm-tab active" id="admt-users" onclick="adminTab('users')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:white;border-bottom:2px solid var(--red);cursor:pointer;">USERS</div>
+        <div class="adm-tab" id="admt-cash" onclick="adminTab('cash')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:#666;border-bottom:2px solid transparent;cursor:pointer;">TIỀN</div>
+        <div class="adm-tab" id="admt-news" onclick="adminTab('news')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:#666;border-bottom:2px solid transparent;cursor:pointer;">TIN TỨC</div>
+        <div class="adm-tab" id="admt-bc" onclick="adminTab('bc')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:#666;border-bottom:2px solid transparent;cursor:pointer;">PHÁT LOA</div>
+        <div class="adm-tab" id="admt-subadmin" onclick="adminTab('subadmin')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:#666;border-bottom:2px solid transparent;cursor:pointer;">PHỤ ADMIN</div>
     </div>
     <div style="flex:1; overflow-y:auto; padding:15px;">
 
         <!-- TAB: USERS -->
         <div id="admv-users">
             <div style="display:flex;gap:8px;margin-bottom:10px;">
-                <button onclick="loadAdminUsers()" style="flex:1;padding:10px;background:#333;color:white;border:none;border-radius:6px;font-weight:bold;">🔄 Làm mới</button>
-                <button onclick="resetAllUsers()" style="flex:1;padding:10px;background:#500;color:white;border:none;border-radius:6px;font-weight:bold;">🗑️ Xóa hết</button>
+                <button onclick="loadAdminUsers()" style="flex:1;padding:10px;background:#333;color:white;border:none;border-radius:6px;font-weight:bold;">Làm mới</button>
+                <button onclick="resetAllUsers()" style="flex:1;padding:10px;background:#500;color:white;border:none;border-radius:6px;font-weight:bold;">Xóa hết</button>
             </div>
-            <input type="text" id="admin-search" placeholder="🔍 Tìm user..." oninput="filterUsers()" style="margin-bottom:10px;">
+            <input type="text" id="admin-search" placeholder="Tìm user..." oninput="filterUsers()" style="margin-bottom:10px;">
             <div id="admin-user-list" style="background:#0a0a0a;border-radius:8px;overflow:auto;max-height:60vh;"></div>
         </div>
 
         <!-- TAB: TIỀN -->
         <div id="admv-cash" style="display:none;">
             <div style="background:#0a0a0a;border-radius:8px;padding:15px;margin-bottom:10px;">
-                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">CHON USER</div>
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">CHỌN USER</div>
                 <div style="position:relative;margin-bottom:10px;">
                     <input type="text" id="cash-user" placeholder="Bấm để chọn hoặc gõ tên..." oninput="filterCashUsers()" onfocus="showUserDropdown()" style="margin-bottom:0;" autocomplete="off">
                     <div id="cash-user-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #444;border-top:none;border-radius:0 0 6px 6px;max-height:180px;overflow-y:auto;z-index:100;"></div>
                 </div>
-                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">SO TIEN</div>
-                <input type="number" id="cash-amount" placeholder="Nhap so tien..." style="margin-bottom:10px;">
-                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">KEM THONG BAO</div>
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">SỐ TIỀN</div>
+                <input type="number" id="cash-amount" placeholder="Nhập số tiền..." style="margin-bottom:10px;">
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">KÈM THÔNG BÁO</div>
                 <div style="display:flex;gap:8px;margin-bottom:8px;">
-                    <button onclick="setCashMsg('none')" id="msgbtn-none" style="flex:1;padding:8px;background:#1f6feb;color:white;border:none;border-radius:6px;font-size:11px;font-weight:bold;">Khong TB</button>
-                    <button onclick="setCashMsg('preset')" id="msgbtn-preset" style="flex:1;padding:8px;background:#333;color:white;border:none;border-radius:6px;font-size:11px;font-weight:bold;">Mau san</button>
-                    <button onclick="setCashMsg('custom')" id="msgbtn-custom" style="flex:1;padding:8px;background:#333;color:white;border:none;border-radius:6px;font-size:11px;font-weight:bold;">Tuy chinh</button>
+                    <button onclick="setCashMsg('none')" id="msgbtn-none" style="flex:1;padding:8px;background:#1f6feb;color:white;border:none;border-radius:6px;font-size:11px;font-weight:bold;">Không TB</button>
+                    <button onclick="setCashMsg('preset')" id="msgbtn-preset" style="flex:1;padding:8px;background:#333;color:white;border:none;border-radius:6px;font-size:11px;font-weight:bold;">Mẫu sẵn</button>
+                    <button onclick="setCashMsg('custom')" id="msgbtn-custom" style="flex:1;padding:8px;background:#333;color:white;border:none;border-radius:6px;font-size:11px;font-weight:bold;">Tùy chỉnh</button>
                 </div>
                 <div id="cash-preset-area" style="display:none;margin-bottom:8px;">
-                    <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">TIEU DE</div>
-                    <input type="text" id="cash-preset-title" placeholder="Tieu de (de trong = mac dinh)..." style="margin-bottom:6px;">
-                    <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">NOI DUNG MAU</div>
+                    <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">TIÊU ĐỀ</div>
+                    <input type="text" id="cash-preset-title" placeholder="Tiêu đề (để trống = mặc định)..." style="margin-bottom:6px;">
+                    <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">NỘI DUNG MẪU</div>
                     <select id="cash-preset-select" style="margin-bottom:0;">
-                        <option value="Ban da nhan duoc phan thuong tu he thong.">Phan thuong he thong</option>
-                        <option value="Chuc mung! Ban da trung thuong su kien.">Trung thuong su kien</option>
-                        <option value="Ban bi phat vi pham noi quy.">Phat vi pham</option>
-                        <option value="Thue tai san dinh ky da duoc thu.">Thue dinh ky</option>
-                        <option value="Admin dieu chinh so du tai khoan.">Dieu chinh so du</option>
+                        <option value="Bạn đã nhận được phần thưởng từ hệ thống.">Phần thưởng hệ thống</option>
+                        <option value="Chúc mừng! Bạn đã trúng thưởng sự kiện.">Trúng thưởng sự kiện</option>
+                        <option value="Bạn bị phạt vi phạm nội quy.">Phạt vi phạm</option>
+                        <option value="Thuế tài sản định kỳ đã được thu.">Thuế định kỳ</option>
+                        <option value="Admin điều chỉnh số dư tài khoản.">Điều chỉnh số dư</option>
                     </select>
                 </div>
                 <div id="cash-custom-area" style="display:none;margin-bottom:8px;">
-                    <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">TIEU DE</div>
-                    <input type="text" id="cash-custom-title" placeholder="Tieu de thong bao..." style="margin-bottom:6px;">
+                    <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">TIÊU ĐỀ</div>
+                    <input type="text" id="cash-custom-title" placeholder="Tiêu đề thông báo..." style="margin-bottom:6px;">
                     <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">NOI DUNG</div>
-                    <textarea id="cash-custom-msg" placeholder="Noi dung thong bao..." style="height:60px;resize:none;"></textarea>
+                    <textarea id="cash-custom-msg" placeholder="Nội dung thông báo..." style="height:60px;resize:none;"></textarea>
                 </div>
                 <div style="display:flex;gap:8px;margin-top:5px;">
-                    <button onclick="doGrantCash(1)" style="flex:1;padding:12px;background:#238636;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">TANG TIEN</button>
-                    <button onclick="doGrantCash(-1)" style="flex:1;padding:12px;background:#da3633;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">THU THUE</button>
+                    <button onclick="doGrantCash(1)" style="flex:1;padding:12px;background:#238636;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">TẶNG TIỀN</button>
+                    <button onclick="doGrantCash(-1)" style="flex:1;padding:12px;background:#da3633;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">THU THUẾ</button>
                 </div>
             </div>
         </div>
@@ -279,19 +279,19 @@
                     <div class="stock-chip" data-code="HPG" onclick="toggleChip(this)" style="padding:5px 10px;border-radius:20px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">HPG</div>
                     <div class="stock-chip" data-code="DIG" onclick="toggleChip(this)" style="padding:5px 10px;border-radius:20px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">DIG</div>
                     <div class="stock-chip" data-code="VTB" onclick="toggleChip(this)" style="padding:5px 10px;border-radius:20px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VTB</div>
-                    <div class="stock-chip" data-code="ALL" onclick="toggleChip(this)" style="padding:5px 10px;border-radius:20px;border:1px solid #555;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">🌐 TẤT CẢ</div>
+                    <div class="stock-chip" data-code="ALL" onclick="toggleChip(this)" style="padding:5px 10px;border-radius:20px;border:1px solid #555;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">TẤT CẢ</div>
                 </div>
 
                 <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:8px;">LOẠI TIN</div>
                 <div style="display:flex;gap:8px;margin-bottom:12px;">
-                    <button onclick="addCustomNews(1)" style="flex:1;padding:10px;background:#238636;color:white;border:none;border-radius:6px;font-weight:bold;font-size:12px;">📈 TÍCH CỰC</button>
-                    <button onclick="addCustomNews(0)" style="flex:1;padding:10px;background:#555;color:white;border:none;border-radius:6px;font-weight:bold;font-size:12px;">📊 TRUNG LẬP</button>
-                    <button onclick="addCustomNews(-1)" style="flex:1;padding:10px;background:#da3633;color:white;border:none;border-radius:6px;font-weight:bold;font-size:12px;">📉 TIÊU CỰC</button>
+                    <button onclick="addCustomNews(1)" style="flex:1;padding:10px;background:#238636;color:white;border:none;border-radius:6px;font-weight:bold;font-size:12px;">TÍCH CỰC</button>
+                    <button onclick="addCustomNews(0)" style="flex:1;padding:10px;background:#555;color:white;border:none;border-radius:6px;font-weight:bold;font-size:12px;">TRUNG LẬP</button>
+                    <button onclick="addCustomNews(-1)" style="flex:1;padding:10px;background:#da3633;color:white;border:none;border-radius:6px;font-weight:bold;font-size:12px;">TIÊU CỰC</button>
                 </div>
 
                 <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">TIN TỨC ĐANG HIỂN THỊ</div>
                 <div id="admin-news-list" style="max-height:180px;overflow-y:auto;background:#111;border-radius:6px;padding:8px;"></div>
-                <button onclick="clearAllNews()" style="width:100%;margin-top:8px;padding:8px;background:#500;color:white;border:none;border-radius:6px;font-weight:bold;">🗑️ Xóa tất cả</button>
+                <button onclick="clearAllNews()" style="width:100%;margin-top:8px;padding:8px;background:#500;color:white;border:none;border-radius:6px;font-weight:bold;">Xóa tất cả</button>
             </div>
         </div>
 
@@ -302,30 +302,54 @@
                 <input type="text" id="bc-title" placeholder="Tiêu đề thông báo..." style="margin-bottom:10px;">
                 <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:8px;">NỘI DUNG</div>
                 <textarea id="bc-body" placeholder="Nội dung thông báo toàn server..." style="height:100px;resize:none;margin-bottom:10px;"></textarea>
-                <button onclick="adminBroadcast()" style="width:100%;padding:12px;background:#ff3b3b;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">📢 PHÁT LOA TOÀN SERVER</button>
+                <button onclick="adminBroadcast()" style="width:100%;padding:12px;background:#ff3b3b;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">PHÁT LOA TOÀN SERVER</button>
             </div>
         </div>
 
-        <!-- TAB: PHU ADMIN -->
+        <!-- TAB: PHỤ ADMIN -->
         <div id="admv-subadmin" style="display:none;">
             <div style="background:#0a0a0a;border-radius:8px;padding:15px;margin-bottom:10px;">
+                <!-- Toggle hệ thống -->
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                    <div style="color:#888;font-size:11px;font-weight:bold;">DANH SACH PHU ADMIN</div>
-                    <div id="subadmin-toggle-wrap" style="display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:11px;color:#888;">He thong</span>
+                    <div style="color:#888;font-size:11px;font-weight:bold;">DANH SÁCH PHỤ ADMIN</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:11px;color:#888;">Bật hệ thống</span>
                         <div onclick="toggleSubAdminSystem()" id="sub-system-btn" style="width:40px;height:20px;background:#333;border-radius:10px;cursor:pointer;position:relative;transition:0.2s;">
                             <div id="sub-system-dot" style="width:16px;height:16px;background:#666;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s;"></div>
                         </div>
                     </div>
                 </div>
-                <div id="subadmin-list" style="margin-bottom:10px;min-height:40px;background:#111;border-radius:6px;padding:8px;max-height:150px;overflow-y:auto;"></div>
-                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">THEM PHU ADMIN</div>
-                <div style="display:flex;gap:8px;">
-                    <input type="text" id="subadmin-name-inp" placeholder="Ten user..." style="flex:1;margin-bottom:0;">
-                    <button onclick="addSubAdmin()" style="padding:8px 12px;background:#1f6feb;color:white;border:none;border-radius:6px;font-weight:bold;white-space:nowrap;">THEM</button>
+                <!-- Danh sách -->
+                <div id="subadmin-list" style="margin-bottom:10px;min-height:40px;background:#111;border-radius:6px;padding:8px;max-height:200px;overflow-y:auto;"></div>
+                <!-- Thêm phụ admin -->
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">THÊM PHỤ ADMIN</div>
+                <div style="display:flex;gap:8px;margin-bottom:12px;">
+                    <input type="text" id="subadmin-name-inp" placeholder="Tên user..." style="flex:1;margin-bottom:0;">
+                    <button onclick="addSubAdmin()" style="padding:8px 12px;background:#1f6feb;color:white;border:none;border-radius:6px;font-weight:bold;white-space:nowrap;">THÊM</button>
                 </div>
-                <div style="margin-top:12px;padding:10px;background:#111;border-radius:6px;border-left:3px solid var(--gold);">
-                    <div style="font-size:11px;color:#888;">Quyen phu admin: xem leaderboard day du, gui mail tu "Admin", KHONG the vao admin panel chinh.</div>
+                <!-- Phân quyền mặc định -->
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:8px;">QUYỀN MẶC ĐỊNH (áp dụng cho tất cả phụ admin)</div>
+                <div id="perm-list" style="background:#111;border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:8px;">
+                    <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                        <span style="font-size:12px;color:#ccc;">Xem danh sách user</span>
+                        <input type="checkbox" id="perm-view-users" checked onchange="savePerms()" style="width:auto;">
+                    </label>
+                    <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                        <span style="font-size:12px;color:#ccc;">Tặng / thu tiền</span>
+                        <input type="checkbox" id="perm-cash" onchange="savePerms()" style="width:auto;">
+                    </label>
+                    <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                        <span style="font-size:12px;color:#ccc;">Thêm tin tức</span>
+                        <input type="checkbox" id="perm-news" onchange="savePerms()" style="width:auto;">
+                    </label>
+                    <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                        <span style="font-size:12px;color:#ccc;">Phát loa toàn server</span>
+                        <input type="checkbox" id="perm-broadcast" onchange="savePerms()" style="width:auto;">
+                    </label>
+                    <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                        <span style="font-size:12px;color:#ccc;">Ban user</span>
+                        <input type="checkbox" id="perm-ban" onchange="savePerms()" style="width:auto;">
+                    </label>
                 </div>
             </div>
         </div>
@@ -719,7 +743,7 @@
     // Kể cả fake me bằng devtools vẫn không qua được vì _adminToken bind với session
     function _requireAdmin() {
         if(!_adminVerified || !_adminToken || typeof _adminToken !== 'string' || _adminToken.length < 10) {
-            showToast("TU CHOI","Khong co quyen admin");
+            showToast("TỪ CHỐI","Không có quyền admin");
             // Reset nếu có ai đó cố inject
             _adminVerified = false; _adminToken = null;
             return false;
@@ -751,7 +775,7 @@
             sfx("err");
             showToast("⛔ SAI MẬT KHẨU","Truy cập bị từ chối", 4000);
             // Log cảnh báo nhưng không làm gì thêm
-            console.warn("[ADMIN] Failed attempt from:", me);
+            console.warn("[ADMIN] Truy cập thất bại từ:", me);
             return;
         }
         // Xác thực thành công — tạo token session
@@ -835,8 +859,8 @@
         if(!_requireAdmin()) return;
         const user = document.getElementById("cash-user").value.trim();
         const amount = parseFloat(document.getElementById("cash-amount").value);
-        if(!user) return showToast("LOI","Chua chon user");
-        if(isNaN(amount)||amount<=0) return showToast("LOI","So tien khong hop le");
+        if(!user) return showToast("LỖI","Chưa chọn user");
+        if(isNaN(amount)||amount<=0) return showToast("LỖI","Số tiền không hợp lệ");
 
         const finalAmount = Math.abs(amount) * sign;
 
@@ -844,7 +868,7 @@
         const giftId = `gift_${user}_${Date.now()}_${Math.random().toString(36).substr(2,4)}`;
         const gr = await sb("gifts","POST",{id:giftId, to:user, amount:finalAmount});
         if(!gr.ok && gr.status!==201 && gr.status!==200 && gr.status!==204) {
-            return showToast("LOI","Ghi that bai: "+gr.status);
+            return showToast("LỖI","Ghi thất bại: "+gr.status);
         }
 
         // -- Gửi mail thông báo (CHỈ 1 lần, chỉ khi cashMsgMode !== none) --
@@ -864,7 +888,7 @@
             await sb("mails","POST",{id:mailId, to:user, from:"Admin", title:msgTitle, body:msgBody, time:Date.now()});
         }
 
-        showToast("THANH CONG", finalAmount>0?`Da tang $${amount} cho ${user}`:`Da thu $${amount} tu ${user}`);
+        showToast("THANH CONG", finalAmount>0?`Đã tặng $${amount} cho ${user}`:`Đã thu $${amount} từ ${user}`);
         document.getElementById("cash-amount").value = "";
         document.getElementById("cash-user").value = "";
     }
@@ -882,12 +906,14 @@
     function renderAdminNews() {
         const el = document.getElementById("admin-news-list");
         if(!news.length){el.innerHTML="<div style='color:#555;font-size:12px;padding:5px;'>Chưa có tin tức</div>";return;}
-        el.innerHTML = news.map((n,i)=>`
-            <div style="display:flex;align-items:center;padding:5px;border-bottom:1px solid #222;gap:8px;">
-                <div style="font-size:10px;width:14px;height:14px;border-radius:50%;background:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#555'};flex-shrink:0;"></div>
-                <div style="flex:1;font-size:11px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.t}</div>
+        el.innerHTML = news.map((n,i)=>{
+            const tags = (n.stocks && n.stocks.length > 0) ? ` [${n.stocks.join(',')}]` : '';
+            return `<div style="display:flex;align-items:center;padding:5px;border-bottom:1px solid #222;gap:8px;">
+                <div style="width:8px;height:8px;border-radius:50%;background:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#555'};flex-shrink:0;"></div>
+                <div style="flex:1;font-size:11px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.t}<span style="color:#555;font-size:10px;">${tags}</span></div>
                 <button onclick="deleteNews(${i})" style="background:none;border:none;color:#555;font-size:12px;padding:0 3px;flex-shrink:0;">✕</button>
-            </div>`).join('');
+            </div>`;
+        }).join('');
     }
 
     function toggleChip(el) {
@@ -933,26 +959,30 @@
 
         const selectedStocks = getSelectedChips();
 
-        if(selectedStocks.length === 0) {
-            // Không chọn doanh nghiệp nào — tin tức chung
-            const displayTitle = titleInp || rawText;
-            news.unshift({t: displayTitle, b: sentiment*50, time: new Date().toLocaleTimeString()});
-        } else {
-            // Tạo tin cho từng doanh nghiệp được chọn
-            selectedStocks.forEach(code => {
-                const txt = titleInp ? `[${code}] ${titleInp}: ${rawText}` : rawText.replace('{S}', code).includes(code) ? rawText : `${rawText} — ${code}`;
-                news.unshift({t: txt, b: sentiment*50, time: new Date().toLocaleTimeString()});
-            });
-        }
+        // Luôn chỉ tạo 1 tin tức duy nhất — không nhân bản theo doanh nghiệp
+        // Doanh nghiệp được chọn lưu trong news.stocks để hiển thị tag nhỏ
+        const displayText = titleInp ? titleInp : rawText;
+        const newsItem = {
+            t: displayText,           // tiêu đề hiển thị
+            body: titleInp ? rawText : '',  // nội dung phụ nếu có tiêu đề riêng
+            b: sentiment * 50,
+            time: new Date().toLocaleTimeString(),
+            stocks: selectedStocks    // danh sách doanh nghiệp liên quan (không hiển thị trong tên tin)
+        };
+        news.unshift(newsItem);
+        if(news.length > 25) news.length = 25;
 
-        if(news.length>25) news.length = 25;
-        document.getElementById("custom-news-text").value="";
-        document.getElementById("news-title-inp").value="";
-        // Reset chips
-        document.querySelectorAll('.stock-chip').forEach(c=>{c.style.background='#111';c.style.borderColor=c.dataset.code==='ALL'?'#555':'#444';c.style.color='#888';});
+        document.getElementById("custom-news-text").value = "";
+        document.getElementById("news-title-inp").value = "";
+        document.querySelectorAll('.stock-chip').forEach(c=>{
+            c.style.background='#111';
+            c.style.borderColor = c.dataset.code==='ALL' ? '#555' : '#444';
+            c.style.color='#888';
+        });
         renderAdminNews(); tick();
         if(activeTab==='news') renderNewsPage();
-        showToast("THÀNH CÔNG", selectedStocks.length>0 ? `Đã thêm ${selectedStocks.length} tin!` : "Đã thêm tin tức!");
+        const stockLabel = selectedStocks.length === 0 ? 'chung' : selectedStocks.join(', ');
+        showToast("THÀNH CÔNG", `Đã thêm tin — áp dụng: ${stockLabel}`);
     }
 
     function deleteNews(idx) {
@@ -1009,34 +1039,56 @@
         document.getElementById("cash-user-dropdown").style.display='none';
     }
 
-    // --- PHU ADMIN ---
+    // --- PHỤ ADMIN ---
     let subAdminList = JSON.parse(localStorage.getItem('_subAdmins')||'[]');
     let subAdminSystemOn = localStorage.getItem('_subAdminSys') === '1';
+    let subAdminPerms = JSON.parse(localStorage.getItem('_subAdminPerms')||'{"view-users":true,"cash":false,"news":false,"broadcast":false,"ban":false}');
 
     function saveSubAdmins() {
         localStorage.setItem('_subAdmins', JSON.stringify(subAdminList));
         localStorage.setItem('_subAdminSys', subAdminSystemOn ? '1' : '0');
     }
-
+    function savePerms() {
+        subAdminPerms = {
+            'view-users': document.getElementById('perm-view-users').checked,
+            'cash':       document.getElementById('perm-cash').checked,
+            'news':       document.getElementById('perm-news').checked,
+            'broadcast':  document.getElementById('perm-broadcast').checked,
+            'ban':        document.getElementById('perm-ban').checked,
+        };
+        localStorage.setItem('_subAdminPerms', JSON.stringify(subAdminPerms));
+    }
+    function loadPerms() {
+        ['view-users','cash','news','broadcast','ban'].forEach(p => {
+            const el = document.getElementById(`perm-${p}`);
+            if(el) el.checked = subAdminPerms[p] || false;
+        });
+    }
+    function hasPerm(perm) {
+        // Admin chính luôn có tất cả quyền
+        if(_adminVerified) return true;
+        // Phụ admin kiểm tra quyền
+        if(isSubAdmin()) return subAdminPerms[perm] === true;
+        return false;
+    }
     function isSubAdmin() {
         return subAdminSystemOn && subAdminList.includes(me);
     }
 
     function renderSubAdminList() {
         if(!_requireAdmin()) return;
-        // Cập nhật toggle
+        loadPerms();
         const dot = document.getElementById("sub-system-dot");
         const btn = document.getElementById("sub-system-btn");
         if(subAdminSystemOn){ btn.style.background='#1f6feb'; dot.style.left='22px'; dot.style.background='white'; }
         else { btn.style.background='#333'; dot.style.left='2px'; dot.style.background='#666'; }
-        // Render danh sách
         const el = document.getElementById("subadmin-list");
-        if(!subAdminList.length){ el.innerHTML="<div style='color:#555;font-size:12px;padding:4px;'>Chua co phu admin</div>"; return; }
+        if(!subAdminList.length){ el.innerHTML="<div style='color:#555;font-size:12px;padding:4px;'>Chưa có phụ admin</div>"; return; }
         el.innerHTML = subAdminList.map((n,i)=>`
-            <div style="display:flex;align-items:center;padding:5px;gap:8px;border-bottom:1px solid #222;">
+            <div style="display:flex;align-items:center;padding:6px 4px;gap:8px;border-bottom:1px solid #222;">
                 <div style="flex:1;font-size:12px;color:${subAdminSystemOn?'white':'#666'};">${n}</div>
-                <div style="font-size:10px;color:${subAdminSystemOn?'var(--green)':'#555'};">${subAdminSystemOn?'ACTIVE':'OFF'}</div>
-                <button onclick="removeSubAdmin(${i})" style="background:none;border:none;color:#555;cursor:pointer;">x</button>
+                <div style="font-size:10px;padding:2px 6px;border-radius:3px;background:${subAdminSystemOn?'#0f3318':'#1a1a1a'};color:${subAdminSystemOn?'var(--green)':'#555'};">${subAdminSystemOn?'ACTIVE':'TẮT'}</div>
+                <button onclick="removeSubAdmin(${i})" style="background:none;border:none;color:#555;cursor:pointer;font-size:14px;">×</button>
             </div>`).join('');
     }
 
@@ -1045,15 +1097,15 @@
         subAdminSystemOn = !subAdminSystemOn;
         saveSubAdmins();
         renderSubAdminList();
-        showToast("PHU ADMIN", subAdminSystemOn ? "He thong phu admin: BAT" : "He thong phu admin: TAT");
+        showToast("PHỤ ADMIN", subAdminSystemOn ? "Hệ thống phụ admin: BẬT" : "Hệ thống phụ admin: TẮT");
     }
 
     function addSubAdmin() {
         if(!_requireAdmin()) return;
         const name = document.getElementById("subadmin-name-inp").value.trim();
-        if(!name) return showToast("LOI","Nhap ten user");
-        if(name === 'minh') return showToast("LOI","Admin chinh khong can them");
-        if(subAdminList.includes(name)) return showToast("LOI","Da co trong danh sach");
+        if(!name) return showToast("LỖI","Nhập tên user");
+        if(name === 'minh') return showToast("LỖI","Admin chính không cần thêm");
+        if(subAdminList.includes(name)) return showToast("LỖI","Đã có trong danh sách");
         subAdminList.push(name);
         saveSubAdmins();
         document.getElementById("subadmin-name-inp").value="";
@@ -1072,7 +1124,7 @@
 
     async function resetAllUsers() {
         if(!_requireAdmin()) return;
-        const c=await askInput(`Go "XOAHET" de xoa TOAN BO:`);
+        const c=await askInput(`Gõ "XOAHET" để xóa TOÀN BỘ:`);
         if(c==='XOAHET'){
             await sb("users?name=neq.____x____","DELETE");
             await sb("mails?id=neq.____x____","DELETE");
@@ -1145,7 +1197,23 @@
         if(news.length>25) news.pop();
         if(activeTab==='news') renderNewsPage(); tick();
     }
-    function renderNewsPage(){document.getElementById("news-list").innerHTML=news.map(n=>`<div class="news-card" style="border-left-color:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#666'}"><span class="news-time">${n.time}</span><div style="font-size:10px;color:#888;font-weight:bold;margin-bottom:2px;">${n.b>0?'TÍCH CỰC':n.b<0?'TIÊU CỰC':'THỊ TRƯỜNG'}</div><div style="color:#ddd;">${n.t}</div></div>`).join('');}
+    function renderNewsPage(){
+        document.getElementById("news-list").innerHTML=news.map(n=>{
+            const stockTags = (n.stocks && n.stocks.length > 0)
+                ? n.stocks.map(s=>`<span style="font-size:9px;background:#1a2a1a;color:var(--green);padding:1px 5px;border-radius:3px;margin-right:3px;">${s}</span>`).join('')
+                : '';
+            const bodyLine = n.body ? `<div style="color:#999;font-size:11px;margin-top:4px;">${n.body}</div>` : '';
+            return `<div class="news-card" style="border-left-color:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#666'}">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+                    <span class="news-time">${n.time}</span>
+                    <div style="font-size:9px;color:#888;font-weight:bold;">${n.b>0?'TÍCH CỰC':n.b<0?'TIÊU CỰC':'THỊ TRƯỜNG'}</div>
+                </div>
+                ${stockTags ? `<div style="margin-bottom:5px;">${stockTags}</div>` : ''}
+                <div style="color:#ddd;font-weight:bold;">${n.t}</div>
+                ${bodyLine}
+            </div>`;
+        }).join('');
+    }
     function tick(){if(!news.length)return;const n=news[0];const el=document.getElementById("mini-news-ticker");el.innerText=`📰 ${n.t}`;el.className=`mini-news ${n.b>0?'pos':'neg'}`;}
     function openDetail(c){sfx('click');sel=c;document.getElementById("detail-view").classList.add("active");initChart();updateD();tick();}
     function closeDetail(){sfx('click');sel=null;document.getElementById("detail-view").classList.remove("active");}
