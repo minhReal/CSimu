@@ -265,6 +265,13 @@
         <div id="admv-news" style="display:none;">
             <div style="background:#0a0a0a;border-radius:8px;padding:15px;margin-bottom:10px;">
 
+                <!-- Toggle hiện badge CUSTOM -->
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px;background:#111;border-radius:6px;">
+                    <span style="font-size:11px;color:#888;">Hiện nhãn <span style="color:var(--gold);font-weight:bold;">CUSTOM</span> trên tin</span>
+                    <div onclick="toggleCustomBadge()" id="custom-badge-btn" style="width:40px;height:20px;background:#333;border-radius:10px;cursor:pointer;position:relative;transition:0.2s;">
+                        <div id="custom-badge-dot" style="width:16px;height:16px;background:#666;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s;"></div>
+                    </div>
+                </div>
                 <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">TIÊU ĐỀ</div>
                 <input type="text" id="news-title-inp" placeholder="Tiêu đề (để trống = dùng nội dung)..." style="margin-bottom:8px;">
 
@@ -600,6 +607,7 @@
         setInterval(checkGift, 20000);
         setInterval(checkP2PMail, 20000);
         setInterval(cleanExpiredNews, 10000); // cập nhật timer tin tức mỗi 10 giây
+        setInterval(tick, 6000); // xoay ticker qua các tin
         setTimeout(()=>{ checkBan(); setInterval(checkBan, 60000); }, 60000);
         // Load news từ GitHub rồi mới generate
         loadNewsDb().then(() => {
@@ -818,6 +826,7 @@
         _adminToken = _genToken();
         document.getElementById("admin-view").style.display="flex";
         adminTab("users");
+        setTimeout(initCustomBadgeToggle, 50);
     }
 
     // Khi đóng admin panel — reset xác thực
@@ -951,6 +960,27 @@
         }).join('');
     }
 
+    // Toggle hiện/ẩn badge CUSTOM
+    let showCustomBadge = localStorage.getItem('_showCustomBadge') !== '0'; // mặc định BẬT
+    function toggleCustomBadge() {
+        if(!_requireAdmin()) return;
+        showCustomBadge = !showCustomBadge;
+        localStorage.setItem('_showCustomBadge', showCustomBadge ? '1' : '0');
+        const dot = document.getElementById("custom-badge-dot");
+        const btn = document.getElementById("custom-badge-btn");
+        if(showCustomBadge){ btn.style.background='var(--gold)'; dot.style.left='22px'; dot.style.background='white'; }
+        else { btn.style.background='#333'; dot.style.left='2px'; dot.style.background='#666'; }
+        showToast("TIN TỨC", showCustomBadge ? "Đang hiện nhãn CUSTOM" : "Đã ẩn nhãn CUSTOM");
+        if(activeTab==='news') renderNewsPage();
+    }
+    function initCustomBadgeToggle() {
+        const dot = document.getElementById("custom-badge-dot");
+        const btn = document.getElementById("custom-badge-btn");
+        if(!dot||!btn) return;
+        if(showCustomBadge){ btn.style.background='var(--gold)'; dot.style.left='22px'; dot.style.background='white'; }
+        else { btn.style.background='#333'; dot.style.left='2px'; dot.style.background='#666'; }
+    }
+
     function setNewsSentiment(impact, vol, dur) {
         document.getElementById("news-impact-val").value = impact;
         document.getElementById("news-vol-val").value = vol;
@@ -999,19 +1029,57 @@
         btn.innerText = "Đang tạo..."; btn.disabled = true;
         try {
             const stocks = getSelectedChips();
-            const sentiment = document.getElementById("news-sentiment-select").value;
-            const context = stocks.length > 0 ? `liên quan đến ${stocks.join(', ')}` : 'thị trường chứng khoán Việt Nam';
-            const prompt = `Viết 1 tin tức chứng khoán ngắn (1 câu, tối đa 15 từ) theo hướng ${sentiment === '1' ? 'tích cực lạc quan' : sentiment === '-1' ? 'tiêu cực bi quan' : 'trung lập'} ${context}. Chỉ trả về nội dung tin, không giải thích.`;
+            const sentVal = document.getElementById("news-sentiment-select").value;
+            const sentWord = sentVal==='1' ? 'tích cực, lạc quan' : sentVal==='-1' ? 'tiêu cực, bi quan' : 'trung lập';
+            const ctx = stocks.length > 0 ? `về doanh nghiệp ${stocks.join(', ')}` : 'về thị trường chứng khoán Việt Nam';
+            const prompt = `Bạn là phóng viên tài chính Việt Nam. Viết đúng 1 tiêu đề tin tức chứng khoán ${sentWord} ${ctx}. Ngắn gọn 10-18 từ, thực tế, không hoa mỹ. Chỉ trả về tiêu đề, không thêm gì khác.`;
+
             const resp = await fetch("https://api.anthropic.com/v1/messages", {
-                method:"POST",
-                headers:{"Content-Type":"application/json"},
-                body: JSON.stringify({model:"claude-sonnet-4-5-20250929", max_tokens:100, messages:[{role:"user",content:prompt}]})
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "claude-sonnet-4-5-20250929",
+                    max_tokens: 80,
+                    messages: [{ role: "user", content: prompt }]
+                })
             });
+
+            if (!resp.ok) throw new Error("HTTP " + resp.status);
             const j = await resp.json();
-            const aiText = j.content?.[0]?.text?.trim() || '';
-            if(aiText) document.getElementById("custom-news-text").value = aiText;
-            showToast("AI","Đã tạo tin tức!");
-        } catch(e){ showToast("LỖI","Không kết nối được AI"); }
+            const aiText = (j.content?.[0]?.text || '').trim().replace(/^["']|["']$/g, '');
+            if (aiText) {
+                document.getElementById("custom-news-text").value = aiText;
+                showToast("AI", "Đã tạo tin tức!");
+            } else {
+                throw new Error("Không có nội dung");
+            }
+        } catch(e) {
+            // Fallback: generate locally từ template
+            const stocks = getSelectedChips();
+            const sentVal = document.getElementById("news-sentiment-select").value;
+            const fallbackPos = [
+                "Dòng tiền ngoại đổ mạnh vào thị trường phiên sáng",
+                "Thanh khoản cải thiện rõ, nhà đầu tư lạc quan trở lại",
+                "Nhóm cổ phiếu dẫn dắt kéo chỉ số tăng điểm mạnh",
+                "Kết quả kinh doanh vượt kỳ vọng, thị trường phấn khởi",
+            ];
+            const fallbackNeg = [
+                "Áp lực bán tháo lan rộng, thanh khoản sụt giảm",
+                "Khối ngoại bán ròng mạnh, tâm lý thị trường bi quan",
+                "Cổ phiếu trụ cột giảm sâu, VN-Index mất điểm",
+                "Tin xấu vĩ mô tạo áp lực lớn lên thị trường",
+            ];
+            const fallbackNeu = [
+                "Thị trường đi ngang, nhà đầu tư chờ đợi thông tin mới",
+                "Giao dịch cầm chừng, dòng tiền phân hóa theo nhóm",
+                "Biên độ dao động thu hẹp, thị trường thiếu động lực",
+            ];
+            const pool = sentVal==='1' ? fallbackPos : sentVal==='-1' ? fallbackNeg : fallbackNeu;
+            let txt = pool[Math.floor(Math.random()*pool.length)];
+            if (stocks.length > 0) txt = `${stocks[0]}: ${txt.toLowerCase()}`;
+            document.getElementById("custom-news-text").value = txt;
+            showToast("AI (Offline)", "Dùng template — API không khả dụng");
+        }
         btn.innerText = "✨ AI Tạo tin"; btn.disabled = false;
     }
 
@@ -1344,10 +1412,10 @@
             const stockTags = (n.stocks && n.stocks.length > 0)
                 ? n.stocks.map(s => `<span style="font-size:9px;background:#1a2a1a;color:var(--green);padding:1px 5px;border-radius:3px;margin-right:3px;border:1px solid #2a4a2a;">${s}</span>`).join('')
                 : '';
-            // Badges
+            // Badges — CUSTOM chỉ hiện nếu admin bật toggle
             const badges = [
                 n.aiGen ? `<span style="font-size:8px;background:#1a1a3a;color:#7777ff;padding:1px 4px;border-radius:2px;">AI</span>` : '',
-                n.isCustom ? `<span style="font-size:8px;background:#2a1a00;color:var(--gold);padding:1px 4px;border-radius:2px;">CUSTOM</span>` : '',
+                (n.isCustom && showCustomBadge) ? `<span style="font-size:8px;background:#2a1a00;color:var(--gold);padding:1px 4px;border-radius:2px;">CUSTOM</span>` : '',
             ].filter(Boolean).join(' ');
             return `<div class="news-card" style="border-left-color:${impactColor};border-left-width:3px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
@@ -1364,7 +1432,16 @@
             </div>`;
         }).join('') || '<div style="text-align:center;color:#444;padding:30px;font-size:13px;">Chưa có tin tức</div>';
     }
-    function tick(){if(!news.length)return;const n=news[0];const el=document.getElementById("mini-news-ticker");el.innerText=`📰 ${n.t}`;el.className=`mini-news ${n.b>0?'pos':'neg'}`;}
+    let tickIdx = 0;
+    function tick(){
+        if(!news.length)return;
+        tickIdx = tickIdx % news.length;
+        const n=news[tickIdx];
+        const el=document.getElementById("mini-news-ticker");
+        el.innerText=n.t;
+        el.className=`mini-news ${n.b>0?'pos':n.b<0?'neg':''}`;
+        tickIdx++;
+    }
     function openDetail(c){sfx('click');sel=c;document.getElementById("detail-view").classList.add("active");initChart();updateD();tick();}
     function closeDetail(){sfx('click');sel=null;document.getElementById("detail-view").classList.remove("active");}
     function updateD(){const s=data.find(x=>x.code===sel);document.getElementById("d-code").innerText=s.code;document.getElementById("d-price").innerText=s.price.toFixed(2);document.getElementById("d-owned").innerText=(wallet.stocks[sel]||0).toFixed(0);document.getElementById("d-price").style.color=(candles[sel]?.at(-1).close>=candles[sel]?.at(-1).open)?"var(--green)":"var(--red)";}
