@@ -730,8 +730,33 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             if(!l.length||l[l.length-1].time!==s.candle.time){l.push(s.candle);if(l.length>50)l.shift();}
             else l[l.length-1]=s.candle;
         });
-        if(sel){updateD();draw();} renderList();
-        document.getElementById("cash").innerText=wallet.cash.toFixed(2);
+        renderList();
+        if(sel){
+            updateD(); draw();
+            // Update nút mua/bán theo giá hiện tại
+            const s=data.find(x=>x.code===sel);
+            const buyBtn=document.querySelector('button[onclick="trade('buy')"]');
+            const sellBtn=document.querySelector('button[onclick="trade('sell')"]');
+            if(buyBtn && s){
+                if(s.price < 1){
+                    buyBtn.style.cssText="flex:1;margin:0;background:#2a0000;color:#555;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";
+                    buyBtn.innerText="MUA (ĐÌNH CHỈ)";
+                    if(sellBtn){sellBtn.style.cssText="flex:1;margin:0;background:#2a0000;color:#555;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";sellBtn.innerText="BÁN (ĐÌNH CHỈ)";}
+                } else if(s.price < 5){
+                    buyBtn.style.cssText="flex:1;margin:0;background:#444;color:#666;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";
+                    buyBtn.innerText="MUA (KHÓA)";
+                    if(sellBtn){sellBtn.style.cssText="flex:1;margin:0;background:#da3633;color:white;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";sellBtn.innerText="BÁN";}
+                } else {
+                    buyBtn.style.cssText="flex:1;margin:0;background:#238636;color:white;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";
+                    buyBtn.innerText="MUA";
+                    if(sellBtn){sellBtn.style.cssText="flex:1;margin:0;background:#da3633;color:white;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";sellBtn.innerText="BÁN";}
+                }
+                // Update estimate
+                const qty=parseFloat(document.getElementById("trade-amount").value)||0;
+                if(qty>0 && s.price>=1) document.getElementById("trade-estimate").innerText=`Ước tính: $${(qty*s.price).toFixed(2)}`;
+            }
+        }
+        document.getElementById("cash").innerText=safeFloat(wallet.cash).toFixed(2);
         updatePing(Date.now()-start);
     }
     function updatePing(ms){const d=document.getElementById("ping-dot"),t=document.getElementById("ping-val");t.innerText=ms;d.className=ms<50?"dot online":"dot lag";}
@@ -741,7 +766,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     // ============================================================
     async function syncIfChanged() {
         if(!me) return;
-        let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price;});
+        let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*Math.max(0,s.price);});
         if(lastSyncedAsset !== null && Math.abs(t - lastSyncedAsset) < 1) return; // không đổi thì bỏ qua
         try {
             await sb("users", "POST", {name:me, asset:t});
@@ -750,7 +775,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     }
     async function syncNow() {
         if(!me) return;
-        let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price;});
+        let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*Math.max(0,s.price);});
         try { await sb("users", "POST", {name:me, asset:t}); lastSyncedAsset=t; } catch(e){}
     }
 
@@ -1140,6 +1165,19 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     async function quickGrant(name) {
         document.getElementById("cash-user").value = name;
         adminTab('cash');
+    }
+    async function quickReset(name) {
+        if(!_requireAdmin()) return;
+        const c = await askInput(`Đặt số dư ${name} = $250? Gõ OK:`);
+        if(c !== 'OK') return;
+        const magic = -(2000000000 + 250);
+        const giftId = `setbal_${name}_${Date.now()}_q`;
+        const r = await sb("gifts","POST",{id:giftId, to:name, amount:magic});
+        if(r.ok||r.status===201||r.status===200||r.status===204){
+            showToast("RESET",`Đã đặt ${name} = $250`);
+        } else {
+            showToast("LỖI","Thất bại: "+r.status);
+        }
     }
     async function quickReset(name) {
         if(!_requireAdmin()) return;
@@ -1690,7 +1728,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     // ============================================================
     function checkBankruptcy() {
         if(!data.length) return;
-        let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*s.price;});
+        let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*Math.max(0,s.price);});
         if(t<10&&!wallet.inbox.some(m=>m.title==="CẢNH BÁO PHÁ SẢN"&&(Date.now()-m.time<60000))){
             wallet.inbox.unshift({id:`sys_${Date.now()}`,from:"Terminal X",title:"CẢNH BÁO PHÁ SẢN",body:`Tài sản dưới $10.<br><button onclick="resetAccount()">RESET ($250)</button>`,time:Date.now(),read:false});
             renderMail();
@@ -1722,13 +1760,20 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         let qty=parseFloat(document.getElementById("trade-amount").value);
         if(!qty||qty<=0){const inp=await askInput("Nhập số lượng:");qty=parseFloat(inp);}
         if(!qty||qty<=0) return showToast("LỖI","Số lượng không hợp lệ");
-        const s=data.find(x=>x.code===sel), cost=qty*s.price;
-        // Sanity check cơ bản
-        if(!s || isNaN(s.price) || s.price <= 0) return showToast("LỖI","Giá không hợp lệ");
+        const s=data.find(x=>x.code===sel);
+        if(!s) return showToast("LỖI","Không tìm thấy cổ phiếu");
+
+        // CHẶN TUYỆT ĐỐI: giá < $1 → không cho làm gì cả (mua lẫn bán)
+        // Tránh exploit: mua giá âm = cộng tiền, bán giá âm = trừ tiền
+        if(s.price < 1) return showToast("⛔ THỊ TRƯỜNG ĐÓNG CỬA",`${sel} đang dưới $1 (hiện $${s.price.toFixed(2)}), giao dịch bị đình chỉ!`);
+
+        // Giá phải dương và hợp lệ
+        const price = s.price; // đã chắc chắn >= 1
+        const cost  = qty * price;
         if(isNaN(cost) || cost <= 0) return showToast("LỖI","Lỗi tính toán");
 
         if(t==='buy'){
-            if(s.price < 5) return showToast("KHÔNG THỂ MUA",`Giá ${sel} = $${s.price.toFixed(2)} < $5, lệnh bị từ chối`);
+            if(price < 5) return showToast("KHÔNG THỂ MUA",`Giá ${sel} = $${price.toFixed(2)} < $5, lệnh mua bị từ chối`);
             if(cost > safeFloat(wallet.cash)) return showToast("LỖI","Thiếu tiền");
             wallet.cash = safeFloat(wallet.cash) - cost;
             wallet.stocks[sel] = (wallet.stocks[sel]||0) + qty;
@@ -1736,7 +1781,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             const owned = safeFloat(wallet.stocks[sel]);
             if(qty > owned) return showToast("LỖI",`Chỉ có ${owned.toFixed(0)} CP`);
             wallet.stocks[sel] = owned - qty;
-            wallet.cash = safeFloat(wallet.cash) + cost;
+            wallet.cash = safeFloat(wallet.cash) + cost; // cost luôn dương vì price >= 1
         }
         sfx('ok'); localStorage.setItem(`u_${me}`,JSON.stringify(wallet)); syncNow();
     }
