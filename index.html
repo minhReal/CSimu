@@ -808,33 +808,60 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             const r = await sb(`gifts?to=eq.${encodeURIComponent(me)}&select=*`);
             if(r.ok && r.data.length>0){
                 await sb(`gifts?to=eq.${encodeURIComponent(me)}`,"DELETE");
-                let totalCash=0;
-                r.data.forEach(g=>{
-                    if(g.set_absolute){
-                        // Đặt số dư tuyệt đối
-                        wallet.cash = safeFloat(g.amount);
-                        wallet.inbox.unshift({id:`setcash_${Date.now()}`,from:"Admin",title:"Điều chỉnh số dư",body:`Số dư của bạn đã được đặt thành $${g.amount}`,time:Date.now(),read:false});
-                    } else if(g.stock_code && g.stock_qty){
-                        // Tặng cổ phiếu
-                        wallet.stocks[g.stock_code]=(wallet.stocks[g.stock_code]||0)+safeFloat(g.stock_qty);
-                        wallet.inbox.unshift({id:`giftstock_${Date.now()}`,from:"Admin",title:"Nhận cổ phiếu",body:`Bạn nhận được ${g.stock_qty} CP ${g.stock_code} từ Admin`,time:Date.now(),read:false});
-                        showToast("CỔ PHIẾU",`Nhận ${g.stock_qty} CP ${g.stock_code}!`);
+                let totalCash = 0;
+                let didSetBalance = false;
+                r.data.forEach(g => {
+                    const id = g.id || '';
+                    const amt = safeFloat(g.amount);
+
+                    if(id.startsWith('setbal_')) {
+                        // Magic decode: amount = -(100000000 + target) → target = -amount - 100000000
+                        const target = -amt - 100000000;
+                        if(target >= 0 && target < 10000000) {
+                            wallet.cash = target;
+                            didSetBalance = true;
+                            wallet.inbox.unshift({id:`setcash_${Date.now()}`,from:"Admin",
+                                title:"Điều chỉnh số dư",
+                                body:`Số dư của bạn đã được đặt thành $${target.toLocaleString()}`,
+                                time:Date.now(),read:false});
+                            showToast("ADMIN",`Số dư đặt thành $${target.toLocaleString()}`);
+                        }
+                    } else if(id.startsWith('STK_')) {
+                        // STK_VIN_10_user_ts → parts[1]=code, parts[2]=qty
+                        const parts = id.split('_');
+                        const code = parts[1];
+                        const qty  = parseFloat(parts[2]);
+                        if(code && qty > 0) {
+                            wallet.stocks[code] = (wallet.stocks[code]||0) + qty;
+                            wallet.inbox.unshift({id:`giftstock_${Date.now()}`,from:"Admin",
+                                title:`Nhận ${qty} CP ${code}`,
+                                body:`Admin đã tặng bạn ${qty} cổ phiếu ${code}!`,
+                                time:Date.now(),read:false});
+                            showToast("CỔ PHIẾU",`+${qty} CP ${code}!`);
+                        }
                     } else {
-                        totalCash += safeFloat(g.amount);
+                        // Tiền thường (cộng/trừ)
+                        totalCash += amt;
                     }
                 });
-                if(totalCash!==0){
-                    wallet.cash=safeFloat(wallet.cash)+totalCash;
-                    const type=totalCash>0?"QUÀ TẶNG":"THU THUẾ";
-                    const msgText=totalCash>0?`Bạn nhận được: $${totalCash}`:`Bạn bị trừ: $${Math.abs(totalCash)}`;
-                    wallet.inbox.unshift({id:`gift_${Date.now()}`,from:"System",title:type,body:msgText,time:Date.now(),read:false});
-                    showToast(type,msgText);
+                if(totalCash !== 0 && !didSetBalance){
+                    wallet.cash = safeFloat(wallet.cash) + totalCash;
+                    const type = totalCash>0 ? "QUÀ TẶNG" : "THU THUẾ";
+                    const msgText = totalCash>0
+                        ? `Bạn nhận được: $${totalCash.toLocaleString()}`
+                        : `Bạn bị trừ: $${Math.abs(totalCash).toLocaleString()}`;
+                    wallet.inbox.unshift({id:`gift_${Date.now()}`,from:"System",
+                        title:type, body:msgText, time:Date.now(), read:false});
+                    showToast(type, msgText);
+                } else if(totalCash !== 0 && didSetBalance){
+                    // Nếu vừa set balance vừa có gift thì cộng thêm sau khi set
+                    wallet.cash = safeFloat(wallet.cash) + totalCash;
                 }
                 renderMail();
-                localStorage.setItem(`u_${me}`,JSON.stringify(wallet));
+                localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
                 syncNow();
             }
-        } catch(e){}
+        } catch(e){ console.error('checkGift error:', e); }
     }
 
     // ============================================================
@@ -1158,11 +1185,17 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const amount = parseFloat(document.getElementById("cash-set-amount").value);
         if(!user) return showToast("LỖI","Chưa chọn user");
         if(isNaN(amount)||amount<0) return showToast("LỖI","Số tiền không hợp lệ");
-        // Gửi gift để set (dùng một giá trị đặc biệt SET:amount)
-        const giftId = `setcash_${user}_${Date.now()}`;
-        await sb("gifts","POST",{id:giftId, to:user, amount:amount, set_absolute:true});
-        showToast("THÀNH CÔNG",`Đặt số dư ${user} = $${amount}`);
-        document.getElementById("cash-set-amount").value="";
+        // Magic: amount = -(100000000 + target) → client nhận là SET signal
+        // VD set 500 → gửi amount = -100000500 → client decode: -(-100000000-(-100000500))=500
+        const magic = -(100000000 + amount);
+        const giftId = `setbal_${user}_${Date.now()}_${Math.random().toString(36).substr(2,4)}`;
+        const r = await sb("gifts","POST",{id:giftId, to:user, amount:magic});
+        if(r.ok||r.status===201||r.status===200||r.status===204){
+            showToast("THÀNH CÔNG",`Đặt số dư ${user} = $${amount}`);
+            document.getElementById("cash-set-amount").value="";
+        } else {
+            showToast("LỖI","Ghi thất bại: "+r.status);
+        }
     }
     async function doGrantStock() {
         if(!_requireAdmin()) return;
@@ -1171,10 +1204,15 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const qty  = parseFloat(document.getElementById("cash-stock-qty").value);
         if(!user) return showToast("LỖI","Chưa chọn user");
         if(!qty||qty<=0) return showToast("LỖI","Số CP không hợp lệ");
-        const giftId = `giftstock_${user}_${Date.now()}`;
-        await sb("gifts","POST",{id:giftId, to:user, amount:0, stock_code:code, stock_qty:qty});
-        showToast("THÀNH CÔNG",`Đã tặng ${qty} CP ${code} cho ${user}`);
-        document.getElementById("cash-stock-qty").value="";
+        // id prefix: STK_VIN_10_user_ts → an toàn với Supabase
+        const giftId = `STK_${code}_${qty}_${user}_${Date.now()}`;
+        const r = await sb("gifts","POST",{id:giftId, to:user, amount:0});
+        if(r.ok||r.status===201||r.status===200||r.status===204){
+            showToast("THÀNH CÔNG",`Đã tặng ${qty} CP ${code} cho ${user}`);
+            document.getElementById("cash-stock-qty").value="";
+        } else {
+            showToast("LỖI","Ghi thất bại: "+r.status);
+        }
     }
 
     async function delUser(n) {
@@ -1655,9 +1693,9 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         if(!qty||qty<=0) return showToast("LỖI","Số lượng không hợp lệ");
         const s=data.find(x=>x.code===sel), cost=qty*s.price;
         if(t==='buy'){
-            // Chặn mua khi giá đang giảm (close < open)
-            if(s.candle.close < s.candle.open){
-                return showToast("KHÔNG THỂ MUA","Cổ phiếu đang giảm giá, thị trường không chấp nhận lệnh mua!");
+            // Chặn mua khi giá < 5
+            if(s.price < 5){
+                return showToast("KHÔNG THỂ MUA",`Giá ${sel} quá thấp ($${s.price.toFixed(2)} < $5), lệnh mua bị từ chối!`);
             }
             if(cost>wallet.cash) return showToast("LỖI","Thiếu tiền");
             wallet.cash-=cost; wallet.stocks[sel]=(wallet.stocks[sel]||0)+qty;
