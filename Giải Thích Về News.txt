@@ -19,3 +19,6 @@
 - d (Duration - Thời gian): Tin này tồn tại bao lâu (tính bằng số cây nến).
   + Mỗi cây nến là 2 giây.
   + Ví dụ d: 5 nghĩa là tin này sẽ ảnh hưởng trong 10 giây (5 nến) rồi mới đổi tin khác.
+
+- stocks (Thị trường/Doanh nghiệp):
+  + Để biết tin tức có tác động gì với Doanh nghiệp đó.
