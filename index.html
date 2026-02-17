@@ -323,8 +323,11 @@
 
                 <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">NỘI DUNG</div>
                 <div style="position:relative;margin-bottom:8px;">
-                    <textarea id="custom-news-text" placeholder="Nội dung tin tức..." style="height:60px;resize:none;padding-right:110px;"></textarea>
-                    <button id="ai-news-btn" onclick="generateAINews()" style="position:absolute;right:6px;top:6px;padding:5px 8px;background:#1a1a3a;color:#7777ff;border:1px solid #3333aa;border-radius:5px;font-size:11px;font-weight:bold;white-space:nowrap;">✨ AI Tạo tin</button>
+                    <textarea id="custom-news-text" placeholder="Nội dung tin tức..." style="height:60px;resize:none;"></textarea>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+                    <button id="ai-news-btn" onclick="generateAINews()" style="padding:8px;background:#0f1a3a;color:#7777ff;border:1px solid #3333aa;border-radius:6px;font-size:11px;font-weight:bold;">✨ AI Tin tức</button>
+                    <button id="ai-positive-news-btn" onclick="generatePositiveNews()" style="padding:8px;background:#0a2a0a;color:#6f6;border:1px solid #1a6a1a;border-radius:6px;font-size:11px;font-weight:bold;">🚀 AI Tăng giá</button>
                 </div>
 
                 
@@ -373,6 +376,36 @@
 
                 <button onclick="addCustomNews()" style="width:100%;padding:12px;background:#1f6feb;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;margin-bottom:12px;">ĐĂNG TIN TỨC</button>
 
+                <div style="background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:12px;margin-bottom:10px;">
+                    <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:8px;">⚡ EVENT THỊ TRƯỜNG</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                        <div>
+                            <div style="color:#888;font-size:10px;font-weight:bold;margin-bottom:4px;">ĐỘ MẠNH (%)</div>
+                            <input type="number" id="crash-magnitude" value="30" min="5" max="90" style="text-align:center;font-weight:bold;padding:8px;">
+                        </div>
+                        <div>
+                            <div style="color:#888;font-size:10px;font-weight:bold;margin-bottom:4px;">THỜI GIAN (p)</div>
+                            <input type="number" id="crash-duration" value="5" min="1" max="60" style="text-align:center;font-weight:bold;padding:8px;">
+                        </div>
+                    </div>
+                    <div style="color:#888;font-size:10px;font-weight:bold;margin-bottom:6px;">ÁP DỤNG CHO</div>
+                    <div id="crash-stock-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">
+                        <div class="crash-chip" data-code="VN-INDEX" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VN-INDEX</div>
+                        <div class="crash-chip" data-code="VIN" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VIN</div>
+                        <div class="crash-chip" data-code="FPT" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">FPT</div>
+                        <div class="crash-chip" data-code="HPG" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">HPG</div>
+                        <div class="crash-chip" data-code="DIG" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">DIG</div>
+                        <div class="crash-chip" data-code="VTB" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VTB</div>
+                        <div class="crash-chip" data-code="" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #555;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">TẤT CẢ</div>
+                    </div>
+                    <div id="crash-status" style="font-size:11px;color:#555;margin-bottom:8px;min-height:16px;"></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+                        <button onclick="triggerCrash()" style="padding:10px;background:#500;color:#ff6666;border:1px solid #800;border-radius:6px;font-weight:bold;font-size:12px;">⬇️ SỤT GIÁ</button>
+                        <button onclick="triggerBoom()" style="padding:10px;background:#0a2a0a;color:#6f6;border:1px solid #1a6a1a;border-radius:6px;font-weight:bold;font-size:12px;">⬆️ TĂNG GIÁ</button>
+                    </div>
+                    <button onclick="cancelCrash()" style="width:100%;padding:8px;background:#111;color:#555;border:1px solid #333;border-radius:6px;font-weight:bold;font-size:11px;">HỦY EVENT</button>
+                </div>
+
                 <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">TIN TỨC ĐANG HIỂN THỊ</div>
                 <div id="admin-news-list" style="max-height:180px;overflow-y:auto;background:#111;border-radius:6px;padding:8px;"></div>
                 <button onclick="clearAllNews()" style="width:100%;margin-top:8px;padding:8px;background:#500;color:white;border:none;border-radius:6px;font-weight:bold;">Xóa tất cả tin</button>
@@ -396,46 +429,6 @@
                 <button onclick="adminBroadcast()" style="width:100%;padding:12px;background:#ff3b3b;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">PHÁT LOA TOÀN SERVER</button>
             </div>
             
-            <div style="background:#0a0a0a;border-radius:8px;padding:15px;border:1px solid #3a0000;">
-                <div style="color:#ff3b3b;font-size:11px;font-weight:bold;margin-bottom:10px;">⚠️ SỰ KIỆN SỤT GIÁ</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-                    <div>
-                        <div style="color:#888;font-size:10px;margin-bottom:4px;">MỨC SỤT (%)</div>
-                        <input type="number" id="crash-magnitude" value="30" min="5" max="90" style="text-align:center;font-weight:bold;padding:8px;">
-                        <div style="font-size:9px;color:#555;margin-top:3px;">VD: 30 = giảm 30%</div>
-                    </div>
-                    <div>
-                        <div style="color:#888;font-size:10px;margin-bottom:4px;">THỜI GIAN (phút)</div>
-                        <input type="number" id="crash-duration" value="5" min="1" max="60" style="text-align:center;font-weight:bold;padding:8px;">
-                        <div style="font-size:9px;color:#555;margin-top:3px;">Random trong khoảng này</div>
-                    </div>
-                </div>
-                <div style="color:#888;font-size:10px;font-weight:bold;margin-bottom:6px;">ÁP DỤNG CHO</div>
-                <div id="crash-stock-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">
-                    <div class="crash-chip" data-code="VN-INDEX" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VN-INDEX</div>
-                    <div class="crash-chip" data-code="VIN" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VIN</div>
-                    <div class="crash-chip" data-code="FPT" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">FPT</div>
-                    <div class="crash-chip" data-code="HPG" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">HPG</div>
-                    <div class="crash-chip" data-code="DIG" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">DIG</div>
-                    <div class="crash-chip" data-code="VTB" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VTB</div>
-                    <div class="crash-chip" data-code="" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #555;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">TẤT CẢ</div>
-                </div>
-                <div id="crash-status" style="font-size:11px;color:#555;margin-bottom:8px;min-height:16px;"></div>
-                <div style="display:flex;gap:8px;">
-                    <button onclick="triggerCrash()" style="flex:1;padding:12px;background:#500;color:#ff6666;border:1px solid #800;border-radius:6px;font-weight:bold;font-size:13px;">KÍCH HOẠT SỤT GIÁ</button>
-                    <button id="ai-crash-news-btn" onclick="generateCrashNews()" style="flex:1;padding:12px;background:#3a0000;color:#ff8888;border:1px solid #700;border-radius:6px;font-weight:bold;font-size:12px;">🔴 AI Crash News</button>
-                </div>
-                <button onclick="cancelCrash()" style="width:100%;padding:8px;background:#111;color:#555;border:1px solid #333;border-radius:6px;font-weight:bold;font-size:11px;margin-top:6px;">HỦY SỰ KIỆN</button>
-            </div>
-        </div>
-
-        <div id="admv-subadmin" style="display:none;">
-            <div style="background:#0a0a0a;border-radius:8px;padding:15px;margin-bottom:10px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                    <div style="color:#888;font-size:11px;font-weight:bold;">DANH SÁCH PHỤ ADMIN</div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:11px;color:#888;">Bật hệ thống</span>
-                        <div onclick="toggleSubAdminSystem()" id="sub-system-btn" style="width:40px;height:20px;background:#333;border-radius:10px;cursor:pointer;position:relative;transition:0.2s;">
                             <div id="sub-system-dot" style="width:16px;height:16px;background:#666;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s;"></div>
                         </div>
                     </div>
@@ -1606,6 +1599,16 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         if(!_requireAdmin()) return;
         const btn = document.getElementById("ai-news-btn");
         btn.innerText = "Đang tạo..."; btn.disabled = true;
+        
+        const crashChance = Math.random();
+        const shouldCrash = crashChance < 0.15;
+        
+        if(shouldCrash) {
+            btn.innerText = "✨ AI Tạo tin"; btn.disabled = false;
+            await generateCrashNews();
+            return;
+        }
+        
         try {
             const stocks = getSelectedChips();
             const sentVal = document.getElementById("news-sentiment-select").value;
@@ -1764,6 +1767,49 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         });
         return sel;
     }
+    async function generatePositiveNews() {
+        if(!_requireAdmin()) return;
+        const btn = document.getElementById("ai-positive-news-btn");
+        if(btn){ btn.innerText="Đang tạo..."; btn.disabled=true; }
+        
+        const stocks = getSelectedChips();
+        const target = stocks.length > 0 ? stocks.join(", ") : "thị trường";
+        
+        let newsTitle = null;
+        try {
+            const resp = await fetch("https://api.anthropic.com/v1/messages", {
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body: JSON.stringify({
+                    model:"claude-sonnet-4-5-20250929", max_tokens:100,
+                    messages:[{role:"user",content:`Viết 1 tiêu đề tin tức tài chính Việt Nam RẤT TÍCH CỰC, lạc quan về ${target}. Tin phải rất vui tươi, tạo cảm giác thị trường tăng mạnh. Chỉ 10-16 từ tiếng Việt. Chỉ tiêu đề.`}]
+                })
+            });
+            if(resp.ok){ const j=await resp.json(); newsTitle=(j.content?.[0]?.text||'').trim().replace(/^["'""]/,'').replace(/["'""]$/,''); }
+        } catch(e){}
+        
+        if(!newsTitle){
+            const pool = [
+                "Dòng vốn ngoại đổ mạnh vào Việt Nam, VN-Index vượt ngưỡng kháng cự",
+                "Kết quả kinh doanh vượt kỳ vọng, cổ phiếu blue-chip tăng trần",
+                "Thị trường chứng khoán bứt phá mạnh nhờ tín hiệu tích cực từ Fed",
+                "Thanh khoản cải thiện rõ rệt, nhà đầu tư lạc quan trở lại",
+                "Nhóm cổ phiếu dẫn dắt kéo VN-Index tăng hơn 20 điểm",
+                "Tin vui kinh tế vĩ mô đẩy thị trường chứng khoán tăng điểm mạnh",
+                "Khối ngoại mua ròng kỷ lục, thị trường xanh sàn toàn diện",
+            ];
+            newsTitle = pool[Math.floor(Math.random()*pool.length)];
+            if(stocks.length > 0) newsTitle = `[${stocks[0]}] ` + newsTitle;
+        }
+        
+        const impact = 30 + Math.random()*40;
+        const duration = 5 + Math.random()*10;
+        pushNews({ t: newsTitle, b: impact, v: 20, d: duration, stocks, isCustom: true });
+        
+        showToast("🟢 GOOD NEWS", newsTitle.substring(0,55)+"...");
+        if(btn){ btn.innerText="🟢 AI Tin Tốt"; btn.disabled=false; }
+    }
+    
     async function generateCrashNews() {
         if(!_requireAdmin()) return;
         const btn = document.getElementById("ai-crash-news-btn");
@@ -1830,10 +1876,27 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         pushNews({t:`THỊ TRƯỜNG SỤT GIÁ: ${label} giảm mạnh ${pct}%`, b:-pct, v:30, d:actualMins, stocks, isCustom:true});
         updateCrashStatus();
     }
+    function triggerBoom() {
+        if(!_requireAdmin()) return;
+        const pct = parseFloat(document.getElementById("crash-magnitude").value)||30;
+        const mins = parseFloat(document.getElementById("crash-duration").value)||5;
+        const randomDur = (mins * 0.5 + Math.random() * mins * 0.5) * 60000;
+        const stocks = getSelectedCrashStocks();
+        crashEvent = {
+            stocks,
+            magnitude: 1 + (pct / 100),
+            endsAt: Date.now() + randomDur
+        };
+        const label = stocks.length===0 ? 'toàn thị trường' : stocks.join(', ');
+        const actualMins = Math.round(randomDur/60000*10)/10;
+        showToast("🚀 BOOM",`Tăng giá +${pct}% — ${label} trong ~${actualMins}p`);
+        pushNews({t:`🚀 THỊ TRƯỜNG TĂNG: ${label} tăng mạnh ${pct}%`, b:pct, v:20, d:actualMins, stocks, isCustom:true});
+        updateCrashStatus();
+    }
     function cancelCrash(){
         if(!_requireAdmin()) return;
         crashEvent=null;
-        showToast("SỰ KIỆN","Đã hủy sự kiện sụt giá");
+        showToast("SỰ KIỆN","Đã hủy sự kiện");
         updateCrashStatus();
     }
     function updateCrashStatus(){
@@ -2305,6 +2368,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const rect=document.getElementById("chart").parentElement.getBoundingClientRect();
         const W=rect.width,H=rect.height; ctx.clearRect(0,0,W,H);
         let min=Infinity,max=-Infinity; d.forEach(x=>{if(x.low<min)min=x.low;if(x.high>max)max=x.high;});
+        if(min === Infinity || max === -Infinity || min === max) { min = 0; max = 100; }
         const padding=(max-min)*0.1; min-=padding; max+=padding;
         const step=calculateSmartGrid(min,max); const startY=Math.ceil(min/step)*step; const py=20;
         const gy=v=>H-py-((v-min)/(max-min))*(H-py*2);
@@ -2325,7 +2389,10 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             ctx.setLineDash([]);
             ctx.fillStyle="#666"; ctx.fillText("0",W-5,zy-2);
         }
-        let cw=(W-30)/50; if(cw>40) cw=40;
+        const numCandles = Math.min(d.length, 50);
+        let cw = numCandles > 0 ? (W-30)/numCandles : 10;
+        if(cw < 3) cw = 3;
+        if(cw > 40) cw = 40;
         if(chartType==='candle'){d.forEach((c,i)=>{const x=i*cw+10,col=c.close>=c.open?"#00ff88":"#ff3b3b";ctx.strokeStyle=col;ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(x+cw/2,gy(c.high));ctx.lineTo(x+cw/2,gy(c.low));ctx.stroke();const h=Math.abs(gy(c.open)-gy(c.close))||1;ctx.fillRect(x+1,Math.min(gy(c.open),gy(c.close)),cw-2,h);});}
         else{ctx.lineWidth=2;for(let i=0;i<d.length-1;i++){const x1=i*cw+10+cw/2,y1=gy(d[i].close),x2=(i+1)*cw+10+cw/2,y2=gy(d[i+1].close);ctx.beginPath();ctx.strokeStyle=d[i+1].close>=d[i].close?"#00ff88":"#ff3b3b";ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}}
         const ly=gy(d[d.length-1].close); ctx.strokeStyle="rgba(255,255,255,0.4)"; ctx.setLineDash([2,2]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
