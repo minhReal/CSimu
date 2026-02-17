@@ -117,7 +117,7 @@
         <div style="display:flex; gap:15px; align-items:center;">
             <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;">ADMIN</button>
 
-            <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;">$<span id="cash">0.00</span></div>
+            <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;"><span id="cash">$0.00</span></div>
             <button onclick="openSettings()" style="background:none; border:none; padding:0; font-size:20px;">⚙️</button>
         </div>
     </div>
@@ -510,14 +510,12 @@
 </div>
 
 <script>
-    // Language system (simple, EN default)
     const LANG = {
         en: { buy: "BUY", sell: "SELL", market: "MARKET", news: "NEWS", mail: "MAIL" },
         vi: { buy: "MUA", sell: "BÁN", market: "THỊ TRƯỜNG", news: "TIN TỨC", mail: "THƯ" }
     };
     function t(k) { return (LANG[currentLang] && LANG[currentLang][k]) || k; }
     
-    // Global error handler for debugging
     window.addEventListener('error', function(e) {
         console.error('[GLOBAL ERROR]', e.message, e.filename, e.lineno, e.colno);
     });
@@ -525,16 +523,11 @@
         console.error('[UNHANDLED PROMISE]', e.reason);
     });
 
-    // ============================================================
-    // SUPABASE CONFIG — gọi thẳng, không qua Cloudflare
-    // ============================================================
     const SB_URL = "https://mtdbpmezysuwxbxgxasc.supabase.co";
     const SB_KEY = "sb_publishable_W-Q-MzuBfxjHsG4ia_x68A_fNF26q32";
-    // ADMIN SECRET — lưu dạng hash runtime, không so sánh plaintext trực tiếp
-    // Hash đơn giản: không ai thấy được giá trị gốc qua devtools memory snapshot
     const _AS = (()=>{ const s="minh@depzai36"; let h=0; for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;} return h; })();
     function _checkPass(p){ let h=0; for(let i=0;i<p.length;i++){h=((h<<5)-h)+p.charCodeAt(i);h|=0;} return h===_AS; }
-    const ADMIN_SECRET = "minh@depzai36"; // vẫn giữ để dùng ở Supabase key check
+    const ADMIN_SECRET = "minh@depzai36";
 
     async function sb(path, method = "GET", body = null, extra = {}) {
         const opts = {
@@ -555,9 +548,6 @@
         catch { return { ok: res.ok, status: res.status, data: text }; }
     }
 
-    // ============================================================
-    // MARKET ENGINE — tính local theo timestamp (không cần server)
-    // ============================================================
     const STOCKS = [
         { code: "VN-INDEX", base: 1200, volatility: 20, speed: 0.5 },
         { code: "VIN",      base: 45,   volatility: 5,  speed: 1.2 },
@@ -572,7 +562,6 @@
         t ^= t + Math.imul(t ^ t >>> 7, t | 61);
         return ((t ^ t >>> 14) >>> 0) / 4294967296;
     }
-    // CRASH EVENT — khai báo trước getPriceAtBlock vì được dùng bên trong
     let crashEvent = null;
     function getCrashMultiplier(code) {
         if(!crashEvent || Date.now() > crashEvent.endsAt) { crashEvent=null; return 1; }
@@ -598,15 +587,10 @@
         });
     }
 
-    // ============================================================
-    // STATE
-    // ============================================================
-    // FAKE_NEWS_TEMPLATES đã được thay bằng news.json từ GitHub
     let me = null, wallet = {cash:250, stocks:{}, inbox:[], lastBC:0};
     let data = [], candles = {}, sel = null, news = [];
     let activeTab = 'market';
     let currentLang = localStorage.getItem('_lang') || 'en';
-    // (crashEvent đã khai báo ở trên)
     let chartType = localStorage.getItem("chart_type") || "candle";
     try { document.getElementById("chart-type-select").value = chartType; } catch(e){}
     let isBgmOn = localStorage.getItem("bgm_state") !== "off";
@@ -614,9 +598,6 @@
     let currentMailIdx = -1;
     let lastSyncedAsset = null;
 
-    // ============================================================
-    // AUDIO
-    // ============================================================
     const bgm = document.getElementById("bgm");
     let audioCtx = null;
     let unlocked = false;
@@ -635,7 +616,7 @@
         isBgmOn = document.getElementById("toggle-bgm").checked;
         localStorage.setItem("bgm_state", isBgmOn?"on":"off");
         if(isBgmOn) bgm.play().catch(()=>{}); else bgm.pause();
-        _getAudioCtx(); // init nếu chưa có
+        _getAudioCtx();
     }
     function sfx(t) {
         const audioCtx=_getAudioCtx(); if(!audioCtx) return;
@@ -647,9 +628,6 @@
         if(t==='mail'){o.frequency.setValueAtTime(800,audioCtx.currentTime);o.frequency.linearRampToValueAtTime(1200,audioCtx.currentTime+0.1);g.gain.value=0.1;o.start();o.stop(audioCtx.currentTime+0.3);}
     }
 
-    // ============================================================
-    // TOAST & PROMPT
-    // ============================================================
     function showToast(title, msg, duration=3000) {
         const c=document.getElementById("toast-container"), el=document.createElement("div");
         el.className="toast-box";
@@ -683,10 +661,6 @@
 
     setInterval(()=>{document.getElementById("system-time").innerText=new Date().toLocaleTimeString('vi-VN');},1000);
 
-    // ============================================================
-    // AUTH — gọi thẳng Supabase
-    // ============================================================
-    // Đợi DOM ready trước khi auto-login
     if(document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', _tryAutoLogin);
     } else {
@@ -713,12 +687,10 @@
 
         if(t==='reg'){
             try {
-                // Kiểm tra tên đã tồn tại chưa
                 const chk = await sb(`users?name=eq.${encodeURIComponent(u)}&select=name`);
                 if((chk.ok && chk.data.length>0) || localStorage.getItem(`u_${u}`)){
                     sfx('err'); msg.innerText="Tên đã tồn tại"; msg.style.color="var(--red)"; return;
                 }
-                // Tạo user trên Supabase
                 const ins = await sb("users", "POST", {name:u, asset:250, pass:p});
                 if(!ins.ok && ins.status !== 201 && ins.status !== 200){
                     sfx('err'); msg.innerText="Lỗi tạo tài khoản"; msg.style.color="var(--red)"; return;
@@ -739,18 +711,15 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
 </div>`,time:Date.now(),read:false};
                 const newWallet = {pass:p,cash:250,stocks:{},inbox:[firstMail],lastBC:Date.now()};
                 localStorage.setItem(`u_${u}`, JSON.stringify(newWallet));
-                // Sync asset lên Supabase ngay để xuất hiện trong leaderboard
                 await sb("users","POST",{name:u, asset:250, pass:p});
                 sfx('ok'); msg.innerText="Đăng ký thành công!"; msg.style.color="var(--green)";
             } catch(e){ sfx('err'); msg.innerText="Lỗi mạng: "+e.message; msg.style.color="var(--red)"; }
         } else {
             try {
-                // Xác thực qua Supabase
                 const r = await sb(`users?name=eq.${encodeURIComponent(u)}&select=name,pass,asset`);
                 if(!r.ok || !r.data.length){ sfx('err'); msg.innerText="Tài khoản không tồn tại"; msg.style.color="var(--red)"; return; }
                 const srv = r.data[0];
                 if(srv.pass !== p){ sfx('err'); msg.innerText="Sai mật khẩu"; msg.style.color="var(--red)"; return; }
-                // Sync wallet từ server nếu chưa có local
                 let w = localStorage.getItem(`u_${u}`) ? JSON.parse(localStorage.getItem(`u_${u}`)) : null;
                 if(!w) w = {pass:p, cash:safeFloat(srv.asset), stocks:{}, inbox:[{id:`sys_0`,from:"Terminal X",title:"Chào mừng trở lại",body:"Dữ liệu được khôi phục từ server.",time:Date.now(),read:false}], lastBC:Date.now()};
                 w.pass = p;
@@ -778,8 +747,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         app.style.display="flex";
         uName.innerText=me;
 
-        setTimeout(_verifyAdminAccess, 500); // đợi DOM ổn định
-        // Guard: chỉ start interval 1 lần duy nhất
+        setTimeout(_verifyAdminAccess, 500);
         if(!_appStarted) {
             _appStarted = true;
             setInterval(loop, 1500);
@@ -797,14 +765,11 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             });
         }
         renderMail();
-        loop(); // chạy ngay 1 lần để có data
+        loop();
         window.dispatchEvent(new Event('resize'));
         setTimeout(()=>syncNow(), 2000);
     }
 
-    // ============================================================
-    // MARKET LOOP — tính local, không cần gọi server
-    // ============================================================
     function loop() {
         const start = Date.now();
         try {
@@ -820,7 +785,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         renderList();
         if(sel){
             updateD(); draw();
-            // Update nút mua/bán theo giá hiện tại
             const s=data.find(x=>x.code===sel);
             const buyBtn=document.getElementById('btn-buy');
             const sellBtn=document.getElementById('btn-sell');
@@ -838,23 +802,19 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                     buyBtn.innerText="MUA";
                     if(sellBtn){sellBtn.style.cssText="flex:1;margin:0;background:#da3633;color:white;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";sellBtn.innerText="BÁN";}
                 }
-                // Update estimate
                 const qty=parseFloat(document.getElementById("trade-amount").value)||0;
                 if(qty>0 && s.price>=1) document.getElementById("trade-estimate").innerText=`Ước tính: $${(qty*s.price).toFixed(2)}`;
             }
         }
-        document.getElementById("cash").innerText="$"+formatAsset(safeFloat(wallet.cash));
+        document.getElementById("cash").innerText="$"+safeFloat(wallet.cash).toFixed(2);
         updatePing(Date.now()-start);
     }
     function updatePing(ms){const d=document.getElementById("ping-dot"),t=document.getElementById("ping-val");if(!d||!t)return;t.innerText=ms;d.className=ms<50?"dot online":"dot lag";}
 
-    // ============================================================
-    // SYNC — chỉ ghi khi asset thay đổi để tiết kiệm writes
-    // ============================================================
     async function syncIfChanged() {
         if(!me) return;
         let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*Math.max(0,s.price);});
-        if(lastSyncedAsset !== null && Math.abs(t - lastSyncedAsset) < 1) return; // không đổi thì bỏ qua
+        if(lastSyncedAsset !== null && Math.abs(t - lastSyncedAsset) < 1) return;
         try {
             await sb("users", "POST", {name:me, asset:t});
             lastSyncedAsset = t;
@@ -866,9 +826,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         try { await sb("users", "POST", {name:me, asset:t}); lastSyncedAsset=t; } catch(e){}
     }
 
-    // ============================================================
-    // BAN CHECK
-    // ============================================================
     async function checkBan() {
         try {
             const r = await sb(`users?name=eq.${encodeURIComponent(me)}&select=name`);
@@ -879,16 +836,12 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         } catch(e){}
     }
 
-    // ============================================================
-    // LEADERBOARD
-    // ============================================================
     async function getRank() {
         if(activeTab!=='rank') return;
         const el = document.getElementById("rank-list");
         el.innerHTML = "<div style='padding:20px;text-align:center;color:#555;'>Đang tải...</div>";
         try {
-            // Sync asset của mình trước để bảng xếp hạng luôn mới nhất
-            await syncNow(true); // silent sync
+            await syncNow(true);
             const r = await sb("users?select=name,asset&order=asset.desc&limit=100");
             const list = r.data || [];
             if(!list.length){ el.innerHTML="<div style='padding:20px;text-align:center;color:#555;'>Chưa có dữ liệu</div>"; return; }
@@ -904,9 +857,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         } catch(e){ el.innerHTML="<div style='padding:20px;text-align:center;color:red;'>Lỗi tải dữ liệu</div>"; }
     }
 
-    // ============================================================
-    // BROADCAST
-    // ============================================================
     async function checkBroadcast() {
         try {
             const r = await sb("broadcast?id=eq.bc_latest&select=*");
@@ -922,9 +872,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         } catch(e){}
     }
 
-    // ============================================================
-    // GIFT
-    // ============================================================
     async function checkGift() {
         try {
             const r = await sb(`gifts?to=eq.${encodeURIComponent(me)}&select=*`);
@@ -937,7 +884,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                     const amt = safeFloat(g.amount);
 
                     if(id.startsWith('setbal_')) {
-                        // Magic decode: amount = -(1000000000 + target) → target = -amount - 1000000000
                         const target = -amt - 1000000000;
                         if(target >= 0 && target < 10000000) {
                             wallet.cash = target;
@@ -949,7 +895,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                             showToast("ADMIN",`Số dư đặt thành $${target.toLocaleString()}`);
                         }
                     } else if(id.startsWith('STK_')) {
-                        // STK_VIN_10_user_ts → parts[1]=code, parts[2]=qty
                         const parts = id.split('_');
                         const code = parts[1];
                         const qty  = parseFloat(parts[2]);
@@ -962,7 +907,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                             showToast("CỔ PHIẾU",`+${qty} CP ${code}!`);
                         }
                     } else {
-                        // Tiền thường (cộng/trừ)
                         totalCash += amt;
                     }
                 });
@@ -976,7 +920,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                         title:type, body:msgText, time:Date.now(), read:false});
                     showToast(type, msgText);
                 } else if(totalCash !== 0 && didSetBalance){
-                    // Nếu vừa set balance vừa có gift thì cộng thêm sau khi set
                     wallet.cash = safeFloat(wallet.cash) + totalCash;
                 }
                 renderMail();
@@ -986,9 +929,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         } catch(e){ console.error('checkGift error:', e); }
     }
 
-    // ============================================================
-    // MAIL P2P
-    // ============================================================
     async function checkP2PMail() {
         try {
             const r = await sb(`mails?to=eq.${encodeURIComponent(me)}&select=*&order=time.asc`);
@@ -1000,7 +940,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             }
         } catch(e){}
     }
-    // P2P Money cooldown tracking
     let lastMoneyGiftTime = parseInt(localStorage.getItem('_lastMoneyGift')) || 0;
     
     function toggleAttachMoney() {
@@ -1014,9 +953,8 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const amt = parseFloat(document.getElementById("mail-money-amount").value) || 0;
         const info = document.getElementById("attach-money-info");
         
-        // Check cooldown
         const now = Date.now();
-        const cooldown = 60 * 60 * 1000; // 1 hour
+        const cooldown = 60 * 60 * 1000;
         const timeSince = now - lastMoneyGiftTime;
         const remaining = cooldown - timeSince;
         
@@ -1042,18 +980,15 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         info.style.color = '#888';
     }
     
-    // P2P stock attach removed
     
     async function sendP2PMail() {
         const to   = document.getElementById("mail-to").value.trim();
         const sub  = document.getElementById("mail-subj").value.trim();
         const body = document.getElementById("mail-content").value.trim();
         
-        // P2P money transfer
         const attachMoney = document.getElementById("attach-money-toggle").checked;
         const moneyAmt = parseFloat(document.getElementById("mail-money-amount").value) || 0;
         
-        // P2P stock transfer
         const attachStock = document.getElementById("attach-stock-toggle").checked;
         const stockCode = document.getElementById("mail-stock-code").value;
         const stockQty = parseFloat(document.getElementById("mail-stock-qty").value) || 0;
@@ -1062,7 +997,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         if(!sub) return showToast("LỖI","Chưa nhập tiêu đề");
         if(!body) return showToast("LỖI","Chưa nhập nội dung");
         
-        // Validate money transfer
         if(attachMoney) {
             const now = Date.now();
             const cooldown = 60 * 60 * 1000;
@@ -1076,7 +1010,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             if(moneyAmt > wallet.cash) return showToast("LỖI","Không đủ tiền");
         }
         
-        // Validate stock transfer
         if(attachStock) {
             if(!stockCode) return showToast("LỖI","Chưa chọn cổ phiếu");
             if(stockQty <= 0) return showToast("LỖI","Số CP không hợp lệ");
@@ -1086,7 +1019,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         if(to === me) return showToast("LỖI","Không thể gửi cho chính mình");
         if(safeFloat(wallet.cash) < 10) return showToast("LỖI",`Không đủ tiền (cần $10, có $${safeFloat(wallet.cash).toFixed(0)})`);
 
-        // Kiểm tra người nhận tồn tại
         const sendBtn = document.querySelector('#compose-modal button[onclick="sendP2PMail()"]');
         if(sendBtn){ sendBtn.disabled=true; sendBtn.innerText="Đang gửi..."; }
         try {
@@ -1104,7 +1036,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
 
         const id = `mail_${Date.now()}_${Math.random().toString(36).substr(2,6)}`;
         
-        // Append money & stock info to body
         let finalBody = body;
         if(attachMoney && moneyAmt > 0) {
             finalBody += `\n\n💵 Kèm theo: $${moneyAmt.toFixed(2)}`;
@@ -1119,13 +1050,11 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                 wallet.cash = safeFloat(wallet.cash) - 10;
                 localStorage.setItem(`u_${me}`,JSON.stringify(wallet));
                 
-                // Gửi money gift nếu có
                 if(attachMoney && moneyAmt > 0) {
                     const moneyGiftId = `gift_${to}_${Date.now()}_money`;
                     await sb("gifts","POST",{id:moneyGiftId, to, amount:moneyAmt});
                 }
                 
-                // Gửi stock gift nếu có
                 if(attachStock && stockQty > 0) {
                     const stockGiftId = `STK_${stockCode}_${stockQty}_${to}_${Date.now()}`;
                     await sb("gifts","POST",{id:stockGiftId, to, amount:0});
@@ -1155,9 +1084,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         if(sendBtn){ sendBtn.disabled=false; sendBtn.innerText="GỬI THƯ"; }
     }
 
-    // ============================================================
-    // MAIL RENDER
-    // ============================================================
     function renderMail() {
         const div=document.getElementById("mail-list"),empty=document.getElementById("empty-mail"),badge=document.getElementById("mail-badge");
         if(!wallet.inbox.length){div.innerHTML="";empty.style.display="block";badge.style.display="none";return;}
@@ -1191,7 +1117,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     function openCompose(){
         document.getElementById("compose-modal").style.display="flex";
         document.getElementById("compose-balance").innerText = "$"+safeFloat(wallet.cash).toFixed(0);
-        // Load users nếu chưa có
         if(!allUsersCache.length) sb("users?select=name,asset&order=asset.desc").then(r=>{ allUsersCache=r.data||[]; });
         setTimeout(()=>document.getElementById("mail-to").focus(), 100);
     }
@@ -1231,48 +1156,34 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         document.getElementById("mail-subj").focus();
     }
 
-    // ============================================================
-    // ADMIN
-    // ============================================================
     let allUsersCache = [];
     let cashMsgMode = 'none';
-    let _adminVerified = false;  // cờ bảo mật runtime — không lưu localStorage
-    let _adminToken = null;      // token ngẫu nhiên, reset mỗi session
+    let _adminVerified = false; 
+    let _adminToken = null;     
 
-    // Sinh token ngẫu nhiên mỗi lần load — không thể đoán hay giả mạo
     function _genToken() { return Math.random().toString(36).substr(2,9) + Date.now().toString(36) + Math.random().toString(36).substr(2,9); }
 
-    // Xác minh admin từ Supabase — không tin vào tên client, hỏi server
     async function _verifyAdminAccess() {
-        // Bước 1: tên phải đúng
+        const btn = document.getElementById("btn-admin");
+        if(isSubAdmin()) {
+            if(btn) btn.style.display = "block";
+            else setTimeout(_verifyAdminAccess, 200);
+            return;
+        }
         if(!me || me.toLowerCase() !== 'minh') return;
-        // Bước 2: query Supabase xác nhận tài khoản tồn tại với đúng pass
-        // (không lưu pass admin ở client — so sánh hash)
         try {
             const r = await sb(`users?name=eq.${encodeURIComponent(me)}&select=name,pass`);
             if(!r.ok || !r.data.length) return;
-            const serverPass = r.data[0].pass;
-            // Kiểm tra pass từ wallet local có match server không
-            if(wallet.pass !== serverPass) return;
-            // Bước 3: chỉ hiện nút nếu qua hết 2 bước trên
-            const btn = document.getElementById("btn-admin");
-            if(btn) {
-                btn.style.display = "block";
-            } else {
-                // Retry sau 200ms nếu button chưa có
-                setTimeout(_verifyAdminAccess, 200);
-            }
-        } catch(e) { console.error("Admin verify error:", e); }
+            if(wallet.pass !== r.data[0].pass) return;
+            if(btn) btn.style.display = "block";
+            else setTimeout(_verifyAdminAccess, 200);
+        } catch(e) {}
     }
 
-    // Guard: kiểm tra token + username thật sự match
-    // Kể cả fake me bằng devtools vẫn không qua được vì _adminToken bind với session
     function _requireAdmin(perm=null) {
-        // Admin chính — full quyền
         if(_adminVerified && _adminToken && typeof _adminToken === 'string' && _adminToken.length >= 10) return true;
-        // Phụ admin — kiểm tra quyền cụ thể
         if(isSubAdmin()){
-            if(perm===null) return true; // không cần quyền cụ thể
+            if(perm===null) return true;
             if(hasPerm(perm)) return true;
             showToast("TỪ CHỐI","Phụ admin không có quyền này");
             return false;
@@ -1284,37 +1195,59 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         return _adminVerified && _adminToken && typeof _adminToken === 'string' && _adminToken.length >= 10;
     }
 
-    // _adminVerified và _adminToken là biến thường — bảo mật qua server-side check
-
     async function openAdmin() {
-        // Bất kể ai click nút ADMIN — đều phải xác thực
+        if(isSubAdmin()) {
+            document.getElementById("admin-view").style.display="flex";
+            const allowedTabs = [];
+            if(hasPerm('view-users')) allowedTabs.push('users');
+            if(hasPerm('cash')) allowedTabs.push('cash');
+            if(hasPerm('news')) allowedTabs.push('news');
+            if(hasPerm('broadcast')) allowedTabs.push('bc');
+            ['users','cash','news','bc','subadmin'].forEach(t => {
+                const btn = document.getElementById(`admt-${t}`);
+                if(btn) btn.style.display = (t==='subadmin' || allowedTabs.includes(t)) ? '' : 'none';
+            });
+            adminTab(allowedTabs[0] || 'users');
+            return;
+        }
         const p = await askInput("NHẬP MẬT KHẨU ADMIN:");
         if(!p) return;
         if(!_checkPass(p)) {
             sfx("err");
             showToast("⛔ SAI MẬT KHẨU","Truy cập bị từ chối", 4000);
-            // Log cảnh báo nhưng không làm gì thêm
-            console.warn("[ADMIN] Truy cập thất bại từ:", me);
             return;
         }
-        // Xác thực thành công — tạo token session
         _adminVerified = true;
         _adminToken = _genToken();
+        ['users','cash','news','bc','subadmin'].forEach(t => {
+            const btn = document.getElementById(`admt-${t}`);
+            if(btn) btn.style.display = '';
+        });
         document.getElementById("admin-view").style.display="flex";
         adminTab("users");
         setTimeout(initCustomBadgeToggle, 50);
     }
 
-    // Khi đóng admin panel — reset xác thực
     function closeAdmin() {
         _adminVerified = false;
         _adminToken = null;
         document.getElementById("admin-view").style.display="none";
+        ['users','cash','news','bc','subadmin'].forEach(t => {
+            const btn = document.getElementById(`admt-${t}`);
+            if(btn) btn.style.display = '';
+        });
     }
 
     function adminTab(tab) {
+        const permMap = {'users':'view-users','cash':'cash','news':'news','bc':'broadcast','subadmin':null};
+        const perm = permMap[tab];
+        if(!_adminVerified && isSubAdmin() && perm !== null && !hasPerm(perm)) {
+            showToast("TỪ CHỐI","Phụ admin không có quyền tab này");
+            return;
+        }
         ['users','cash','news','bc','subadmin'].forEach(t => {
-            document.getElementById(`admv-${t}`).style.display = t===tab ? 'block' : 'none';
+            const el = document.getElementById(`admv-${t}`);
+            if(el) el.style.display = t===tab ? 'block' : 'none';
             const btn = document.getElementById(`admt-${t}`);
             if(btn){ btn.style.color = t===tab ? 'white' : '#666'; btn.style.borderBottom = t===tab ? '2px solid var(--red)' : '2px solid transparent'; }
         });
@@ -1397,14 +1330,12 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         modal.style.display = 'flex';
         
         try {
-            // Lấy data từ Supabase
             const r = await sb(`users?name=eq.${encodeURIComponent(name)}&select=name,asset,pass`);
             if(!r.ok || !r.data.length) {
                 content.innerHTML = '<div style="color:red;">Không tìm thấy user</div>';
                 return;
             }
             
-            // Lấy wallet từ localStorage nếu có (để xem CP breakdown)
             let walletData = localStorage.getItem(`u_${name}`);
             let stocks = {};
             let cash = r.data[0].asset || 0;
@@ -1417,7 +1348,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                 } catch(e) {}
             }
             
-            // Render
             let html = `
                 <div style="margin-bottom:15px;">
                     <div style="font-size:12px;color:#888;margin-bottom:4px;">TÊN TÀI KHOẢN</div>
@@ -1482,7 +1412,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     }
     
 
-    // --- CASH TAB ---
     function setCashMsg(mode) {
         cashMsgMode = mode;
         ['none','preset','custom'].forEach(m => {
@@ -1501,14 +1430,12 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
 
         const finalAmount = Math.abs(amount) * sign;
 
-        // -- Ghi gift vào Supabase (CHỈ 1 lần) --
         const giftId = `gift_${user}_${Date.now()}_${Math.random().toString(36).substr(2,4)}`;
         const gr = await sb("gifts","POST",{id:giftId, to:user, amount:finalAmount});
         if(!gr.ok && gr.status!==201 && gr.status!==200 && gr.status!==204) {
             return showToast("LỖI","Ghi thất bại: "+gr.status);
         }
 
-        // -- Gửi mail thông báo (CHỈ 1 lần, chỉ khi cashMsgMode !== none) --
         if(cashMsgMode !== 'none') {
             let msgTitle = '', msgBody = '';
             if(cashMsgMode === 'preset') {
@@ -1536,13 +1463,10 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const amount = parseFloat(document.getElementById("cash-set-amount").value);
         if(!user) return showToast("LỖI","Chưa chọn user");
         if(isNaN(amount)||amount<0) return showToast("LỖI","Số tiền không hợp lệ");
-        // Bước 1: Lấy asset hiện tại của user từ Supabase
         const chk = await sb(`users?name=eq.${encodeURIComponent(user)}&select=name,asset`);
         if(!chk.ok || !chk.data.length) return showToast("LỖI","Không tìm thấy user");
-        // Bước 2: Ghi gift với flag SET bằng cách dùng amount = -(1e9 + target)
-        // Client sẽ decode: nếu amount < -999999000 → SET signal
         const MAGIC = -1000000000;
-        const magic = MAGIC - amount; // VD set 250 → -1000000250
+        const magic = MAGIC - amount;
         const giftId = `setbal_${user}_${Date.now()}_${Math.random().toString(36).substr(2,4)}`;
         const r = await sb("gifts","POST",{id:giftId, to:user, amount:magic});
         if(r.ok||r.status===201||r.status===200||r.status===204){
@@ -1577,7 +1501,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         if(!qty||qty<=0) return showToast("LỖI","Số CP không hợp lệ");
         const c = await askInput(`Xóa ${qty} CP ${code} của ${user}? Gõ OK:`);
         if(c !== 'OK') return;
-        // Dùng số âm để trừ CP
         const giftId = `STK_${code}_${-qty}_${user}_${Date.now()}`;
         const r = await sb("gifts","POST",{id:giftId, to:user, amount:0});
         if(r.ok||r.status===201||r.status===200||r.status===204){
@@ -1597,7 +1520,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         }
     }
 
-    // --- NEWS TAB ---
     function renderAdminNews() {
         const el = document.getElementById("admin-news-list");
         if(!news.length){el.innerHTML="<div style='color:#555;font-size:12px;padding:5px;'>Chưa có tin tức</div>";return;}
@@ -1611,8 +1533,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         }).join('');
     }
 
-    // Toggle hiện/ẩn badge CUSTOM
-    let showCustomBadge = localStorage.getItem('_showCustomBadge') !== '0'; // mặc định BẬT
+    let showCustomBadge = localStorage.getItem('_showCustomBadge') !== '0';
     function toggleCustomBadge() {
         if(!_requireAdmin()) return;
         showCustomBadge = !showCustomBadge;
@@ -1632,12 +1553,11 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         else { btn.style.background='#333'; dot.style.left='2px'; dot.style.background='#666'; }
     }
 
-    // Khi click 1 tin trong tab news → ticker nhảy tới tin đó
     function jumpToTickerNews(newsId){
         const idx = news.findIndex(n => n.id === newsId);
         if(idx === -1) return;
         tickIdx = idx;
-        tick(); // hiện ngay
+        tick();
     }
 
     function setNewsSentiment(impact, vol, dur) {
@@ -1650,7 +1570,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     function toggleChip(el) {
         const isActive = el.style.background !== 'rgb(17, 17, 17)' && el.style.background !== '#111' && el.style.background !== '';
         if(el.dataset.code === 'ALL') {
-            // Chọn tất cả hoặc bỏ tất cả
             const chips = document.querySelectorAll('.stock-chip:not([data-code="ALL"])');
             const allSelected = !isActive;
             chips.forEach(c => {
@@ -1665,7 +1584,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             el.style.background = isActive ? '#111' : '#1a3a1a';
             el.style.borderColor = isActive ? '#444' : 'var(--green)';
             el.style.color = isActive ? '#888' : 'var(--green)';
-            // Bỏ chọn "TẤT CẢ" nếu bỏ 1 cái
             const allChip = document.querySelector('.stock-chip[data-code="ALL"]');
             if(isActive && allChip) { allChip.style.background='#111'; allChip.style.borderColor='#555'; allChip.style.color='#888'; }
         }
@@ -1713,18 +1631,14 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                 throw new Error("Không có nội dung");
             }
         } catch(e) {
-            // Fallback: random từ news.json hoặc template
             const stocks = getSelectedChips();
             const sentVal = document.getElementById("news-sentiment-select").value;
             
-            // Nếu có news.json → pick random từ đó
             if(newsDbLoaded && newsDb.length > 0) {
-                // Filter by sentiment nếu có
                 let pool = newsDb;
                 if(sentVal === '1') pool = newsDb.filter(n => n.b > 0);
                 else if(sentVal === '-1') pool = newsDb.filter(n => n.b < 0);
                 
-                // Filter by stocks nếu có
                 if(stocks.length > 0) {
                     const filtered = pool.filter(n => !n.stocks || n.stocks.length === 0 || n.stocks.some(s => stocks.includes(s)));
                     if(filtered.length > 0) pool = filtered;
@@ -1737,7 +1651,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                 document.getElementById("news-dur-val").value = pick.d || 10;
                 showToast("AI (Random)", "Lấy tin từ news.json");
             } else {
-                // Fallback templates cứng
                 const fallbackPos = [
                     "Dòng tiền ngoại đổ mạnh vào thị trường phiên sáng",
                     "Thanh khoản cải thiện rõ, nhà đầu tư lạc quan trở lại",
@@ -1815,7 +1728,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         showToast("THÔNG BÁO","Đã xóa tất cả tin tức");
     }
 
-    // --- BROADCAST ---
     let bcAnon = false;
     function toggleBcAnon(){
         if(!_requireAdmin()) return;
@@ -1835,7 +1747,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         document.getElementById("bc-body").value="";
     }
 
-    // --- CRASH EVENT ---
     function toggleCrashChip(el){
         const isActive = el.style.background !== '#111' && el.style.background !== 'rgb(17, 17, 17)';
         el.style.background = isActive ? '#111' : '#3a0000';
@@ -1874,7 +1785,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             if(resp.ok){ const j=await resp.json(); newsTitle=(j.content?.[0]?.text||'').trim().replace(/^["'""]/,'').replace(/["'""]$/,''); }
         } catch(e){}
         
-        // Fallback crash news templates
         if(!newsTitle){
             const pool = [
                 "KHỦNG HOẢNG: Làn sóng bán tháo nhấn chìm toàn bộ thị trường chứng khoán",
@@ -1890,11 +1800,9 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             if(stocks.length > 0) newsTitle = `[${stocks[0]}] ` + newsTitle;
         }
         
-        // Push news với tác động cực mạnh và thời gian dài
-        const duration = Math.max(mins, 20); // tối thiểu 20 phút
+        const duration = Math.max(mins, 20);
         pushNews({ t: newsTitle, b: -Math.max(pct, 60), v: 60, d: duration, stocks, isCustom: true });
         
-        // Cũng kích hoạt crash event luôn
         const randomDur = duration * (0.8 + Math.random()*0.4) * 60000;
         crashEvent = { stocks, magnitude: (100-Math.max(pct,50))/100, endsAt: Date.now()+randomDur };
         updateCrashStatus();
@@ -1907,7 +1815,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         if(!_requireAdmin()) return;
         const pct = parseFloat(document.getElementById("crash-magnitude").value)||30;
         const mins = parseFloat(document.getElementById("crash-duration").value)||5;
-        const randomDur = (mins * 0.5 + Math.random() * mins * 0.5) * 60000; // random 50-100% thời gian
+        const randomDur = (mins * 0.5 + Math.random() * mins * 0.5) * 60000;
         const stocks = getSelectedCrashStocks();
         crashEvent = {
             stocks,
@@ -1917,7 +1825,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const label = stocks.length===0 ? 'toàn thị trường' : stocks.join(', ');
         const actualMins = Math.round(randomDur/60000*10)/10;
         showToast("⚠️ SỰ KIỆN","Sụt giá "+pct+"% — "+label+" trong ~"+actualMins+"p");
-        // Đẩy tin tức crash
         pushNews({t:`THỊ TRƯỜNG SỤT GIÁ: ${label} giảm mạnh ${pct}%`, b:-pct, v:30, d:actualMins, stocks, isCustom:true});
         updateCrashStatus();
     }
@@ -1938,7 +1845,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     }
     setInterval(updateCrashStatus, 1000);
 
-    // --- USER DROPDOWN cho cash tab ---
     function showUserDropdown() {
         if(!_requireAdmin()) return;
         if(!allUsersCache.length){
@@ -1962,7 +1868,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                 <span style="font-weight:bold;">${u.name}</span>
                 <span style="color:#00ff88;font-size:11px;margin-left:8px;">$${safeFloat(u.asset).toLocaleString(undefined,{maximumFractionDigits:0})}</span>
             </div>`).join('');
-        // Đóng dropdown khi click ra ngoài
         setTimeout(()=>{ document.addEventListener('click', closeCashDropdown, {once:true}); }, 0);
     }
     function closeCashDropdown(e) {
@@ -1974,7 +1879,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         document.getElementById("cash-user-dropdown").style.display='none';
     }
 
-    // --- PHỤ ADMIN ---
     let subAdminList = JSON.parse(localStorage.getItem('_subAdmins')||'[]');
     let subAdminSystemOn = localStorage.getItem('_subAdminSys') === '1';
     let subAdminPerms = JSON.parse(localStorage.getItem('_subAdminPerms')||'{"view-users":true,"cash":false,"news":false,"broadcast":false,"ban":false}');
@@ -2000,9 +1904,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         });
     }
     function hasPerm(perm) {
-        // Admin chính luôn có tất cả quyền
         if(_adminVerified) return true;
-        // Phụ admin kiểm tra quyền
         if(isSubAdmin()) return subAdminPerms[perm] === true;
         return false;
     }
@@ -2040,7 +1942,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const q = (document.getElementById("subadmin-name-inp").value||'').toLowerCase();
         const dd = document.getElementById("subadmin-name-dropdown");
         if(!allUsersCache.length){
-            // Load nếu chưa có
             sb("users?select=name,asset&order=asset.desc").then(r=>{
                 allUsersCache=r.data||[];
                 filterSubAdminInput();
@@ -2102,9 +2003,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         }
     }
 
-    // ============================================================
-    // BANKRUPTCY & ACCOUNT UTILS
-    // ============================================================
     function checkBankruptcy() {
         if(!data.length) return;
         let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*Math.max(0,s.price);});
@@ -2128,9 +2026,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         showToast("THÀNH CÔNG","Đã đổi mật khẩu!"); logout();
     }
 
-    // ============================================================
-    // TRADE
-    // ============================================================
     try{
         const tradeAmountEl = document.getElementById("trade-amount");
         if(!tradeAmountEl) throw new Error("trade-amount not found");
@@ -2145,12 +2040,9 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const s=data.find(x=>x.code===sel);
         if(!s) return showToast("LỖI","Không tìm thấy cổ phiếu");
 
-        // CHẶN TUYỆT ĐỐI: giá < $1 → không cho làm gì cả (mua lẫn bán)
-        // Tránh exploit: mua giá âm = cộng tiền, bán giá âm = trừ tiền
         if(s.price < 1) return showToast("⛔ THỊ TRƯỜNG ĐÓNG CỬA",`${sel} đang dưới $1 (hiện $${s.price.toFixed(2)}), giao dịch bị đình chỉ!`);
 
-        // Giá phải dương và hợp lệ
-        const price = s.price; // đã chắc chắn >= 1
+        const price = s.price;
         const cost  = qty * price;
         if(isNaN(cost) || cost <= 0) return showToast("LỖI","Lỗi tính toán");
 
@@ -2163,14 +2055,11 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             const owned = safeFloat(wallet.stocks[sel]);
             if(qty > owned) return showToast("LỖI",`Chỉ có ${owned.toFixed(0)} CP`);
             wallet.stocks[sel] = owned - qty;
-            wallet.cash = safeFloat(wallet.cash) + cost; // cost luôn dương vì price >= 1
+            wallet.cash = safeFloat(wallet.cash) + cost;
         }
         sfx('ok'); localStorage.setItem(`u_${me}`,JSON.stringify(wallet)); syncNow();
     }
 
-    // ============================================================
-    // CHART & RENDER
-    // ============================================================
     function renderList() {
         const div=document.getElementById("list");
         if(!div) return;
@@ -2209,9 +2098,8 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             });
         }
     }
-    // ─── NEWS ENGINE ───────────────────────────────────────────────
-    let newsDb = [];        // tin từ GitHub JSON
-    let activeNewsEvents = []; // tin đang tác động (có timer)
+    let newsDb = [];       
+    let activeNewsEvents = [];
     let newsDbLoaded = false;
 
     async function loadNewsDb() {
@@ -2240,31 +2128,29 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const n = {
             id: now + '_' + Math.random().toString(36).substr(2,4),
             t: item.t,
-            b: item.b || 0,         // tác động % (+ tốt, - xấu)
-            v: item.v || 5,         // volatility thêm
-            d: item.d || 10,        // thời gian tác động (phút)
+            b: item.b || 0,        
+            v: item.v || 5,        
+            d: item.d || 10,       
             stocks: item.stocks || [],
             time: new Date().toLocaleTimeString(),
             expiresAt: now + (item.d || 10) * 60 * 1000,
             isCustom: item.isCustom || false,
             aiGen: item.aiGen || false,
         };
-        // Thêm vào active events nếu có tác động
         if(n.b !== 0 || n.v !== 5) {
             activeNewsEvents.unshift(n);
             if(activeNewsEvents.length > 10) activeNewsEvents.pop();
         }
         news.unshift(n);
         if(news.length > 30) news.pop();
-        tickIdx = 0; // Reset về tin mới nhất
+        tickIdx = 0;
         if(activeTab==='news'){
             renderNewsPage();
             setTimeout(()=>highlightTickerNews(n.id), 30);
         }
-        tick(); // Cập nhật ticker ngay
+        tick();
     }
 
-    // Tick đếm thời gian và loại bỏ tin hết hạn
     function cleanExpiredNews() {
         const now = Date.now();
         activeNewsEvents = activeNewsEvents.filter(n => n.expiresAt > now);
@@ -2280,7 +2166,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             const impactColor = impact > 0 ? 'var(--green)' : impact < 0 ? 'var(--red)' : '#666';
             const impactLabel = impact > 10 ? 'RẤT TÍCH CỰC' : impact > 0 ? 'TÍCH CỰC' : impact < -10 ? 'RẤT TIÊU CỰC' : impact < 0 ? 'TIÊU CỰC' : 'THỊ TRƯỜNG';
             const impactSign = impact > 0 ? '+' : '';
-            // Timer đếm ngược
             let timerHTML = '';
             if(n.expiresAt) {
                 const remaining = Math.max(0, n.expiresAt - now);
@@ -2302,11 +2187,9 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                     timerHTML = `<div style="font-size:9px;color:#444;margin-top:4px;">Đã hết tác động</div>`;
                 }
             }
-            // Stock tags
             const stockTags = (n.stocks && n.stocks.length > 0)
                 ? n.stocks.map(s => `<span style="font-size:9px;background:#1a2a1a;color:var(--green);padding:1px 5px;border-radius:3px;margin-right:3px;border:1px solid #2a4a2a;">${s}</span>`).join('')
                 : '';
-            // Badges — CUSTOM chỉ hiện nếu admin bật toggle
             const badges = [
                 n.aiGen ? `<span style="font-size:8px;background:#1a1a3a;color:#7777ff;padding:1px 4px;border-radius:2px;">AI</span>` : '',
                 (n.isCustom && showCustomBadge) ? `<span style="font-size:8px;background:#2a1a00;color:var(--gold);padding:1px 4px;border-radius:2px;">CUSTOM</span>` : '',
@@ -2335,31 +2218,26 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const n = news[tickIdx];
         currentTickNewsId = n.id;
 
-        // Cập nhật ticker dưới biểu đồ
         const el = document.getElementById("mini-news-ticker");
         if(el){
             el.innerText = n.t;
             el.className = `mini-news ${n.b>0?'pos':n.b<0?'neg':''}`;
         }
 
-        // Nếu đang ở tab tin tức → highlight tin đang chạy ở ticker
         if(activeTab==='news') highlightTickerNews(n.id);
 
         tickIdx++;
     }
 
     function highlightTickerNews(newsId){
-        // Bỏ highlight cũ
         document.querySelectorAll('.news-card').forEach(c => {
             c.style.outline = 'none';
             c.style.boxShadow = 'none';
         });
-        // Highlight card đang chạy ở ticker
         const card = document.querySelector(`.news-card[data-id="${newsId}"]`);
         if(card){
             card.style.outline = '1px solid #555';
             card.style.boxShadow = '0 0 8px rgba(255,255,255,0.05)';
-            // Scroll vào view nếu cần
             card.scrollIntoView({behavior:'smooth', block:'nearest'});
         }
     }
@@ -2373,7 +2251,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         document.getElementById("d-price").innerText = s.price.toFixed(2);
         document.getElementById("d-price").style.color = bankrupt ? '#ff4444' : (up ? "var(--green)" : "var(--red)");
         document.getElementById("d-owned").innerText = (wallet.stocks[sel]||0).toFixed(0);
-        // Bankrupt banner
         let banner = document.getElementById("bankrupt-banner");
         if(!banner){
             banner = document.createElement("div");
@@ -2406,7 +2283,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         ctx.font="10px monospace"; ctx.textAlign="right"; ctx.lineWidth=1;
         for(let v=startY;v<=max;v+=step){
             const y=gy(v);
-            // Đường zero nổi bật hơn
             if(Math.abs(v)<step*0.01){ ctx.strokeStyle="#555"; ctx.lineWidth=1.5; }
             else { ctx.strokeStyle="#1a1a1a"; ctx.lineWidth=1; }
             ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
@@ -2414,7 +2290,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             ctx.fillStyle = v<0 ? "#ff6666" : v===0 ? "#888" : "#555";
             ctx.fillText(v.toFixed(step<1?2:0),W-5,y-2);
         }
-        // Vẽ đường zero riêng nếu range âm dương
         if(min<0 && max>0){
             const zy=gy(0);
             ctx.strokeStyle="#444"; ctx.lineWidth=1; ctx.setLineDash([4,4]);
@@ -2431,9 +2306,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         ctx.fillStyle=lastColor; ctx.fillRect(W-lblW,ly-8,lblW,16); ctx.fillStyle="black"; ctx.fillText(lastTxt,W-2,ly+3);
     }
 
-    // ============================================================
-    // UTILS
-    // ============================================================
     function tab(id){
         document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden'));
         document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
@@ -2444,7 +2316,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         if(id==='rank') getRank();
         if(id==='news'){
             renderNewsPage();
-            // Highlight tin đang chạy ở ticker ngay sau khi render
             setTimeout(()=>{ if(currentTickNewsId) highlightTickerNews(currentTickNewsId); }, 50);
         }
     }
@@ -2453,7 +2324,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     function changeChartType(){chartType=document.getElementById("chart-type-select").value;localStorage.setItem("chart_type",chartType);if(sel)draw();}
     function openSettings(){document.getElementById("settings-modal").style.display='flex';}
 
-    // Export hàm ra window bằng cách an toàn — dùng eval để tránh ReferenceError
     ['unlockAudio','auth','trade','openAdmin','closeAdmin','adminTab','doGrantCash',
      'doSetCash','doGrantStock','sendP2PMail','openMail','closeMail','openSettings',
      'logout','forgotPass','changePassword','toggleBGM','changeChartType','openDetail',
