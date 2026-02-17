@@ -47,7 +47,8 @@
         .mail-subject { font-size: 13px; color: #ccc; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         #mail-detail, #compose-modal, #custom-prompt { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; flex-direction: column; justify-content:center; align-items:center; }
         #mail-detail { background: #101010; justify-content: flex-start; z-index: 3000; }
-        #compose-modal { background: #101010; justify-content: flex-start; z-index: 3000; }
+        #compose-modal { background: rgba(0,0,0,0.6); backdrop-filter:blur(4px); justify-content: flex-end; z-index: 3000; padding: 0; }
+        #compose-inner { background:#111; border-radius:20px 20px 0 0; width:100%; max-width:600px; margin:0 auto; padding:20px; padding-bottom:30px; max-height:90vh; overflow-y:auto; }
         .modal-box { background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
         .modal-title { font-weight: bold; margin-bottom: 10px; color: var(--green); font-size: 16px; }
         .modal-btn { width: 100%; padding: 10px; background: #444; border: none; border-radius: 6px; color: white; font-weight: bold; margin-top: 5px; }
@@ -62,8 +63,8 @@
         .toast-progress { height: 3px; background: var(--green); width: 100%; position: absolute; bottom: 0; left: 0; animation: timeRun linear forwards; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @keyframes timeRun { from { width: 100%; } to { width: 0%; } }
-        #detail-view { position: fixed; bottom: 25px; left: 0; right: 0; height: 55%; background: #101010; border-top: 1px solid var(--green); box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 2000; display: flex; flex-direction: column; transform: translateY(110%); transition: transform 0.3s; }
-        #detail-view.active { transform: translateY(0); }
+        #detail-view { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(110%); width: 100%; max-width: 700px; height: 58%; background: #101010; border-top: 1px solid var(--green); border-left: 1px solid #222; border-right: 1px solid #222; border-radius: 16px 16px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.7); z-index: 2000; display: flex; flex-direction: column; transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+        #detail-view.active { transform: translateX(-50%) translateY(0); }
         .chart-header { padding:10px 15px; display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; border-bottom:1px solid #333; }
         .chart-container { flex:1; width:100%; position:relative; background: #080808; overflow: hidden; }
         canvas { display:block; width:100%; height:100%; }
@@ -128,12 +129,10 @@
         <div class="tab-btn" onclick="tab('rank')">XẾP HẠNG</div>
     </div>
     <div id="tab-market" class="view-content"><div id="list"></div></div>
-    <div id="tab-mail" class="view-content hidden">
-        <div style="padding:10px;">
-            <button onclick="openCompose()" style="width:100%; background:#333; color:white; border:1px solid #444; padding:10px; border-radius:5px; font-weight:bold;">+ SOẠN THƯ ($10)</button>
-        </div>
+    <div id="tab-mail" class="view-content hidden" style="position:relative;">
         <div id="mail-list"></div>
         <div style="text-align:center; padding:20px; color:#444; font-size:12px;" id="empty-mail">Hòm thư trống</div>
+        <button onclick="openCompose()" title="Soạn thư ($10)" style="position:fixed;bottom:80px;right:20px;width:52px;height:52px;border-radius:50%;background:var(--blue);color:white;border:none;font-size:26px;font-weight:300;cursor:pointer;box-shadow:0 4px 16px rgba(31,111,235,0.5);z-index:1500;display:none;align-items:center;justify-content:center;line-height:1;" id="fab-compose">+</button>
     </div>
     <div id="tab-news" class="view-content hidden"><div id="news-list" style="padding:10px;"></div></div>
     <div id="tab-rank" class="view-content hidden"><div id="rank-list" style="padding:10px;"></div></div>
@@ -165,40 +164,43 @@
     <div class="mail-body" id="mail-body-content"></div>
 </div>
 
-<div id="compose-modal">
-    <div class="mail-header">
-        <button onclick="closeCompose()" style="background:none; border:none; color:white; font-size:20px;">✕</button>
-        <div style="font-weight:bold;">Soạn thư mới</div>
-        <div style="width:20px;"></div>
-    </div>
-    <div style="padding:20px;">
-        <div style="position:relative; margin-bottom:10px;">
-            <input type="text" id="mail-to" placeholder="Người nhận (gõ tên...)" autocomplete="off"
-                oninput="filterMailTo()" onfocus="filterMailTo()"
-                style="margin-bottom:0;">
+<div id="compose-modal" onclick="if(event.target.id==='compose-modal')closeCompose()">
+    <div id="compose-inner">
+        <div style="width:36px;height:4px;background:#333;border-radius:2px;margin:0 auto 16px;"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div style="font-size:16px;font-weight:bold;color:white;">✉️ Soạn thư mới</div>
+            <button onclick="closeCompose()" style="background:#222;border:none;color:#888;width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+        <div style="position:relative;margin-bottom:10px;">
+            <label style="font-size:10px;color:#555;font-weight:bold;display:block;margin-bottom:4px;">NGƯỜI NHẬN</label>
+            <input type="text" id="mail-to" placeholder="Gõ tên..." autocomplete="off" oninput="filterMailTo()" onfocus="filterMailTo()" style="margin-bottom:0;background:#1a1a1a;border-color:#333;">
             <div id="mail-to-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #444;border-top:none;border-radius:0 0 6px 6px;max-height:160px;overflow-y:auto;z-index:200;"></div>
         </div>
-        <input type="text" id="mail-subj" placeholder="Tiêu đề" style="margin-bottom:10px;">
-        <textarea id="mail-content" placeholder="Nội dung..." style="height:100px; margin-bottom:10px;resize:none;"></textarea>
-        
-        <!-- P2P MONEY TRANSFER -->
-        <div style="background:#0f1a1a;border:1px solid #1a3a3a;border-radius:6px;padding:10px;margin-bottom:8px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <span style="font-size:11px;color:#888;font-weight:bold;">💵 Kèm tiền</span>
-                <input type="checkbox" id="attach-money-toggle" onchange="toggleAttachMoney()" style="width:auto;">
-            </div>
-            <div id="attach-money-panel" style="display:none;">
-                <div style="display:flex;gap:8px;margin-bottom:4px;">
-                    <input type="number" id="mail-money-amount" placeholder="Số tiền (tối đa $100)" min="1" max="100" step="0.01" oninput="updateAttachMoneyInfo()" style="flex:1;margin-bottom:0;font-size:12px;">
+        <div style="margin-bottom:10px;">
+            <label style="font-size:10px;color:#555;font-weight:bold;display:block;margin-bottom:4px;">TIÊU ĐỀ</label>
+            <input type="text" id="mail-subj" placeholder="Nhập tiêu đề..." style="margin-bottom:0;background:#1a1a1a;border-color:#333;">
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size:10px;color:#555;font-weight:bold;display:block;margin-bottom:4px;">NỘI DUNG</label>
+            <textarea id="mail-content" placeholder="Nhập nội dung..." style="height:90px;resize:none;background:#1a1a1a;border-color:#333;margin-bottom:0;"></textarea>
+        </div>
+        <div style="background:#0d1a1a;border:1px solid #1a3030;border-radius:10px;padding:12px;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0;">
+                <div>
+                    <div style="font-size:12px;color:#4af;font-weight:bold;">💵 Kèm tiền mặt</div>
+                    <div style="font-size:10px;color:#555;margin-top:2px;">Tối đa $100 · Cooldown 1 tiếng</div>
                 </div>
-                <div id="attach-money-info" style="font-size:10px;color:#555;margin-top:4px;"></div>
+                <input type="checkbox" id="attach-money-toggle" onchange="toggleAttachMoney()" style="width:auto;transform:scale(1.3);">
+            </div>
+            <div id="attach-money-panel" style="display:none;margin-top:10px;">
+                <input type="number" id="mail-money-amount" placeholder="$0.00" min="0.01" max="100" step="0.01" oninput="updateAttachMoneyInfo()" style="margin-bottom:4px;background:#111;border-color:#1a3030;font-size:16px;font-weight:bold;text-align:center;">
+                <div id="attach-money-info" style="font-size:10px;color:#555;text-align:center;"></div>
             </div>
         </div>
-        
-
-        
-        <div style="font-size:11px; color:#666; margin-bottom:12px;">Phí gửi: $10 · Số dư: <span id="compose-balance">--</span></div>
-        <button onclick="sendP2PMail()" style="width:100%; background:var(--blue); color:white; padding:12px; border:none; border-radius:5px; font-weight:bold;">GỬI THƯ</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-size:11px;color:#555;">Phí gửi: $10 · Số dư: <span id="compose-balance" style="color:#4af;">--</span></div>
+        </div>
+        <button onclick="sendP2PMail()" style="width:100%;padding:14px;background:var(--blue);color:white;border:none;border-radius:10px;font-weight:bold;font-size:15px;letter-spacing:0.5px;">GỬI THƯ →</button>
     </div>
 </div>
 
@@ -224,7 +226,7 @@
         <div style="color:#ff3b3b; font-weight:900; font-size:14px; letter-spacing:2px;">🛠️ ADMIN PANEL</div>
         <button onclick="closeAdmin()" style="background:#333;color:white;border:none;padding:6px 12px;border-radius:4px;font-weight:bold;">✕ ĐÓNG</button>
     </div>
-    <!-- ADMIN TABS -->
+    
     <div style="display:flex; background:#111; border-bottom:1px solid #333;">
         <div class="adm-tab active" id="admt-users" onclick="adminTab('users')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:white;border-bottom:2px solid var(--red);cursor:pointer;">USERS</div>
         <div class="adm-tab" id="admt-cash" onclick="adminTab('cash')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:#666;border-bottom:2px solid transparent;cursor:pointer;">TIỀN</div>
@@ -234,7 +236,7 @@
     </div>
     <div style="flex:1; overflow-y:auto; padding:15px;">
 
-        <!-- TAB: USERS -->
+        
         <div id="admv-users">
             <div style="display:flex;gap:8px;margin-bottom:10px;">
                 <button onclick="loadAdminUsers()" style="flex:1;padding:10px;background:#333;color:white;border:none;border-radius:6px;font-weight:bold;">Làm mới</button>
@@ -244,7 +246,7 @@
             <div id="admin-user-list" style="background:#0a0a0a;border-radius:8px;overflow:auto;max-height:60vh;"></div>
         </div>
 
-        <!-- TAB: TIỀN -->
+        
         <div id="admv-cash" style="display:none;">
             <div style="background:#0a0a0a;border-radius:8px;padding:15px;margin-bottom:10px;">
                 <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">CHỌN USER</div>
@@ -305,11 +307,11 @@
             </div>
         </div>
 
-        <!-- TAB: TIN TỨC -->
+        
         <div id="admv-news" style="display:none;">
             <div style="background:#0a0a0a;border-radius:8px;padding:15px;margin-bottom:10px;">
 
-                <!-- Toggle hiện badge CUSTOM -->
+                
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px;background:#111;border-radius:6px;">
                     <span style="font-size:11px;color:#888;">Hiện nhãn <span style="color:var(--gold);font-weight:bold;">CUSTOM</span> trên tin</span>
                     <div onclick="toggleCustomBadge()" id="custom-badge-btn" style="width:40px;height:20px;background:#333;border-radius:10px;cursor:pointer;position:relative;transition:0.2s;">
@@ -325,7 +327,7 @@
                     <button id="ai-news-btn" onclick="generateAINews()" style="position:absolute;right:6px;top:6px;padding:5px 8px;background:#1a1a3a;color:#7777ff;border:1px solid #3333aa;border-radius:5px;font-size:11px;font-weight:bold;white-space:nowrap;">✨ AI Tạo tin</button>
                 </div>
 
-                <!-- Tác động số -->
+                
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
                     <div>
                         <div style="color:#888;font-size:10px;font-weight:bold;margin-bottom:4px;">TÁC ĐỘNG (%)</div>
@@ -344,16 +346,16 @@
                     </div>
                 </div>
 
-                <!-- Preset sentiment -->
+                
                 <div style="display:flex;gap:6px;margin-bottom:10px;">
                     <button onclick="setNewsSentiment(15,8,10)" style="flex:1;padding:7px;background:#0f3318;color:var(--green);border:1px solid #238636;border-radius:6px;font-size:11px;font-weight:bold;">+15 Tích cực</button>
                     <button onclick="setNewsSentiment(0,3,5)" style="flex:1;padding:7px;background:#1a1a1a;color:#aaa;border:1px solid #444;border-radius:6px;font-size:11px;font-weight:bold;">0 Trung lập</button>
                     <button onclick="setNewsSentiment(-15,8,10)" style="flex:1;padding:7px;background:#3a0f0f;color:var(--red);border:1px solid #da3633;border-radius:6px;font-size:11px;font-weight:bold;">-15 Tiêu cực</button>
                 </div>
 
-                <!-- Chọn doanh nghiệp -->
+                
                 <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">DOANH NGHIỆP BỊ ẢNH HƯỞNG</div>
-                <!-- AI sentiment select (ẩn, dùng cho AI) -->
+                
                 <select id="news-sentiment-select" style="display:none;">
                     <option value="1">Tích cực</option>
                     <option value="0">Trung lập</option>
@@ -377,10 +379,10 @@
             </div>
         </div>
 
-        <!-- TAB: PHÁT LOA -->
+        
         <div id="admv-bc" style="display:none;">
             <div style="background:#0a0a0a;border-radius:8px;padding:15px;margin-bottom:10px;">
-                <!-- Ẩn danh toggle -->
+                
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px;background:#111;border-radius:6px;">
                     <span style="font-size:11px;color:#888;">Gửi <span style="color:#aaa;font-weight:bold;">ẩn danh</span> (từ "Hệ thống")</span>
                     <div onclick="toggleBcAnon()" id="bc-anon-btn" style="width:40px;height:20px;background:#333;border-radius:10px;cursor:pointer;position:relative;transition:0.2s;">
@@ -393,7 +395,7 @@
                 <textarea id="bc-body" placeholder="Nội dung thông báo toàn server..." style="height:80px;resize:none;margin-bottom:10px;"></textarea>
                 <button onclick="adminBroadcast()" style="width:100%;padding:12px;background:#ff3b3b;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">PHÁT LOA TOÀN SERVER</button>
             </div>
-            <!-- CRASH EVENT -->
+            
             <div style="background:#0a0a0a;border-radius:8px;padding:15px;border:1px solid #3a0000;">
                 <div style="color:#ff3b3b;font-size:11px;font-weight:bold;margin-bottom:10px;">⚠️ SỰ KIỆN SỤT GIÁ</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
@@ -427,10 +429,8 @@
             </div>
         </div>
 
-        <!-- TAB: PHỤ ADMIN -->
         <div id="admv-subadmin" style="display:none;">
             <div style="background:#0a0a0a;border-radius:8px;padding:15px;margin-bottom:10px;">
-                <!-- Toggle hệ thống -->
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                     <div style="color:#888;font-size:11px;font-weight:bold;">DANH SÁCH PHỤ ADMIN</div>
                     <div style="display:flex;align-items:center;gap:8px;">
@@ -440,9 +440,7 @@
                         </div>
                     </div>
                 </div>
-                <!-- Danh sách -->
-                <div id="subadmin-list" style="margin-bottom:10px;min-height:40px;background:#111;border-radius:6px;padding:8px;max-height:200px;overflow-y:auto;"></div>
-                <!-- Thêm phụ admin -->
+                <div id="subadmin-list" style="margin-bottom:10px;min-height:40px;background:#111;border-radius:6px;padding:8px;max-height:220px;overflow-y:auto;"></div>
                 <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">THÊM PHỤ ADMIN</div>
                 <div style="display:flex;gap:8px;margin-bottom:12px;">
                     <div style="flex:1;position:relative;">
@@ -453,29 +451,33 @@
                     </div>
                     <button onclick="addSubAdmin()" style="padding:8px 12px;background:#1f6feb;color:white;border:none;border-radius:6px;font-weight:bold;white-space:nowrap;">THÊM</button>
                 </div>
-                <!-- Phân quyền mặc định -->
-                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:8px;">QUYỀN MẶC ĐỊNH (áp dụng cho tất cả phụ admin)</div>
-                <div id="perm-list" style="background:#111;border-radius:6px;padding:10px;display:flex;flex-direction:column;gap:8px;">
-                    <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
-                        <span style="font-size:12px;color:#ccc;">Xem danh sách user</span>
-                        <input type="checkbox" id="perm-view-users" checked onchange="savePerms()" style="width:auto;">
-                    </label>
-                    <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
-                        <span style="font-size:12px;color:#ccc;">Tặng / thu tiền</span>
-                        <input type="checkbox" id="perm-cash" onchange="savePerms()" style="width:auto;">
-                    </label>
-                    <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
-                        <span style="font-size:12px;color:#ccc;">Thêm tin tức</span>
-                        <input type="checkbox" id="perm-news" onchange="savePerms()" style="width:auto;">
-                    </label>
-                    <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
-                        <span style="font-size:12px;color:#ccc;">Phát loa toàn server</span>
-                        <input type="checkbox" id="perm-broadcast" onchange="savePerms()" style="width:auto;">
-                    </label>
-                    <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
-                        <span style="font-size:12px;color:#ccc;">Ban user</span>
-                        <input type="checkbox" id="perm-ban" onchange="savePerms()" style="width:auto;">
-                    </label>
+                <div id="perm-panel" style="display:none;background:#111;border-radius:8px;padding:12px;border:1px solid #333;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                        <div style="font-size:12px;color:#4af;font-weight:bold;">⚙️ Quyền của: <span id="perm-editing-name" style="color:white;"></span></div>
+                        <button onclick="document.getElementById('perm-panel').style.display='none'" style="background:none;border:none;color:#555;font-size:18px;cursor:pointer;">✕</button>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                            <span style="font-size:12px;color:#ccc;">👁 Xem danh sách user</span>
+                            <input type="checkbox" id="perm-view-users" onchange="savePerms()" style="width:auto;transform:scale(1.2);">
+                        </label>
+                        <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                            <span style="font-size:12px;color:#ccc;">💰 Tặng / thu tiền</span>
+                            <input type="checkbox" id="perm-cash" onchange="savePerms()" style="width:auto;transform:scale(1.2);">
+                        </label>
+                        <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                            <span style="font-size:12px;color:#ccc;">📰 Thêm tin tức</span>
+                            <input type="checkbox" id="perm-news" onchange="savePerms()" style="width:auto;transform:scale(1.2);">
+                        </label>
+                        <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                            <span style="font-size:12px;color:#ccc;">📢 Phát loa toàn server</span>
+                            <input type="checkbox" id="perm-broadcast" onchange="savePerms()" style="width:auto;transform:scale(1.2);">
+                        </label>
+                        <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                            <span style="font-size:12px;color:#ccc;">🔨 Ban user</span>
+                            <input type="checkbox" id="perm-ban" onchange="savePerms()" style="width:auto;transform:scale(1.2);">
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1881,31 +1883,49 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
 
     let subAdminList = JSON.parse(localStorage.getItem('_subAdmins')||'[]');
     let subAdminSystemOn = localStorage.getItem('_subAdminSys') === '1';
-    let subAdminPerms = JSON.parse(localStorage.getItem('_subAdminPerms')||'{"view-users":true,"cash":false,"news":false,"broadcast":false,"ban":false}');
+    let subAdminPermsGlobal = {'view-users':true,'cash':false,'news':false,'broadcast':false,'ban':false};
+    let subAdminPermsMap = JSON.parse(localStorage.getItem('_subAdminPermsMap')||'{}'  );
+    let subAdminPerms = subAdminPermsGlobal;
+    function getPermsForUser(name) {
+        return subAdminPermsMap[name] || {...subAdminPermsGlobal};
+    }
 
     function saveSubAdmins() {
         localStorage.setItem('_subAdmins', JSON.stringify(subAdminList));
         localStorage.setItem('_subAdminSys', subAdminSystemOn ? '1' : '0');
     }
-    function savePerms() {
-        subAdminPerms = {
+    let _editingSubAdmin = null;
+    function savePerms(name) {
+        const target = name || _editingSubAdmin;
+        if(!target) return;
+        const perms = {
             'view-users': document.getElementById('perm-view-users').checked,
             'cash':       document.getElementById('perm-cash').checked,
             'news':       document.getElementById('perm-news').checked,
             'broadcast':  document.getElementById('perm-broadcast').checked,
             'ban':        document.getElementById('perm-ban').checked,
         };
-        localStorage.setItem('_subAdminPerms', JSON.stringify(subAdminPerms));
+        subAdminPermsMap[target] = perms;
+        localStorage.setItem('_subAdminPermsMap', JSON.stringify(subAdminPermsMap));
     }
-    function loadPerms() {
+    function loadPerms(name) {
+        const target = name || _editingSubAdmin;
+        if(!target) return;
+        const perms = getPermsForUser(target);
         ['view-users','cash','news','broadcast','ban'].forEach(p => {
             const el = document.getElementById(`perm-${p}`);
-            if(el) el.checked = subAdminPerms[p] || false;
+            if(el) el.checked = perms[p] || false;
         });
+    }
+    function editSubAdminPerms(name) {
+        _editingSubAdmin = name;
+        document.getElementById('perm-editing-name').innerText = name;
+        document.getElementById('perm-panel').style.display = 'block';
+        loadPerms(name);
     }
     function hasPerm(perm) {
         if(_adminVerified) return true;
-        if(isSubAdmin()) return subAdminPerms[perm] === true;
+        if(isSubAdmin()) return getPermsForUser(me)[perm] === true;
         return false;
     }
     function isSubAdmin() {
@@ -1914,19 +1934,27 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
 
     function renderSubAdminList() {
         if(!_requireAdmin()) return;
-        loadPerms();
         const dot = document.getElementById("sub-system-dot");
         const btn = document.getElementById("sub-system-btn");
         if(subAdminSystemOn){ btn.style.background='#1f6feb'; dot.style.left='22px'; dot.style.background='white'; }
         else { btn.style.background='#333'; dot.style.left='2px'; dot.style.background='#666'; }
         const el = document.getElementById("subadmin-list");
-        if(!subAdminList.length){ el.innerHTML="<div style='color:#555;font-size:12px;padding:4px;'>Chưa có phụ admin</div>"; return; }
-        el.innerHTML = subAdminList.map((n,i)=>`
-            <div style="display:flex;align-items:center;padding:6px 4px;gap:8px;border-bottom:1px solid #222;">
-                <div style="flex:1;font-size:12px;color:${subAdminSystemOn?'white':'#666'};">${n}</div>
-                <div style="font-size:10px;padding:2px 6px;border-radius:3px;background:${subAdminSystemOn?'#0f3318':'#1a1a1a'};color:${subAdminSystemOn?'var(--green)':'#555'};">${subAdminSystemOn?'ACTIVE':'TẮT'}</div>
-                <button onclick="removeSubAdmin(${i})" style="background:none;border:none;color:#555;cursor:pointer;font-size:14px;">×</button>
-            </div>`).join('');
+        if(!subAdminList.length){ el.innerHTML="<div style='color:#555;font-size:12px;padding:8px;'>Chưa có phụ admin nào</div>"; return; }
+        el.innerHTML = subAdminList.map((n,i)=>{
+            const perms = getPermsForUser(n);
+            const activeCount = Object.values(perms).filter(Boolean).length;
+            const statusColor = subAdminSystemOn ? 'var(--green)' : '#555';
+            const statusBg = subAdminSystemOn ? '#0f3318' : '#1a1a1a';
+            return `<div style="display:flex;align-items:center;padding:8px 4px;gap:8px;border-bottom:1px solid #1a1a1a;">
+                <div style="flex:1;">
+                    <div style="font-size:12px;color:${subAdminSystemOn?'white':'#666'};font-weight:bold;">${n}</div>
+                    <div style="font-size:10px;color:#555;margin-top:1px;">${activeCount} quyền được cấp</div>
+                </div>
+                <div style="font-size:10px;padding:2px 7px;border-radius:3px;background:${statusBg};color:${statusColor};">${subAdminSystemOn?'ACTIVE':'TẮT'}</div>
+                <button onclick="editSubAdminPerms('${n}')" style="background:#1a1a2a;border:1px solid #333;color:#4af;cursor:pointer;padding:4px 8px;border-radius:4px;font-size:11px;">⚙️</button>
+                <button onclick="removeSubAdmin(${i})" style="background:none;border:none;color:#555;cursor:pointer;font-size:16px;padding:0 4px;">×</button>
+            </div>`;
+        }).join('');
     }
 
     function toggleSubAdminSystem() {
@@ -2313,6 +2341,8 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         event.target.classList.add('active');
         sfx('click');
         activeTab=id;
+        const fab = document.getElementById("fab-compose");
+        if(fab) fab.style.display = id==='mail' ? 'flex' : 'none';
         if(id==='rank') getRank();
         if(id==='news'){
             renderNewsPage();
