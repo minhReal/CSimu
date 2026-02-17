@@ -74,6 +74,7 @@
         #settings-modal { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; }
         .settings-box { background:var(--panel); padding:20px; border-radius:12px; width:80%; max-width:300px; }
         .up{color:var(--green)} .down{color:var(--red)}
+        /* ADMIN PANEL */
         #admin-view { position:fixed; inset:0; background:#050505; z-index:6000; display:none; flex-direction:column; }
         .adm-tab { transition:0.15s; }
         .adm-tab:hover { background:#1a1a1a; }
@@ -85,6 +86,7 @@
             .header { height:70px; padding:15px 20px; }
             .tab-btn { font-size:13px; height:55px; }
             .stock-item { padding:20px; margin:12px; font-size:16px; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
             .rank-item { padding:16px; margin:10px; }
             #admin-view { max-width:700px; left:50%; transform:translateX(-50%); border-left:1px solid #333; border-right:1px solid #333; }
             .modal-box { max-width:450px; padding:30px; }
@@ -101,7 +103,7 @@
     <div class="login-box">
         <h2 style="margin:0 0 20px 0; color:var(--green); letter-spacing:2px;">TERMINAL X</h2>
         <input type="text" id="user" class="inp-auth" placeholder="Tên hiển thị">
-        <input type="password" id="pass" class="inp-auth" placeholder="Mật khẩu">
+        <input type="password" id="pass" class="inp-auth" placeholder="Mật mã">
         <button onclick="auth('login')" class="btn-auth" style="background:#1f6feb;">ĐĂNG NHẬP</button>
         <button onclick="auth('reg')" class="btn-auth" style="background:#238636;">ĐĂNG KÝ</button>
         <div style="margin-top:15px; font-size:12px;"><span style="color:#666; cursor:pointer;" onclick="forgotPass()">Quên mật khẩu?</span></div>
@@ -114,11 +116,8 @@
         <div style="font-weight:bold; display:flex; align-items:center; gap:5px;">👤 <span id="u-name" style="color:#ccc">...</span></div>
         <div style="display:flex; gap:15px; align-items:center;">
             <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;">ADMIN</button>
-            <select id="lang-select" onchange="changeLang()" style="background:#1a1a1a;color:#888;border:1px solid #333;padding:4px 6px;border-radius:4px;font-size:10px;font-weight:bold;">
-                <option value="en">EN</option>
-                <option value="vi">VI</option>
-            </select>
-            <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;"><span id="cash">0.00</span></div>
+
+            <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;">$<span id="cash">0.00</span></div>
             <button onclick="openSettings()" style="background:none; border:none; padding:0; font-size:20px;">⚙️</button>
         </div>
     </div>
@@ -196,27 +195,7 @@
             </div>
         </div>
         
-        <!-- P2P STOCK TRANSFER -->
-        <div style="background:#0f1a0a;border:1px solid #1a3a1a;border-radius:6px;padding:10px;margin-bottom:10px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                <span style="font-size:11px;color:#888;font-weight:bold;">📈 Kèm cổ phiếu</span>
-                <input type="checkbox" id="attach-stock-toggle" onchange="toggleAttachStock()" style="width:auto;">
-            </div>
-            <div id="attach-stock-panel" style="display:none;">
-                <div style="display:flex;gap:8px;margin-bottom:4px;">
-                    <select id="mail-stock-code" style="flex:1;margin-bottom:0;font-size:12px;">
-                        <option value="">-- Chọn CP --</option>
-                        <option value="VIN">VIN</option>
-                        <option value="FPT">FPT</option>
-                        <option value="HPG">HPG</option>
-                        <option value="DIG">DIG</option>
-                        <option value="VTB">VTB</option>
-                    </select>
-                    <input type="number" id="mail-stock-qty" placeholder="Số lượng" min="1" style="width:80px;margin-bottom:0;font-size:12px;">
-                </div>
-                <div id="attach-stock-info" style="font-size:10px;color:#555;margin-top:4px;"></div>
-            </div>
-        </div>
+
         
         <div style="font-size:11px; color:#666; margin-bottom:12px;">Phí gửi: $10 · Số dư: <span id="compose-balance">--</span></div>
         <button onclick="sendP2PMail()" style="width:100%; background:var(--blue); color:white; padding:12px; border:none; border-radius:5px; font-weight:bold;">GỬI THƯ</button>
@@ -440,7 +419,10 @@
                     <div class="crash-chip" data-code="" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #555;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">TẤT CẢ</div>
                 </div>
                 <div id="crash-status" style="font-size:11px;color:#555;margin-bottom:8px;min-height:16px;"></div>
-                <button onclick="triggerCrash()" style="width:100%;padding:12px;background:#500;color:#ff6666;border:1px solid #800;border-radius:6px;font-weight:bold;font-size:13px;">KÍCH HOẠT SỤT GIÁ</button>
+                <div style="display:flex;gap:8px;">
+                    <button onclick="triggerCrash()" style="flex:1;padding:12px;background:#500;color:#ff6666;border:1px solid #800;border-radius:6px;font-weight:bold;font-size:13px;">KÍCH HOẠT SỤT GIÁ</button>
+                    <button id="ai-crash-news-btn" onclick="generateCrashNews()" style="flex:1;padding:12px;background:#3a0000;color:#ff8888;border:1px solid #700;border-radius:6px;font-weight:bold;font-size:12px;">🔴 AI Crash News</button>
+                </div>
                 <button onclick="cancelCrash()" style="width:100%;padding:8px;background:#111;color:#555;border:1px solid #333;border-radius:6px;font-weight:bold;font-size:11px;margin-top:6px;">HỦY SỰ KIỆN</button>
             </div>
         </div>
@@ -501,7 +483,7 @@
     </div>
 </div>
 
-<div id="user-detail-modal" onclick="if(event.target.id==='user-detail-modal') this.style.display='none'" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:2000; align-items:center; justify-content:center;">
+<div id="user-detail-modal" onclick="if(event.target.id==='user-detail-modal') this.style.display='none'" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.88); z-index:9500; align-items:center; justify-content:center;">
     <div onclick="event.stopPropagation()" style="background:#0a0a0a; border:1px solid #333; border-radius:12px; width:90%; max-width:500px; max-height:80vh; overflow-y:auto; padding:20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <h3 style="margin:0; color:var(--green);">CHI TIẾT USER</h3>
@@ -711,10 +693,7 @@
         _tryAutoLogin();
     }
     function _tryAutoLogin() {
-        // Set language
-        const langSel = document.getElementById("lang-select");
-        if(langSel) langSel.value = currentLang;
-        
+
         const s=localStorage.getItem("sess");
         if(s && localStorage.getItem(`u_${s}`)){
             me=s;
@@ -1063,30 +1042,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         info.style.color = '#888';
     }
     
-    function toggleAttachStock() {
-        const panel = document.getElementById("attach-stock-panel");
-        const checked = document.getElementById("attach-stock-toggle").checked;
-        panel.style.display = checked ? 'block' : 'none';
-        if(checked) updateAttachStockInfo();
-    }
-    function updateAttachStockInfo() {
-        const code = document.getElementById("mail-stock-code").value;
-        const qty = parseFloat(document.getElementById("mail-stock-qty").value) || 0;
-        const info = document.getElementById("attach-stock-info");
-        if(!code || qty <= 0) {
-            info.innerText = '';
-            return;
-        }
-        const owned = wallet.stocks[code] || 0;
-        if(qty > owned) {
-            info.innerHTML = `<span style="color:var(--red);">⚠️ Không đủ CP (có ${owned.toFixed(0)})</span>`;
-        } else {
-            const stock = data.find(s => s.code === code);
-            const value = stock ? qty * stock.price : 0;
-            info.innerHTML = `Gửi ${qty} CP ${code} (~$${value.toFixed(0)}) · Còn lại: ${(owned-qty).toFixed(0)} CP`;
-            info.style.color = '#888';
-        }
-    }
+    // P2P stock attach removed
     
     async function sendP2PMail() {
         const to   = document.getElementById("mail-to").value.trim();
@@ -1188,10 +1144,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                 document.getElementById("attach-money-toggle").checked=false;
                 document.getElementById("attach-money-panel").style.display="none";
                 document.getElementById("mail-money-amount").value="";
-                document.getElementById("attach-stock-toggle").checked=false;
-                document.getElementById("attach-stock-panel").style.display="none";
-                document.getElementById("mail-stock-code").value="";
-                document.getElementById("mail-stock-qty").value="";
+
                 syncNow();
             } else {
                 showToast("LỖI",`Gửi thất bại (${r.status}) — thử lại`);
@@ -1898,6 +1851,58 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         });
         return sel;
     }
+    async function generateCrashNews() {
+        if(!_requireAdmin()) return;
+        const btn = document.getElementById("ai-crash-news-btn");
+        if(btn){ btn.innerText="Đang tạo..."; btn.disabled=true; }
+        
+        const pct = parseFloat(document.getElementById("crash-magnitude").value)||30;
+        const mins = parseFloat(document.getElementById("crash-duration").value)||10;
+        const stocks = getSelectedCrashStocks();
+        const target = stocks.length > 0 ? stocks.join(", ") : "toàn thị trường";
+        
+        let newsTitle = null;
+        try {
+            const resp = await fetch("https://api.anthropic.com/v1/messages", {
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body: JSON.stringify({
+                    model:"claude-sonnet-4-5-20250929", max_tokens:100,
+                    messages:[{role:"user",content:`Viết 1 tiêu đề tin tức tài chính Việt Nam gây hoảng loạn thị trường chứng khoán NGHIÊM TRỌNG, ảnh hưởng ${target}. Tin phải rất bi quan, tạo cảm giác khủng hoảng. Chỉ 10-16 từ tiếng Việt. Chỉ tiêu đề.`}]
+                })
+            });
+            if(resp.ok){ const j=await resp.json(); newsTitle=(j.content?.[0]?.text||'').trim().replace(/^["'""]/,'').replace(/["'""]$/,''); }
+        } catch(e){}
+        
+        // Fallback crash news templates
+        if(!newsTitle){
+            const pool = [
+                "KHỦNG HOẢNG: Làn sóng bán tháo nhấn chìm toàn bộ thị trường chứng khoán",
+                "Sàn chứng khoán lao dốc không phanh, nhà đầu tư hoảng loạn tháo chạy",
+                "FED tăng lãi suất khẩn, thị trường toàn cầu chìm trong sắc đỏ nghiêm trọng",
+                "Ngân hàng lớn mất khả năng thanh khoản, thị trường rung chuyển dữ dội",
+                "Tin xấu kinh tế vĩ mô đẩy VN-Index sụp đổ — mức tệ nhất nhiều năm",
+                "Cuộc khủng hoảng tài chính bùng nổ, hàng nghìn tỷ bốc hơi trong phiên",
+                "Bong bóng chứng khoán vỡ tung — cảnh báo đỏ toàn thị trường",
+                "Dòng vốn ngoại tháo chạy ồ ạt, thị trường chứng khoán chao đảo nghiêm trọng",
+            ];
+            newsTitle = pool[Math.floor(Math.random()*pool.length)];
+            if(stocks.length > 0) newsTitle = `[${stocks[0]}] ` + newsTitle;
+        }
+        
+        // Push news với tác động cực mạnh và thời gian dài
+        const duration = Math.max(mins, 20); // tối thiểu 20 phút
+        pushNews({ t: newsTitle, b: -Math.max(pct, 60), v: 60, d: duration, stocks, isCustom: true });
+        
+        // Cũng kích hoạt crash event luôn
+        const randomDur = duration * (0.8 + Math.random()*0.4) * 60000;
+        crashEvent = { stocks, magnitude: (100-Math.max(pct,50))/100, endsAt: Date.now()+randomDur };
+        updateCrashStatus();
+        
+        showToast("🔴 CRASH NEWS", newsTitle.substring(0,55)+"...");
+        if(btn){ btn.innerText="🔴 AI Crash News"; btn.disabled=false; }
+    }
+    
     function triggerCrash(){
         if(!_requireAdmin()) return;
         const pct = parseFloat(document.getElementById("crash-magnitude").value)||30;
@@ -2168,11 +2173,40 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     // ============================================================
     function renderList() {
         const div=document.getElementById("list");
-        if(!div) return; // element chưa tồn tại
-        if(div.childElementCount!==data.length){
-            div.innerHTML=data.map(s=>`<div class="stock-item" onclick="openDetail('${s.code}')" id="st-${s.code}"><div><div style="font-weight:900;font-size:16px;color:white">${s.code}</div><div style="font-size:11px;color:#888">${(wallet.stocks[s.code]||0).toFixed(0)} CP</div></div><div style="text-align:right"><div class="price-val" style="font-size:16px;font-weight:bold;">${s.price.toFixed(2)}</div></div></div>`).join('');
+        if(!div) return;
+        const rebuild = div.childElementCount!==data.length;
+        if(rebuild){
+            div.innerHTML=data.map(s=>{
+                const bankrupt = s.price < 5;
+                const bankruptBadge = bankrupt
+                    ? `<div style="font-size:9px;font-weight:bold;color:#ff4444;background:#2a0000;border:1px solid #500;border-radius:3px;padding:1px 5px;margin-top:2px;display:inline-block;animation:pulse 1s infinite;">⚠ ĐANG PHÁ SẢN</div>`
+                    : '';
+                const owned = (wallet.stocks[s.code]||0).toFixed(0);
+                const priceColor = bankrupt ? '#ff4444' : (s.candle.close>=s.candle.open ? 'var(--green)' : 'var(--red)');
+                const borderColor = bankrupt ? '#500' : 'var(--border)';
+                return `<div class="stock-item" onclick="openDetail('${s.code}')" id="st-${s.code}" style="border-color:${borderColor}${bankrupt?';background:#110000':''}">
+                    <div>
+                        <div style="font-weight:900;font-size:16px;color:${bankrupt?'#ff6666':'white'}">${s.code}</div>
+                        <div style="font-size:11px;color:#888">${owned} CP</div>
+                        ${bankruptBadge}
+                    </div>
+                    <div style="text-align:right">
+                        <div class="price-val" style="font-size:16px;font-weight:bold;color:${priceColor}">${s.price.toFixed(2)}</div>
+                        ${bankrupt ? '<div style="font-size:9px;color:#ff4444">Giao dịch bị đình chỉ</div>' : ''}
+                    </div>
+                </div>`;
+            }).join('');
         } else {
-            data.forEach(s=>{const el=document.getElementById(`st-${s.code}`);if(el){const up=s.candle.close>=s.candle.open;const p=el.querySelector(".price-val");p.innerText=s.price.toFixed(2);p.style.color=up?"var(--green)":"var(--red)";}});
+            data.forEach(s=>{
+                const el=document.getElementById(`st-${s.code}`);
+                if(!el) return;
+                const bankrupt = s.price < 5;
+                const up = s.candle.close>=s.candle.open;
+                const p=el.querySelector(".price-val");
+                if(p){p.innerText=s.price.toFixed(2);p.style.color=bankrupt?'#ff4444':(up?"var(--green)":"var(--red)");}
+                el.style.borderColor = bankrupt?'#500':'var(--border)';
+                el.style.background = bankrupt?'#110000':'#1a1a1a';
+            });
         }
     }
     // ─── NEWS ENGINE ───────────────────────────────────────────────
@@ -2331,7 +2365,26 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     }
     function openDetail(c){sfx('click');sel=c;document.getElementById("detail-view").classList.add("active");initChart();updateD();tick();}
     function closeDetail(){sfx('click');sel=null;document.getElementById("detail-view").classList.remove("active");}
-    function updateD(){const s=data.find(x=>x.code===sel);document.getElementById("d-code").innerText=s.code;document.getElementById("d-price").innerText=s.price.toFixed(2);document.getElementById("d-owned").innerText=(wallet.stocks[sel]||0).toFixed(0);document.getElementById("d-price").style.color=(candles[sel]?.at(-1).close>=candles[sel]?.at(-1).open)?"var(--green)":"var(--red)";}
+    function updateD(){
+        const s=data.find(x=>x.code===sel); if(!s) return;
+        const bankrupt = s.price < 5;
+        const up = candles[sel]?.at(-1)?.close >= candles[sel]?.at(-1)?.open;
+        document.getElementById("d-code").innerText = s.code;
+        document.getElementById("d-price").innerText = s.price.toFixed(2);
+        document.getElementById("d-price").style.color = bankrupt ? '#ff4444' : (up ? "var(--green)" : "var(--red)");
+        document.getElementById("d-owned").innerText = (wallet.stocks[sel]||0).toFixed(0);
+        // Bankrupt banner
+        let banner = document.getElementById("bankrupt-banner");
+        if(!banner){
+            banner = document.createElement("div");
+            banner.id = "bankrupt-banner";
+            banner.style.cssText = "display:none;background:#2a0000;border-bottom:1px solid #800;color:#ff4444;text-align:center;padding:8px;font-size:11px;font-weight:bold;letter-spacing:1px;animation:pulse 1.2s infinite;";
+            const dv = document.getElementById("detail-view");
+            if(dv) dv.insertBefore(banner, dv.firstChild);
+        }
+        banner.style.display = bankrupt ? "block" : "none";
+        if(bankrupt) banner.innerText = `⚠ ${sel}: ĐANG PHÁ SẢN — $${s.price.toFixed(2)} — GIAO DỊCH BỊ ĐÌNH CHỈ ⚠`;
+    }
     window.addEventListener('resize',()=>{if(sel){initChart();draw();}});
     let ctx;
     function initChart(){const c=document.getElementById("chart");const rect=c.parentElement.getBoundingClientRect();const dpr=window.devicePixelRatio||1;c.width=rect.width*dpr;c.height=rect.height*dpr;ctx=c.getContext("2d");ctx.scale(dpr,dpr);}
@@ -2396,11 +2449,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         }
     }
     function logout(){localStorage.removeItem("sess");location.reload();}
-    function changeLang() {
-        currentLang = document.getElementById("lang-select").value;
-        localStorage.setItem('_lang', currentLang);
-        location.reload(); // Reload để apply translations
-    }
+
     function changeChartType(){chartType=document.getElementById("chart-type-select").value;localStorage.setItem("chart_type",chartType);if(sel)draw();}
     function openSettings(){document.getElementById("settings-modal").style.display='flex';}
 
