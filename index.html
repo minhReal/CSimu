@@ -66,17 +66,17 @@
         #detail-view { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(110%); width: 100%; max-width: 700px; height: 58%; background: #101010; border-top: 1px solid var(--green); border-left: 1px solid #222; border-right: 1px solid #222; border-radius: 16px 16px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.7); z-index: 2000; display: flex; flex-direction: column; transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
         #detail-view.active { transform: translateX(-50%) translateY(0); }
         .chart-header { padding:10px 15px; display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; border-bottom:1px solid #333; }
-        .chart-container { flex:1; width:100%; position:relative; background: #080808; overflow-x: auto; overflow-y: hidden; }
+        .chart-container { flex:1; width:100%; position:relative; background: #080808; overflow: hidden; }
         canvas { display:block; width:100%; height:100%; }
         .controls-area { padding:10px; background:#151515; border-top:1px solid #333; padding-bottom: 20px; }
         .mini-news { font-size: 11px; padding: 5px 15px; color: #888; border-bottom: 1px solid #222; white-space: nowrap; overflow: hidden; background: #0f0f0f; font-weight: bold; }
         .mini-news.pos { color: var(--green); } .mini-news.neg { color: var(--red); }
-        #admin-view { position:fixed; inset:0; background:#000; z-index:16000; display:none; flex-direction:column; overflow-y:auto; }
+        #admin-view { position:fixed; inset:0; background:#000; z-index:6000; display:none; flex-direction:column; overflow-y:auto; }
         #settings-modal { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; }
         .settings-box { background:var(--panel); padding:20px; border-radius:12px; width:80%; max-width:300px; }
         .up{color:var(--green)} .down{color:var(--red)}
         /* ADMIN PANEL */
-        #admin-view { position:fixed; inset:0; background:#050505; z-index:12000; display:none; flex-direction:column; }
+        #admin-view { position:fixed; inset:0; background:#050505; z-index:6000; display:none; flex-direction:column; }
         .adm-tab { transition:0.15s; }
         .adm-tab:hover { background:#1a1a1a; }
         /* PC RESPONSIVE */
@@ -434,7 +434,15 @@
                 <textarea id="bc-body" placeholder="Nội dung thông báo toàn server..." style="height:80px;resize:none;margin-bottom:10px;"></textarea>
                 <button onclick="adminBroadcast()" style="width:100%;padding:12px;background:#ff3b3b;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">PHÁT LOA TOÀN SERVER</button>
             </div>
-            
+        </div>
+
+        <div id="admv-subadmin" style="display:none;">
+            <div style="background:#0a0a0a;border-radius:8px;padding:15px;margin-bottom:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <div style="color:#888;font-size:11px;font-weight:bold;">DANH SÁCH PHỤ ADMIN</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:11px;color:#888;">Bật hệ thống</span>
+                        <div onclick="toggleSubAdminSystem()" id="sub-system-btn" style="width:40px;height:20px;background:#333;border-radius:10px;cursor:pointer;position:relative;transition:0.2s;">
                             <div id="sub-system-dot" style="width:16px;height:16px;background:#666;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s;"></div>
                         </div>
                     </div>
@@ -446,7 +454,7 @@
                         <input type="text" id="subadmin-name-inp" placeholder="Tên user..." autocomplete="off"
                             oninput="filterSubAdminInput()" onfocus="filterSubAdminInput()"
                             style="margin-bottom:0;width:100%;box-sizing:border-box;">
-                        <div id="subadmin-name-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #444;border-top:none;border-radius:0 0 6px 6px;max-height:150px;overflow-y:auto;z-index:600;"></div>
+                        <div id="subadmin-name-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #444;border-top:none;border-radius:0 0 6px 6px;max-height:150px;overflow-y:auto;z-index:200;"></div>
                     </div>
                     <button onclick="addSubAdmin()" style="padding:8px 12px;background:#1f6feb;color:white;border:none;border-radius:6px;font-weight:bold;white-space:nowrap;">THÊM</button>
                 </div>
@@ -2230,6 +2238,24 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                 if(p){p.innerText=s.price.toFixed(2);p.style.color=bankrupt?'#ff4444':(up?"var(--green)":"var(--red)");}
                 el.style.borderColor = bankrupt?'#500':'var(--border)';
                 el.style.background = bankrupt?'#110000':'#1a1a1a';
+                
+                const badge = el.querySelector('.bankrupt-badge');
+                const susp = el.querySelector('.suspend-text');
+                if(bankrupt) {
+                    if(!badge) {
+                        const code = el.querySelector('div > div:first-child');
+                        if(code) code.insertAdjacentHTML('afterend', '<div class="bankrupt-badge" style="font-size:9px;font-weight:bold;color:#ff4444;background:#2a0000;border:1px solid #500;border-radius:3px;padding:1px 5px;margin-top:2px;display:inline-block;animation:pulse 1s infinite;">⚠ ĐANG PHÁ SẢN</div>');
+                    }
+                    if(!susp) {
+                        const priceArea = el.querySelector('div:last-child');
+                        if(priceArea && !priceArea.querySelector('.suspend-text')) {
+                            priceArea.insertAdjacentHTML('beforeend', '<div class="suspend-text" style="font-size:9px;color:#ff4444;">Giao dịch bị đình chỉ</div>');
+                        }
+                    }
+                } else {
+                    if(badge) badge.remove();
+                    if(susp) susp.remove();
+                }
             });
         }
     }
@@ -2409,15 +2435,8 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     }
     function draw(){
         if(!sel||!candles[sel]) return; const d=candles[sel]; if(!d.length) return;
-        const container=document.getElementById("chart").parentElement;
-        const H=container.getBoundingClientRect().height;
-        const W=Math.max(container.getBoundingClientRect().width, d.length*cw+60);
-        const canvas=document.getElementById("chart");
-        if(canvas.width!==W||canvas.height!==H){
-            canvas.width=W; canvas.height=H;
-            ctx=canvas.getContext("2d");
-        }
-        ctx.clearRect(0,0,W,H);
+        const rect=document.getElementById("chart").parentElement.getBoundingClientRect();
+        const W=rect.width,H=rect.height; ctx.clearRect(0,0,W,H);
         let min=Infinity,max=-Infinity; d.forEach(x=>{if(x.low<min)min=x.low;if(x.high>max)max=x.high;});
         if(min === Infinity || max === -Infinity || min === max) { min = 0; max = 100; }
         const padding=(max-min)*0.1; min-=padding; max+=padding;
@@ -2440,7 +2459,10 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             ctx.setLineDash([]);
             ctx.fillStyle="#666"; ctx.fillText("0",W-5,zy-2);
         }
-        const cw = 6;
+        const numCandles = Math.min(d.length, 60);
+        let cw = numCandles > 0 ? (W-30)/numCandles : 10;
+        if(cw < 3) cw = 3;
+        if(cw > 15) cw = 15;
         if(chartType==='candle'){d.forEach((c,i)=>{const x=i*cw+10,col=c.close>=c.open?"#00ff88":"#ff3b3b";ctx.strokeStyle=col;ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(x+cw/2,gy(c.high));ctx.lineTo(x+cw/2,gy(c.low));ctx.stroke();const h=Math.abs(gy(c.open)-gy(c.close))||1;ctx.fillRect(x+1,Math.min(gy(c.open),gy(c.close)),cw-2,h);});}
         else{ctx.lineWidth=2;for(let i=0;i<d.length-1;i++){const x1=i*cw+10+cw/2,y1=gy(d[i].close),x2=(i+1)*cw+10+cw/2,y2=gy(d[i+1].close);ctx.beginPath();ctx.strokeStyle=d[i+1].close>=d[i].close?"#00ff88":"#ff3b3b";ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}}
         const ly=gy(d[d.length-1].close); ctx.strokeStyle="rgba(255,255,255,0.4)"; ctx.setLineDash([2,2]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
