@@ -1242,7 +1242,10 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             dot.style.background = '#6f6';
             if(aiBoostInterval) clearInterval(aiBoostInterval);
             aiBoostInterval = setInterval(async () => {
-                if(Math.random() < 0.25) await generatePositiveNews();
+                if(Math.random() < 0.25) {
+                    await generatePositiveNews();
+                    triggerBoom();
+                }
             }, 25000);
             showToast("AI BOOST","Đã bật tự động tăng giá");
         } else {
@@ -1265,7 +1268,10 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             dot.style.background = '#f66';
             if(aiCrashInterval) clearInterval(aiCrashInterval);
             aiCrashInterval = setInterval(async () => {
-                if(Math.random() < 0.2) await generateCrashNews();
+                if(Math.random() < 0.2) {
+                    await generateCrashNews();
+                    triggerCrash();
+                }
             }, 35000);
             showToast("AI CRASH","Đã bật tự động sụt giá");
         } else {
@@ -1653,6 +1659,18 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         if(!_requireAdmin()) return;
         const btn = document.getElementById("ai-news-btn");
         btn.innerText = "Đang tạo..."; btn.disabled = true;
+        
+        if(aiCrashEnabled) {
+            btn.innerText = "✨ AI Tạo tin"; btn.disabled = false;
+            await generateCrashNews();
+            return;
+        }
+        
+        if(aiBoostEnabled) {
+            btn.innerText = "✨ AI Tạo tin"; btn.disabled = false;
+            await generatePositiveNews();
+            return;
+        }
         
         const crashChance = Math.random();
         const shouldCrash = crashChance < 0.15;
