@@ -66,7 +66,7 @@
         #detail-view { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(110%); width: 100%; max-width: 700px; height: 58%; background: #101010; border-top: 1px solid var(--green); border-left: 1px solid #222; border-right: 1px solid #222; border-radius: 16px 16px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.7); z-index: 2000; display: flex; flex-direction: column; transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
         #detail-view.active { transform: translateX(-50%) translateY(0); }
         .chart-header { padding:10px 15px; display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; border-bottom:1px solid #333; }
-        .chart-container { flex:1; width:100%; position:relative; background: #080808; overflow: hidden; }
+        .chart-container { flex:1; width:100%; position:relative; background: #080808; overflow-x: auto; overflow-y: hidden; }
         canvas { display:block; width:100%; height:100%; }
         .controls-area { padding:10px; background:#151515; border-top:1px solid #333; padding-bottom: 20px; }
         .mini-news { font-size: 11px; padding: 5px 15px; color: #888; border-bottom: 1px solid #222; white-space: nowrap; overflow: hidden; background: #0f0f0f; font-weight: bold; }
@@ -277,8 +277,7 @@
                 <div id="cash-custom-area" style="display:none;margin-bottom:8px;">
                     <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">TIÊU ĐỀ</div>
                     <input type="text" id="cash-custom-title" placeholder="Tiêu đề thông báo..." style="margin-bottom:6px;">
-                    <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">NOI DUNG</div>
-                    <textarea id="cash-custom-msg" placeholder="Nội dung thông báo..." style="height:60px;resize:none;"></textarea>
+                    <textarea id="cash-custom-msg" placeholder="Nội dung thông báo tùy chọn..." style="height:60px;resize:none;margin-bottom:0;"></textarea>
                 </div>
                 <div style="display:flex;gap:8px;margin-top:5px;margin-bottom:10px;">
                     <button onclick="doGrantCash(1)" style="flex:1;padding:12px;background:#238636;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">TẶNG TIỀN</button>
@@ -318,16 +317,24 @@
                         <div id="custom-badge-dot" style="width:16px;height:16px;background:#666;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s;"></div>
                     </div>
                 </div>
-                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">TIÊU ĐỀ</div>
-                <input type="text" id="news-title-inp" placeholder="Tiêu đề (để trống = dùng nội dung)..." style="margin-bottom:8px;">
-
-                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">NỘI DUNG</div>
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">NỘI DUNG TIN TỨC</div>
                 <div style="position:relative;margin-bottom:8px;">
                     <textarea id="custom-news-text" placeholder="Nội dung tin tức..." style="height:60px;resize:none;"></textarea>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
-                    <button id="ai-news-btn" onclick="generateAINews()" style="padding:8px;background:#0f1a3a;color:#7777ff;border:1px solid #3333aa;border-radius:6px;font-size:11px;font-weight:bold;">✨ AI Tin tức</button>
-                    <button id="ai-positive-news-btn" onclick="generatePositiveNews()" style="padding:8px;background:#0a2a0a;color:#6f6;border:1px solid #1a6a1a;border-radius:6px;font-size:11px;font-weight:bold;">🚀 AI Tăng giá</button>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
+                    <button id="ai-news-btn" onclick="generateAINews()" style="padding:10px;background:#0f1a3a;color:#7777ff;border:1px solid #3333aa;border-radius:6px;font-size:12px;font-weight:bold;">✨ AI Tạo tin tức</button>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:#0a0a0a;border:1px solid #333;border-radius:6px;">
+                        <span style="font-size:11px;color:#888;">🚀 AI tự động tăng giá</span>
+                        <div onclick="toggleAIBoom()" id="ai-boom-toggle" style="width:40px;height:20px;background:#333;border-radius:10px;cursor:pointer;position:relative;transition:0.2s;">
+                            <div id="ai-boom-dot" style="width:16px;height:16px;background:#666;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s;"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:#0a0a0a;border:1px solid #333;border-radius:6px;">
+                        <span style="font-size:11px;color:#888;">🔴 AI tự động sụt giá</span>
+                        <div onclick="toggleAICrash()" id="ai-crash-toggle" style="width:40px;height:20px;background:#333;border-radius:10px;cursor:pointer;position:relative;transition:0.2s;">
+                            <div id="ai-crash-dot" style="width:16px;height:16px;background:#666;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s;"></div>
+                        </div>
+                    </div>
                 </div>
 
                 
@@ -376,8 +383,7 @@
 
                 <button onclick="addCustomNews()" style="width:100%;padding:12px;background:#1f6feb;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;margin-bottom:12px;">ĐĂNG TIN TỨC</button>
 
-                <div style="background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:12px;margin-bottom:10px;">
-                    <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:8px;">⚡ EVENT THỊ TRƯỜNG</div>
+                <div style="background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:12px;margin-bottom:10px;margin-top:20px;">
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
                         <div>
                             <div style="color:#888;font-size:10px;font-weight:bold;margin-bottom:4px;">ĐỘ MẠNH (%)</div>
@@ -984,10 +990,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const attachMoney = document.getElementById("attach-money-toggle").checked;
         const moneyAmt = parseFloat(document.getElementById("mail-money-amount").value) || 0;
         
-        const attachStock = document.getElementById("attach-stock-toggle").checked;
-        const stockCode = document.getElementById("mail-stock-code").value;
-        const stockQty = parseFloat(document.getElementById("mail-stock-qty").value) || 0;
-        
         if(!to)  return showToast("LỖI","Chưa nhập người nhận");
         if(!sub) return showToast("LỖI","Chưa nhập tiêu đề");
         if(!body) return showToast("LỖI","Chưa nhập nội dung");
@@ -1004,15 +1006,18 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             if(moneyAmt > 100) return showToast("LỖI","Chỉ được tặng tối đa $100");
             if(moneyAmt > wallet.cash) return showToast("LỖI","Không đủ tiền");
         }
-        
-        if(attachStock) {
-            if(!stockCode) return showToast("LỖI","Chưa chọn cổ phiếu");
-            if(stockQty <= 0) return showToast("LỖI","Số CP không hợp lệ");
-            const owned = wallet.stocks[stockCode] || 0;
-            if(stockQty > owned) return showToast("LỖI",`Không đủ CP ${stockCode} (có ${owned.toFixed(0)})`);
-        }
+
         if(to === me) return showToast("LỖI","Không thể gửi cho chính mình");
-        if(safeFloat(wallet.cash) < 10) return showToast("LỖI",`Không đủ tiền (cần $10, có $${safeFloat(wallet.cash).toFixed(0)})`);
+        
+        const totalCost = 10 + (attachMoney && moneyAmt > 0 ? moneyAmt : 0);
+        if(safeFloat(wallet.cash) < totalCost) return showToast("LỖI",`Không đủ tiền (cần $${totalCost.toFixed(2)}, có $${safeFloat(wallet.cash).toFixed(2)})`);
+        
+        if(attachMoney && moneyAmt > 0) {
+            wallet.cash = safeFloat(wallet.cash) - moneyAmt;
+            localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
+            lastMoneyGiftTime = Date.now();
+            localStorage.setItem('_lastMoneyGift', lastMoneyGiftTime.toString());
+        }
 
         const sendBtn = document.querySelector('#compose-modal button[onclick="sendP2PMail()"]');
         if(sendBtn){ sendBtn.disabled=true; sendBtn.innerText="Đang gửi..."; }
@@ -1035,9 +1040,6 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         if(attachMoney && moneyAmt > 0) {
             finalBody += `\n\n💵 Kèm theo: $${moneyAmt.toFixed(2)}`;
         }
-        if(attachStock && stockQty > 0) {
-            finalBody += `\n\n📈 Kèm theo: ${stockQty} CP ${stockCode}`;
-        }
         
         try {
             const r = await sb("mails","POST",{id, to, from:me, title:sub, body:finalBody, time:Date.now()});
@@ -1050,14 +1052,8 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                     await sb("gifts","POST",{id:moneyGiftId, to, amount:moneyAmt});
                 }
                 
-                if(attachStock && stockQty > 0) {
-                    const stockGiftId = `STK_${stockCode}_${stockQty}_${to}_${Date.now()}`;
-                    await sb("gifts","POST",{id:stockGiftId, to, amount:0});
-                }
-                
                 const extras = [];
                 if(attachMoney && moneyAmt > 0) extras.push(`$${moneyAmt.toFixed(2)}`);
-                if(attachStock && stockQty > 0) extras.push(`${stockQty} CP ${stockCode}`);
                 const extrasText = extras.length > 0 ? ' + ' + extras.join(' + ') : '';
                 showToast("THÀNH CÔNG",`Đã gửi thư${extrasText} cho ${to}!`);
                 document.getElementById("compose-modal").style.display="none";
@@ -1153,7 +1149,11 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
 
     let allUsersCache = [];
     let cashMsgMode = 'none';
-    let _adminVerified = false; 
+    let _adminVerified = false;
+    let aiBoostEnabled = false;
+    let aiCrashEnabled = false;
+    let aiBoostInterval = null;
+    let aiCrashInterval = null; 
     let _adminToken = null;     
 
     function _genToken() { return Math.random().toString(36).substr(2,9) + Date.now().toString(36) + Math.random().toString(36).substr(2,9); }
@@ -1223,6 +1223,52 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         setTimeout(initCustomBadgeToggle, 50);
     }
 
+    function toggleAIBoom() {
+        if(!_requireAdmin()) return;
+        aiBoostEnabled = !aiBoostEnabled;
+        const btn = document.getElementById("ai-boom-toggle");
+        const dot = document.getElementById("ai-boom-dot");
+        if(aiBoostEnabled) {
+            btn.style.background = '#1a6a1a';
+            dot.style.left = '22px';
+            dot.style.background = '#6f6';
+            if(aiBoostInterval) clearInterval(aiBoostInterval);
+            aiBoostInterval = setInterval(async () => {
+                if(Math.random() < 0.25) await generatePositiveNews();
+            }, 25000);
+            showToast("AI BOOST","Đã bật tự động tăng giá");
+        } else {
+            btn.style.background = '#333';
+            dot.style.left = '2px';
+            dot.style.background = '#666';
+            if(aiBoostInterval) { clearInterval(aiBoostInterval); aiBoostInterval = null; }
+            showToast("AI BOOST","Đã tắt");
+        }
+    }
+    
+    function toggleAICrash() {
+        if(!_requireAdmin()) return;
+        aiCrashEnabled = !aiCrashEnabled;
+        const btn = document.getElementById("ai-crash-toggle");
+        const dot = document.getElementById("ai-crash-dot");
+        if(aiCrashEnabled) {
+            btn.style.background = '#3a0000';
+            dot.style.left = '22px';
+            dot.style.background = '#f66';
+            if(aiCrashInterval) clearInterval(aiCrashInterval);
+            aiCrashInterval = setInterval(async () => {
+                if(Math.random() < 0.2) await generateCrashNews();
+            }, 35000);
+            showToast("AI CRASH","Đã bật tự động sụt giá");
+        } else {
+            btn.style.background = '#333';
+            dot.style.left = '2px';
+            dot.style.background = '#666';
+            if(aiCrashInterval) { clearInterval(aiCrashInterval); aiCrashInterval = null; }
+            showToast("AI CRASH","Đã tắt");
+        }
+    }
+    
     function closeAdmin() {
         _adminVerified = false;
         _adminToken = null;
@@ -1685,9 +1731,8 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
 
     function addCustomNews() {
         if(!_requireAdmin()) return;
-        const titleInp = document.getElementById("news-title-inp").value.trim();
         const rawText = document.getElementById("custom-news-text").value.trim();
-        if(!rawText && !titleInp) return showToast("LỖI","Nhập nội dung tin tức");
+        if(!rawText) return showToast("LỖI","Nhập nội dung tin tức");
 
         const impactVal  = parseFloat(document.getElementById("news-impact-val").value) || 0;
         const volatility = parseFloat(document.getElementById("news-vol-val").value) || 5;
@@ -1695,8 +1740,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const selectedStocks = getSelectedChips();
 
         pushNews({
-            t: titleInp || rawText,
-            body: titleInp ? rawText : '',
+            t: rawText,
             b: impactVal,
             v: volatility,
             d: duration,
@@ -1705,7 +1749,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         });
 
         document.getElementById("custom-news-text").value = "";
-        document.getElementById("news-title-inp").value = "";
+
         document.getElementById("news-impact-val").value = "0";
         document.getElementById("news-vol-val").value = "5";
         document.getElementById("news-dur-val").value = "5";
@@ -2365,8 +2409,15 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     }
     function draw(){
         if(!sel||!candles[sel]) return; const d=candles[sel]; if(!d.length) return;
-        const rect=document.getElementById("chart").parentElement.getBoundingClientRect();
-        const W=rect.width,H=rect.height; ctx.clearRect(0,0,W,H);
+        const container=document.getElementById("chart").parentElement;
+        const H=container.getBoundingClientRect().height;
+        const W=Math.max(container.getBoundingClientRect().width, d.length*cw+60);
+        const canvas=document.getElementById("chart");
+        if(canvas.width!==W||canvas.height!==H){
+            canvas.width=W; canvas.height=H;
+            ctx=canvas.getContext("2d");
+        }
+        ctx.clearRect(0,0,W,H);
         let min=Infinity,max=-Infinity; d.forEach(x=>{if(x.low<min)min=x.low;if(x.high>max)max=x.high;});
         if(min === Infinity || max === -Infinity || min === max) { min = 0; max = 100; }
         const padding=(max-min)*0.1; min-=padding; max+=padding;
@@ -2389,10 +2440,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             ctx.setLineDash([]);
             ctx.fillStyle="#666"; ctx.fillText("0",W-5,zy-2);
         }
-        const numCandles = Math.min(d.length, 50);
-        let cw = numCandles > 0 ? (W-30)/numCandles : 10;
-        if(cw < 3) cw = 3;
-        if(cw > 40) cw = 40;
+        const cw = 6;
         if(chartType==='candle'){d.forEach((c,i)=>{const x=i*cw+10,col=c.close>=c.open?"#00ff88":"#ff3b3b";ctx.strokeStyle=col;ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(x+cw/2,gy(c.high));ctx.lineTo(x+cw/2,gy(c.low));ctx.stroke();const h=Math.abs(gy(c.open)-gy(c.close))||1;ctx.fillRect(x+1,Math.min(gy(c.open),gy(c.close)),cw-2,h);});}
         else{ctx.lineWidth=2;for(let i=0;i<d.length-1;i++){const x1=i*cw+10+cw/2,y1=gy(d[i].close),x2=(i+1)*cw+10+cw/2,y2=gy(d[i+1].close);ctx.beginPath();ctx.strokeStyle=d[i+1].close>=d[i].close?"#00ff88":"#ff3b3b";ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}}
         const ly=gy(d[d.length-1].close); ctx.strokeStyle="rgba(255,255,255,0.4)"; ctx.setLineDash([2,2]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
