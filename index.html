@@ -2211,20 +2211,20 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             div.innerHTML=data.map(s=>{
                 const bankrupt = s.price < 5;
                 const bankruptBadge = bankrupt
-                    ? `<div style="font-size:9px;font-weight:bold;color:#ff4444;background:#2a0000;border:1px solid #500;border-radius:3px;padding:1px 5px;margin-top:2px;display:inline-block;animation:pulse 1s infinite;">⚠ ĐANG PHÁ SẢN</div>`
+                    ? `<div class="bankrupt-badge" style="font-size:9px;font-weight:bold;color:#ff4444;background:#2a0000;border:1px solid #500;border-radius:3px;padding:1px 5px;margin-top:2px;display:inline-block;animation:pulse 1s infinite;">⚠ ĐANG PHÁ SẢN</div>`
                     : '';
                 const owned = (wallet.stocks[s.code]||0).toFixed(0);
                 const priceColor = bankrupt ? '#ff4444' : (s.candle.close>=s.candle.open ? 'var(--green)' : 'var(--red)');
                 const borderColor = bankrupt ? '#500' : 'var(--border)';
                 return `<div class="stock-item" onclick="openDetail('${s.code}')" id="st-${s.code}" style="border-color:${borderColor}${bankrupt?';background:#110000':''}">
                     <div>
-                        <div style="font-weight:900;font-size:16px;color:${bankrupt?'#ff6666':'white'}">${s.code}</div>
+                        <div class="code-text" style="font-weight:900;font-size:16px;color:${bankrupt?'#ff6666':'white'}">${s.code}</div>
                         <div style="font-size:11px;color:#888">${owned} CP</div>
                         ${bankruptBadge}
                     </div>
                     <div style="text-align:right">
                         <div class="price-val" style="font-size:16px;font-weight:bold;color:${priceColor}">${s.price.toFixed(2)}</div>
-                        ${bankrupt ? '<div style="font-size:9px;color:#ff4444">Giao dịch bị đình chỉ</div>' : ''}
+                        ${bankrupt ? '<div class="suspend-text" style="font-size:9px;color:#ff4444">Giao dịch bị đình chỉ</div>' : ''}
                     </div>
                 </div>`;
             }).join('');
@@ -2234,21 +2234,30 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                 if(!el) return;
                 const bankrupt = s.price < 5;
                 const up = s.candle.close>=s.candle.open;
+                
                 const p=el.querySelector(".price-val");
-                if(p){p.innerText=s.price.toFixed(2);p.style.color=bankrupt?'#ff4444':(up?"var(--green)":"var(--red)");}
+                if(p){
+                    p.innerText=s.price.toFixed(2);
+                    p.style.color=bankrupt?'#ff4444':(up?"var(--green)":"var(--red)");
+                }
+                
+                const codeText = el.querySelector(".code-text");
+                if(codeText) codeText.style.color = bankrupt ? '#ff6666' : 'white';
+                
                 el.style.borderColor = bankrupt?'#500':'var(--border)';
                 el.style.background = bankrupt?'#110000':'#1a1a1a';
                 
                 const badge = el.querySelector('.bankrupt-badge');
                 const susp = el.querySelector('.suspend-text');
+                
                 if(bankrupt) {
                     if(!badge) {
-                        const code = el.querySelector('div > div:first-child');
-                        if(code) code.insertAdjacentHTML('afterend', '<div class="bankrupt-badge" style="font-size:9px;font-weight:bold;color:#ff4444;background:#2a0000;border:1px solid #500;border-radius:3px;padding:1px 5px;margin-top:2px;display:inline-block;animation:pulse 1s infinite;">⚠ ĐANG PHÁ SẢN</div>');
+                        const codeEl = el.querySelector('.code-text');
+                        if(codeEl) codeEl.insertAdjacentHTML('afterend', '<div class="bankrupt-badge" style="font-size:9px;font-weight:bold;color:#ff4444;background:#2a0000;border:1px solid #500;border-radius:3px;padding:1px 5px;margin-top:2px;display:inline-block;animation:pulse 1s infinite;">⚠ ĐANG PHÁ SẢN</div>');
                     }
                     if(!susp) {
                         const priceArea = el.querySelector('div:last-child');
-                        if(priceArea && !priceArea.querySelector('.suspend-text')) {
+                        if(priceArea) {
                             priceArea.insertAdjacentHTML('beforeend', '<div class="suspend-text" style="font-size:9px;color:#ff4444;">Giao dịch bị đình chỉ</div>');
                         }
                     }
