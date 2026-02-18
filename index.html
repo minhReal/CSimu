@@ -71,12 +71,12 @@
         .controls-area { padding:10px; background:#151515; border-top:1px solid #333; padding-bottom: 20px; }
         .mini-news { font-size: 11px; padding: 5px 15px; color: #888; border-bottom: 1px solid #222; white-space: nowrap; overflow: hidden; background: #0f0f0f; font-weight: bold; }
         .mini-news.pos { color: var(--green); } .mini-news.neg { color: var(--red); }
-        #admin-view { position:fixed; inset:0; background:#000; z-index:6000; display:none; flex-direction:column; overflow-y:auto; }
+        #admin-view { position:fixed; inset:0; background:#000; z-index:16000; display:none; flex-direction:column; overflow-y:auto; }
         #settings-modal { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; }
         .settings-box { background:var(--panel); padding:20px; border-radius:12px; width:80%; max-width:300px; }
         .up{color:var(--green)} .down{color:var(--red)}
         /* ADMIN PANEL */
-        #admin-view { position:fixed; inset:0; background:#050505; z-index:6000; display:none; flex-direction:column; }
+        #admin-view { position:fixed; inset:0; background:#050505; z-index:12000; display:none; flex-direction:column; }
         .adm-tab { transition:0.15s; }
         .adm-tab:hover { background:#1a1a1a; }
         /* PC RESPONSIVE */
@@ -446,7 +446,7 @@
                         <input type="text" id="subadmin-name-inp" placeholder="Tên user..." autocomplete="off"
                             oninput="filterSubAdminInput()" onfocus="filterSubAdminInput()"
                             style="margin-bottom:0;width:100%;box-sizing:border-box;">
-                        <div id="subadmin-name-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #444;border-top:none;border-radius:0 0 6px 6px;max-height:150px;overflow-y:auto;z-index:200;"></div>
+                        <div id="subadmin-name-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #444;border-top:none;border-radius:0 0 6px 6px;max-height:150px;overflow-y:auto;z-index:600;"></div>
                     </div>
                     <button onclick="addSubAdmin()" style="padding:8px 12px;background:#1f6feb;color:white;border:none;border-radius:6px;font-weight:bold;white-space:nowrap;">THÊM</button>
                 </div>
