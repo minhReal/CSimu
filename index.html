@@ -116,6 +116,7 @@
     <div class="header">
         <div style="font-weight:bold; display:flex; align-items:center; gap:5px;">👤 <span id="u-name" style="color:#ccc">...</span></div>
         <div style="display:flex; gap:15px; align-items:center;">
+            <button id="btn-daily" onclick="claimDaily()" style="display:none; background:#ffaa00; color:black; border:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:bold;animation:pulse 2s infinite;">🎁 DAILY</button>
             <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;">ADMIN</button>
 
             <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;"><span id="cash">$0.00</span></div>
@@ -135,6 +136,50 @@
         <button onclick="openCompose()" title="Soạn thư ($10)" style="position:fixed;bottom:80px;right:20px;width:52px;height:52px;border-radius:50%;background:var(--blue);color:white;border:none;font-size:26px;font-weight:300;cursor:pointer;box-shadow:0 4px 16px rgba(31,111,235,0.5);z-index:1500;display:none;align-items:center;justify-content:center;line-height:1;" id="fab-compose">+</button>
     </div>
     <div id="tab-news" class="view-content hidden"><div id="news-list" style="padding:10px;"></div></div>
+    <div id="tab-portfolio" class="view-content hidden">
+        <div style="padding:15px;">
+            <div style="background:#0a0a0a;border:1px solid #333;border-radius:10px;padding:15px;margin-bottom:15px;">
+                <div style="font-size:11px;color:#888;margin-bottom:5px;">TỔNG TÀI SẢN</div>
+                <div style="font-size:28px;font-weight:bold;color:var(--green);" id="pf-total">$0.00</div>
+                <div style="display:flex;gap:15px;margin-top:10px;font-size:12px;">
+                    <div>
+                        <div style="color:#888;">Tiền mặt</div>
+                        <div style="color:white;font-weight:bold;" id="pf-cash">$0.00</div>
+                    </div>
+                    <div>
+                        <div style="color:#888;">Cổ phiếu</div>
+                        <div style="color:var(--blue);font-weight:bold;" id="pf-stocks">$0.00</div>
+                    </div>
+                </div>
+            </div>
+            <div style="background:#0a0a0a;border:1px solid #333;border-radius:10px;padding:15px;margin-bottom:15px;">
+                <div style="font-size:11px;color:#888;margin-bottom:8px;font-weight:bold;">LÃI/LỖ TỔNG</div>
+                <div style="font-size:24px;font-weight:bold;" id="pf-pnl">$0.00 (0%)</div>
+            </div>
+            <div style="background:#0a0a0a;border:1px solid #333;border-radius:10px;padding:15px;">
+                <div style="font-size:11px;color:#888;margin-bottom:10px;font-weight:bold;">DANH MỤC NẮM GIỮ</div>
+                <div id="pf-holdings"></div>
+            </div>
+        </div>
+    </div>
+    <div id="tab-watchlist" class="view-content hidden">
+        <div style="padding:15px;">
+            <div style="background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:15px;margin-bottom:15px;">
+                <div style="font-size:11px;color:#888;margin-bottom:8px;font-weight:bold;">THÊM VÀO YÊU THÍCH</div>
+                <div style="display:flex;gap:8px;">
+                    <select id="watchlist-add" style="flex:1;">
+                        <option value="VIN">VIN</option>
+                        <option value="FPT">FPT</option>
+                        <option value="HPG">HPG</option>
+                        <option value="DIG">DIG</option>
+                        <option value="VTB">VTB</option>
+                    </select>
+                    <button onclick="addToWatchlist()" style="padding:8px 16px;background:var(--blue);color:white;border:none;border-radius:6px;font-weight:bold;">THÊM</button>
+                </div>
+            </div>
+            <div id="watchlist-items"></div>
+        </div>
+    </div>
     <div id="tab-rank" class="view-content hidden"><div id="rank-list" style="padding:10px;"></div></div>
     <div class="status-bar">
         <div class="ping-indicator"><div class="dot" id="ping-dot"></div> PING: <span id="ping-val">--</span>ms</div>
@@ -676,9 +721,19 @@
         _tryAutoLogin();
     }
     function _tryAutoLogin() {
-
         const s=localStorage.getItem("sess");
-        if(s && localStorage.getItem(`u_${s}`)){
+        if(!s) return;
+        
+        const banned = JSON.parse(localStorage.getItem('_banned')||'[]');
+        if(banned.includes(s)) {
+            localStorage.removeItem("sess");
+            localStorage.removeItem(`u_${s}`);
+            alert("Tài khoản đã bị ban khỏi hệ thống.");
+            location.reload();
+            return;
+        }
+        
+        if(localStorage.getItem(`u_${s}`)){
             me=s;
             wallet=JSON.parse(localStorage.getItem(`u_${s}`));
             if(!wallet.inbox) wallet.inbox=[];
@@ -724,6 +779,13 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                 sfx('ok'); msg.innerText="Đăng ký thành công!"; msg.style.color="var(--green)";
             } catch(e){ sfx('err'); msg.innerText="Lỗi mạng: "+e.message; msg.style.color="var(--red)"; }
         } else {
+            const banned = JSON.parse(localStorage.getItem('_banned')||'[]');
+            if(banned.includes(u)) {
+                sfx('err'); 
+                msg.innerText="Tài khoản đã bị ban"; 
+                msg.style.color="var(--red)"; 
+                return;
+            }
             try {
                 const r = await sb(`users?name=eq.${encodeURIComponent(u)}&select=name,pass,asset`);
                 if(!r.ok || !r.data.length){ sfx('err'); msg.innerText="Tài khoản không tồn tại"; msg.style.color="var(--red)"; return; }
@@ -802,7 +864,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                     buyBtn.style.cssText="flex:1;margin:0;background:#2a0000;color:#555;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";
                     buyBtn.innerText="MUA (ĐÌNH CHỈ)";
                     if(sellBtn){sellBtn.style.cssText="flex:1;margin:0;background:#2a0000;color:#555;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";sellBtn.innerText="BÁN (ĐÌNH CHỈ)";}
-                } else if(s.price < 5){
+                } else if(s.price < 2){
                     buyBtn.style.cssText="flex:1;margin:0;background:#444;color:#666;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";
                     buyBtn.innerText="MUA (KHÓA)";
                     if(sellBtn){sellBtn.style.cssText="flex:1;margin:0;background:#da3633;color:white;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";sellBtn.innerText="BÁN";}
@@ -1208,7 +1270,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             if(hasPerm('broadcast')) allowedTabs.push('bc');
             ['users','cash','news','bc','subadmin'].forEach(t => {
                 const btn = document.getElementById(`admt-${t}`);
-                if(btn) btn.style.display = (t==='subadmin' || allowedTabs.includes(t)) ? '' : 'none';
+                if(btn) btn.style.display = allowedTabs.includes(t) ? '' : 'none';
             });
             adminTab(allowedTabs[0] || 'users');
             return;
@@ -1240,19 +1302,27 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             btn.style.background = '#1a6a1a';
             dot.style.left = '22px';
             dot.style.background = '#6f6';
+            if(aiCrashEnabled) {
+                toggleAICrash();
+            }
             if(aiBoostInterval) clearInterval(aiBoostInterval);
-            aiBoostInterval = setInterval(async () => {
-                if(Math.random() < 0.25) {
-                    await generatePositiveNews();
-                    triggerBoom();
-                }
-            }, 25000);
-            showToast("AI BOOST","Đã bật tự động tăng giá");
+            if(crashEvent) crashEvent = null;
+            const stocks = getSelectedCrashStocks();
+            crashEvent = {
+                stocks,
+                magnitude: 1.15,
+                endsAt: Date.now() + 999999999
+            };
+            showToast("AI BOOST","🚀 Thị trường tăng LIÊN TỤC cho đến khi tắt!");
+            aiBoostInterval = setInterval(() => {
+                if(Math.random() < 0.3) generatePositiveNews();
+            }, 30000);
         } else {
             btn.style.background = '#333';
             dot.style.left = '2px';
             dot.style.background = '#666';
             if(aiBoostInterval) { clearInterval(aiBoostInterval); aiBoostInterval = null; }
+            crashEvent = null;
             showToast("AI BOOST","Đã tắt");
         }
     }
@@ -1266,19 +1336,27 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             btn.style.background = '#3a0000';
             dot.style.left = '22px';
             dot.style.background = '#f66';
+            if(aiBoostEnabled) {
+                toggleAIBoom();
+            }
             if(aiCrashInterval) clearInterval(aiCrashInterval);
-            aiCrashInterval = setInterval(async () => {
-                if(Math.random() < 0.2) {
-                    await generateCrashNews();
-                    triggerCrash();
-                }
-            }, 35000);
-            showToast("AI CRASH","Đã bật tự động sụt giá");
+            if(crashEvent) crashEvent = null;
+            const stocks = getSelectedCrashStocks();
+            crashEvent = {
+                stocks,
+                magnitude: 0.75,
+                endsAt: Date.now() + 999999999
+            };
+            showToast("AI CRASH","🔴 Thị trường SỤT LIÊN TỤC cho đến khi tắt!");
+            aiCrashInterval = setInterval(() => {
+                if(Math.random() < 0.25) generateCrashNews();
+            }, 40000);
         } else {
             btn.style.background = '#333';
             dot.style.left = '2px';
             dot.style.background = '#666';
             if(aiCrashInterval) { clearInterval(aiCrashInterval); aiCrashInterval = null; }
+            crashEvent = null;
             showToast("AI CRASH","Đã tắt");
         }
     }
@@ -1570,8 +1648,25 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         if(!_requireAdmin()) return;
         const c=await askInput(`Gõ "BAN" để ban ${n}`);
         if(c==='BAN'){
-            await sb(`users?name=eq.${encodeURIComponent(n)}`,"DELETE");
-            showToast("THÔNG BÁO",`Đã ban ${n}`); loadAdminUsers();
+            let banned = JSON.parse(localStorage.getItem('_banned')||'[]');
+            if(!banned.includes(n)) {
+                banned.push(n);
+                localStorage.setItem('_banned', JSON.stringify(banned));
+            }
+            try {
+                await sb(`users?name=eq.${encodeURIComponent(n)}`, "PATCH", {asset: 0});
+            } catch(e){}
+            localStorage.removeItem(`u_${n}`);
+            localStorage.removeItem('_tradeHist_'+n);
+            localStorage.removeItem('_alerts_'+n);
+            localStorage.removeItem('_watchlist_'+n);
+            if(n === me) {
+                alert("Bạn đã bị BAN!");
+                logout();
+                return;
+            }
+            showToast("BANNED",`${n} đã bị khóa và xóa toàn bộ dữ liệu`); 
+            loadAdminUsers();
         }
     }
 
@@ -1730,12 +1825,34 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             } else {
                 const fallbackPos = [
                     "Dòng tiền ngoại đổ mạnh vào thị trường phiên sáng",
+                    "VN-Index vượt ngưỡng kháng cự quan trọng trong phiên",
+                    "Nhóm cổ phiếu bluechip dẫn dắt thị trường tăng điểm",
+                    "Thanh khoản cải thiện mạnh, nhà đầu tư lạc quan trở lại",
+                    "Kết quả kinh doanh vượt kỳ vọng, cổ phiếu tăng trần",
+                    "Fed giữ nguyên lãi suất, thị trường phản ứng tích cực",
+                    "Khối ngoại mua ròng mạnh, VN-Index tăng hơn 15 điểm",
+                    "Tin vui kinh tế vĩ mô hỗ trợ thị trường tăng điểm",
+                    "Cổ phiếu dẫn dắt tăng giá, sắc xanh phủ kín bảng điện",
+                    "Đột phá công nghệ mới đẩy mạnh nhóm cổ phiếu tech",
+                    "Chính sách hỗ trợ doanh nghiệp giúp thị trường phục hồi",
+                    "Dòng tiền chuyển từ vàng sang cổ phiếu, thị trường sôi động",
                     "Thanh khoản cải thiện rõ, nhà đầu tư lạc quan trở lại",
                     "Nhóm cổ phiếu dẫn dắt kéo chỉ số tăng điểm mạnh",
                     "Kết quả kinh doanh vượt kỳ vọng, thị trường phấn khởi",
                 ];
                 const fallbackNeg = [
-                    "Áp lực bán tháo lan rộng, thanh khoản sụt giảm",
+                    "Áp lực bán tháo lan rộng, thanh khoản sụt giảm mạnh",
+                    "Thị trường chứng khoán lao dốc sau thông tin tiêu cực từ Fed",
+                    "Dòng vốn ngoại rút ròng khiến VN-Index giảm điểm mạnh",
+                    "Nhà đầu tư hoảng loạn bán tháo, thị trường chìm sắc đỏ",
+                    "Khối ngoại bán ròng kỷ lục, thanh khoản sụt giảm nghiêm trọng",
+                    "Tin xấu kinh tế vĩ mô đẩy thị trường rơi tự do",
+                    "Ngành ngân hàng dẫn đầu đà giảm, nhóm bluechip mất điểm",
+                    "Lạm phát tăng cao, lo ngại Fed thắt chặt tiền tệ",
+                    "Căng thẳng địa chính trị ảnh hưởng tiêu cực đến thị trường",
+                    "Kết quả kinh doanh quý vừa qua thấp hơn kỳ vọng",
+                    "Cổ phiếu penny bị bán tháo mạnh trong phiên",
+                    "Tâm lý bi quan lan rộng, nhà đầu tư chọn bán tháo",
                     "Khối ngoại bán ròng mạnh, tâm lý thị trường bi quan",
                     "Cổ phiếu trụ cột giảm sâu, VN-Index mất điểm",
                     "Tin xấu vĩ mô tạo áp lực lớn lên thị trường",
@@ -1994,11 +2111,11 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     function filterCashUsers() {
         const q = document.getElementById("cash-user").value.toLowerCase();
         const dd = document.getElementById("cash-user-dropdown");
-        const filtered = allUsersCache.filter(u => u.name.toLowerCase().includes(q));
+        _filteredCashUsers = allUsersCache.filter(u => u.name.toLowerCase().includes(q));const filtered = _filteredCashUsers;
         if(!filtered.length){ dd.style.display='none'; return; }
         dd.style.display='block';
-        dd.innerHTML = filtered.map(u=>`
-            <div onclick="selectCashUser('${u.name}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #333;font-size:13px;color:white;"
+        dd.innerHTML = filtered.map((u,i)=>`
+            <div onclick="selectCashUser(${i})" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #333;font-size:13px;color:white;"
                 onmouseover="this.style.background='#2a2a2a'" onmouseout="this.style.background='transparent'">
                 <span style="font-weight:bold;">${u.name}</span>
                 <span style="color:#00ff88;font-size:11px;margin-left:8px;">$${safeFloat(u.asset).toLocaleString(undefined,{maximumFractionDigits:0})}</span>
@@ -2009,9 +2126,12 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const dd = document.getElementById("cash-user-dropdown");
         if(dd && !dd.contains(e.target)) dd.style.display='none';
     }
-    function selectCashUser(name) {
-        document.getElementById("cash-user").value = name;
-        document.getElementById("cash-user-dropdown").style.display='none';
+    let _filteredCashUsers = [];
+    function selectCashUser(idx) {
+        if(_filteredCashUsers[idx]) {
+            document.getElementById("cash-user").value = _filteredCashUsers[idx].name;
+            document.getElementById("cash-user-dropdown").style.display='none';
+        }
     }
 
     let subAdminList = JSON.parse(localStorage.getItem('_subAdmins')||'[]');
@@ -2208,7 +2328,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         if(isNaN(cost) || cost <= 0) return showToast("LỖI","Lỗi tính toán");
 
         if(t==='buy'){
-            if(price < 5) return showToast("KHÔNG THỂ MUA",`Giá ${sel} = $${price.toFixed(2)} < $5, lệnh mua bị từ chối`);
+            if(price < 2) return showToast("KHÔNG THỂ MUA",`Giá ${sel} = $${price.toFixed(2)} < $2, lệnh mua bị từ chối`);
             if(cost > safeFloat(wallet.cash)) return showToast("LỖI","Thiếu tiền");
             wallet.cash = safeFloat(wallet.cash) - cost;
             wallet.stocks[sel] = (wallet.stocks[sel]||0) + qty;
@@ -2227,7 +2347,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         const rebuild = div.childElementCount!==data.length;
         if(rebuild){
             div.innerHTML=data.map(s=>{
-                const bankrupt = s.price < 5;
+                const bankrupt = s.price < 2;
                 const bankruptBadge = bankrupt
                     ? `<div class="bankrupt-badge" style="font-size:9px;font-weight:bold;color:#ff4444;background:#2a0000;border:1px solid #500;border-radius:3px;padding:1px 5px;margin-top:2px;display:inline-block;animation:pulse 1s infinite;">⚠ ĐANG PHÁ SẢN</div>`
                     : '';
@@ -2250,7 +2370,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             data.forEach(s=>{
                 const el=document.getElementById(`st-${s.code}`);
                 if(!el) return;
-                const bankrupt = s.price < 5;
+                const bankrupt = s.price < 2;
                 const up = s.candle.close>=s.candle.open;
                 
                 const p=el.querySelector(".price-val");
@@ -2433,7 +2553,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     function closeDetail(){sfx('click');sel=null;document.getElementById("detail-view").classList.remove("active");}
     function updateD(){
         const s=data.find(x=>x.code===sel); if(!s) return;
-        const bankrupt = s.price < 5;
+        const bankrupt = s.price < 2;
         const up = candles[sel]?.at(-1)?.close >= candles[sel]?.at(-1)?.open;
         document.getElementById("d-code").innerText = s.code;
         document.getElementById("d-price").innerText = s.price.toFixed(2);
@@ -2507,12 +2627,104 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         activeTab=id;
         const fab = document.getElementById("fab-compose");
         if(fab) fab.style.display = id==='mail' ? 'flex' : 'none';
+        if(id==='watchlist') { loadWatchlist(); renderWatchlist(); }
         if(id==='rank') getRank();
         if(id==='news'){
             renderNewsPage();
             setTimeout(()=>{ if(currentTickNewsId) highlightTickerNews(currentTickNewsId); }, 50);
         }
     }
+    function claimDaily() {
+        const now = Date.now();
+        const oneDay = 24 * 60 * 60 * 1000;
+        const timeSince = now - lastDailyTime;
+        
+        if(timeSince < oneDay) {
+            const hoursLeft = Math.ceil((oneDay - timeSince) / (60 * 60 * 1000));
+            showToast("DAILY BONUS",`Quay lại sau ${hoursLeft} giờ nữa!`);
+            return;
+        }
+        
+        if(timeSince < oneDay * 2) {
+            dailyStreak++;
+        } else {
+            dailyStreak = 1;
+        }
+        
+        const baseReward = 50;
+        const streakBonus = (dailyStreak - 1) * 10;
+        const totalReward = baseReward + streakBonus;
+        
+        wallet.cash += totalReward;
+        lastDailyTime = now;
+        localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
+        localStorage.setItem('_dailyStreak_'+me, dailyStreak.toString());
+        localStorage.setItem('_lastDaily_'+me, now.toString());
+        
+        showToast("🎁 DAILY BONUS",`+$${totalReward} | Streak: ${dailyStreak} ngày`,4000);
+        sfx('ok');
+        syncNow();
+        
+        document.getElementById("btn-daily").style.display = "none";
+    }
+    
+    function checkDailyBonus() {
+        const now = Date.now();
+        const oneDay = 24 * 60 * 60 * 1000;
+        const timeSince = now - lastDailyTime;
+        const btn = document.getElementById("btn-daily");
+        if(btn && timeSince >= oneDay) {
+            btn.style.display = "block";
+        }
+    }
+    
+    let watchlist = [];
+    function loadWatchlist() {
+        watchlist = JSON.parse(localStorage.getItem('_watchlist_'+me)||'[]');
+        if(watchlist.length === 0) watchlist = ['VIN','FPT'];
+    }
+    
+    function addToWatchlist() {
+        const code = document.getElementById("watchlist-add").value;
+        if(!watchlist.includes(code)) {
+            watchlist.push(code);
+            localStorage.setItem('_watchlist_'+me, JSON.stringify(watchlist));
+            renderWatchlist();
+            showToast("YÊU THÍCH",`Đã thêm ${code}`);
+        } else {
+            showToast("THÔNG BÁO",`${code} đã có trong danh sách`);
+        }
+    }
+    
+    function removeFromWatchlist(code) {
+        watchlist = watchlist.filter(c => c !== code);
+        localStorage.setItem('_watchlist_'+me, JSON.stringify(watchlist));
+        renderWatchlist();
+        showToast("YÊU THÍCH",`Đã xóa ${code}`);
+    }
+    
+    function renderWatchlist() {
+        const el = document.getElementById("watchlist-items");
+        if(!el) return;
+        if(watchlist.length === 0) {
+            el.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Chưa có cổ phiếu yêu thích</div>';
+            return;
+        }
+        el.innerHTML = watchlist.map(code => {
+            const s = data.find(x => x.code === code);
+            if(!s) return '';
+            const up = s.candle.close >= s.candle.open;
+            const priceColor = up ? 'var(--green)' : 'var(--red)';
+            return `<div style="background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+                <div onclick="openDetail('${code}')" style="flex:1;cursor:pointer;">
+                    <div style="font-weight:bold;font-size:16px;color:white;">${code}</div>
+                    <div style="font-size:20px;font-weight:bold;color:${priceColor};margin-top:4px;">$${s.price.toFixed(2)}</div>
+                </div>
+                <button onclick="removeFromWatchlist('${code}')" style="background:#500;color:white;border:none;padding:8px 12px;border-radius:6px;font-size:11px;">XÓA</button>
+            </div>`;
+        }).join('');
+    }
+    
     function logout(){localStorage.removeItem("sess");location.reload();}
 
     function changeChartType(){chartType=document.getElementById("chart-type-select").value;localStorage.setItem("chart_type",chartType);if(sel)draw();}
