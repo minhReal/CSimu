@@ -1,0 +1,2801 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Terminal X</title>
+    <script>
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.onkeydown = function(e) {
+            if(e.keyCode == 123) return false;
+            if(e.ctrlKey && e.shiftKey && e.keyCode == 'I'.charCodeAt(0)) return false;
+        }
+    </script>
+    <style>
+        :root { --bg:#050505; --panel:#121212; --border:#2a2a2a; --green:#00ff88; --red:#ff3b3b; --gold:#ffd700; --text:#e0e0e0; --blue:#1f6feb; }
+        body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow:hidden; height:100dvh; }
+        * { box-sizing:border-box; user-select:none; -webkit-tap-highlight-color:transparent; }
+        button { cursor:pointer; transition:0.1s; } button:active { transform:scale(0.95); }
+        select, input, textarea { background:#222; color:white; border:1px solid #444; padding:8px; border-radius:4px; outline:none; width: 100%; font-family: inherit; }
+        #app { display:none; height:100dvh; flex-direction:column; }
+        .status-bar { height: 25px; background: #080808; border-top: 1px solid #333; display: flex; justify-content: space-between; align-items: center; padding: 0 10px; font-size: 10px; color: #666; font-family: monospace; z-index: 5000; }
+        .ping-indicator { display: flex; align-items: center; gap: 5px; }
+        .dot { width: 6px; height: 6px; border-radius: 50%; background: #444; }
+        .dot.online { background: var(--green); box-shadow: 0 0 5px var(--green); }
+        .dot.lag { background: var(--gold); }
+        #login-screen { position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.95); display:flex; flex-direction:column; justify-content:center; align-items:center; }
+        .login-box { background:var(--panel); border:1px solid var(--border); padding:30px; border-radius:16px; width:85%; max-width:350px; text-align:center; box-shadow:0 0 50px rgba(0,255,136,0.1); }
+        .inp-auth { width:100%; padding:15px; margin:10px 0; background:#1a1a1a; border:1px solid #333; color:white; border-radius:8px; font-size:16px; text-align:center; outline:none; }
+        .btn-auth { width:100%; padding:15px; margin-top:10px; border:none; border-radius:8px; font-weight:bold; font-size:16px; color:white; }
+        .header { padding:12px; background:var(--panel); border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; height:60px; z-index: 10; }
+        .tab-bar { display:flex; border-bottom:1px solid var(--border); background:var(--panel); height:50px; z-index: 10; }
+        .tab-btn { flex:1; padding:15px 5px; text-align:center; font-size:11px; font-weight:bold; color:#666; border-bottom:3px solid transparent; position: relative; white-space: nowrap; }
+        .tab-btn.active { color:var(--green); border-bottom-color:var(--green); background:#1a1a1a; color:white; }
+        .badge { position: absolute; top: 5px; right: 10px; background: var(--red); color: white; border-radius: 50%; width: 14px; height: 14px; font-size: 9px; display: flex; align-items: center; justify-content: center; font-weight: bold; display: none; }
+        .view-content { flex:1; overflow-y:auto; position:relative; padding-bottom: 300px; }
+        .hidden { display:none!important; }
+        .stock-item { display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; padding:16px; margin:10px; border-radius:10px; border:1px solid var(--border); }
+        .rank-item { display:flex; align-items:center; background:#161616; padding:12px; margin:8px 10px; border-radius:8px; border:1px solid var(--border); color: white; }
+        .rank-me { border:1px solid var(--green); background:#0f3318; }
+        .news-card { background:#111; border:1px solid #333; border-radius:8px; padding:12px; margin:10px; border-left:4px solid #555; }
+        .news-time { font-size: 10px; color: #666; margin-bottom: 4px; display: block; }
+        .mail-item { background:#161616; padding:15px; border-bottom:1px solid #333; cursor: pointer; display: flex; gap: 10px; align-items: center; }
+        .mail-item.unread { background:#222; border-left: 3px solid var(--green); }
+        .mail-icon { width: 35px; height: 35px; background: #333; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #888; flex-shrink: 0; font-size: 12px; }
+        .mail-content { flex: 1; overflow: hidden; }
+        .mail-sender { font-size: 11px; color: #aaa; }
+        .mail-subject { font-size: 13px; color: #ccc; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #mail-detail, #compose-modal, #custom-prompt { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9000; display: none; flex-direction: column; justify-content:center; align-items:center; }
+        #mail-detail { background: #101010; justify-content: flex-start; z-index: 3000; }
+        #compose-modal { background: rgba(0,0,0,0.6); backdrop-filter:blur(4px); justify-content: flex-end; z-index: 3000; padding: 0; }
+        #compose-inner { background:#111; border-radius:20px 20px 0 0; width:100%; max-width:600px; margin:0 auto; padding:20px; padding-bottom:30px; max-height:90vh; overflow-y:auto; }
+        .modal-box { background: var(--panel); border: 1px solid var(--border); padding: 20px; border-radius: 12px; width: 85%; max-width: 320px; text-align: center; box-shadow: 0 0 30px rgba(0,0,0,0.5); }
+        .modal-title { font-weight: bold; margin-bottom: 10px; color: var(--green); font-size: 16px; }
+        .modal-btn { width: 100%; padding: 10px; background: #444; border: none; border-radius: 6px; color: white; font-weight: bold; margin-top: 5px; }
+        .modal-btn.primary { background: var(--green); color: black; }
+        .mail-header { padding: 15px; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 15px; width:100%; }
+        .mail-body { padding: 20px; flex: 1; overflow-y: auto; line-height: 1.6; color: #ddd; width:100%; }
+        #toast-container { position: fixed; bottom: 35px; right: 0; left: 0; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 10px; z-index: 9999; }
+        .toast-box { background: #111; border: 1px solid #333; color: white; width: 90%; max-width: 300px; border-radius: 8px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.5); animation: slideUp 0.3s ease-out; position: relative; pointer-events: auto; }
+        .toast-content { padding: 12px 15px; display: flex; align-items: center; gap: 10px; }
+        .toast-icon { font-size: 20px; }
+        .toast-text { font-size: 13px; font-weight: 500; }
+        .toast-progress { height: 3px; background: var(--green); width: 100%; position: absolute; bottom: 0; left: 0; animation: timeRun linear forwards; }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes timeRun { from { width: 100%; } to { width: 0%; } }
+        #detail-view { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(110%); width: 100%; max-width: 700px; height: 58%; background: #101010; border-top: 1px solid var(--green); border-left: 1px solid #222; border-right: 1px solid #222; border-radius: 16px 16px 0 0; box-shadow: 0 -10px 40px rgba(0,0,0,0.7); z-index: 2000; display: flex; flex-direction: column; transition: transform 0.3s cubic-bezier(0.4,0,0.2,1); }
+        #detail-view.active { transform: translateX(-50%) translateY(0); }
+        .chart-header { padding:10px 15px; display:flex; justify-content:space-between; align-items:center; background:#1a1a1a; border-bottom:1px solid #333; }
+        .chart-container { flex:1; width:100%; position:relative; background: #080808; overflow: hidden; }
+        canvas { display:block; width:100%; height:100%; }
+        .controls-area { padding:10px; background:#151515; border-top:1px solid #333; padding-bottom: 20px; }
+        .mini-news { font-size: 11px; padding: 5px 15px; color: #888; border-bottom: 1px solid #222; white-space: nowrap; overflow: hidden; background: #0f0f0f; font-weight: bold; }
+        .mini-news.pos { color: var(--green); } .mini-news.neg { color: var(--red); }
+        #admin-view { position:fixed; inset:0; background:#000; z-index:6000; display:none; flex-direction:column; overflow-y:auto; }
+        #settings-modal { position:fixed; inset:0; z-index:5000; background:rgba(0,0,0,0.8); display:none; align-items:center; justify-content:center; }
+        .settings-box { background:var(--panel); padding:20px; border-radius:12px; width:80%; max-width:300px; }
+        .up{color:var(--green)} .down{color:var(--red)}
+        /* ADMIN PANEL */
+        #admin-view { position:fixed; inset:0; background:#050505; z-index:6000; display:none; flex-direction:column; }
+        .adm-tab { transition:0.15s; }
+        .adm-tab:hover { background:#1a1a1a; }
+        /* PC RESPONSIVE */
+        @media(min-width:600px){
+            .login-box { padding:40px; }
+            .inp-auth { font-size:18px; padding:18px; }
+            .btn-auth { font-size:18px; padding:18px; }
+            .header { height:70px; padding:15px 20px; }
+            .tab-btn { font-size:13px; height:55px; }
+            .stock-item { padding:20px; margin:12px; font-size:16px; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+            .rank-item { padding:16px; margin:10px; }
+            #admin-view { max-width:700px; left:50%; transform:translateX(-50%); border-left:1px solid #333; border-right:1px solid #333; }
+            .modal-box { max-width:450px; padding:30px; }
+            .controls-area input { font-size:20px; }
+            .chart-header { padding:15px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+<audio id="bgm" loop preload="auto"><source src="https://cdn.pixabay.com/audio/2022/05/27/audio_1808fbf07a.mp3" type="audio/mpeg"></audio>
+
+<div id="login-screen" onclick="unlockAudio()">
+    <div class="login-box">
+        <h2 style="margin:0 0 20px 0; color:var(--green); letter-spacing:2px;">TERMINAL X</h2>
+        <input type="text" id="user" class="inp-auth" placeholder="Tên hiển thị">
+        <input type="password" id="pass" class="inp-auth" placeholder="Mật mã">
+        <button onclick="auth('login')" class="btn-auth" style="background:#1f6feb;">ĐĂNG NHẬP</button>
+        <button onclick="auth('reg')" class="btn-auth" style="background:#238636;">ĐĂNG KÝ</button>
+        <div style="margin-top:15px; font-size:12px;"><span style="color:#666; cursor:pointer;" onclick="forgotPass()">Quên mật khẩu?</span></div>
+        <div id="msg" style="color:var(--red); font-size:12px; margin-top:15px;"></div>
+    </div>
+</div>
+
+<div id="app">
+    <div class="header">
+        <div style="font-weight:bold; display:flex; align-items:center; gap:5px;">👤 <span id="u-name" style="color:#ccc">...</span></div>
+        <div style="display:flex; gap:15px; align-items:center;">
+            <button id="btn-daily" onclick="claimDaily()" style="display:none; background:#ffaa00; color:black; border:none; padding:4px 10px; border-radius:4px; font-size:10px; font-weight:bold;animation:pulse 2s infinite;">🎁 DAILY</button>
+            <button id="btn-admin" onclick="openAdmin()" style="display:none; background:var(--red); color:white; border:none; padding:4px 8px; border-radius:4px; font-size:10px; font-weight:bold;">ADMIN</button>
+
+            <div style="font-weight:bold; color:var(--green); background:#0f3318; padding:5px 10px; border-radius:6px;"><span id="cash">$0.00</span></div>
+            <button onclick="openSettings()" style="background:none; border:none; padding:0; font-size:20px;">⚙️</button>
+        </div>
+    </div>
+    <div class="tab-bar">
+        <div class="tab-btn active" onclick="tab('market')">THỊ TRƯỜNG</div>
+        <div class="tab-btn" onclick="tab('mail')">HỘP THƯ <div class="badge" id="mail-badge">0</div></div>
+        <div class="tab-btn" onclick="tab('news')">TIN TỨC</div>
+        <div class="tab-btn" onclick="tab('rank')">XẾP HẠNG</div>
+    </div>
+    <div id="tab-market" class="view-content"><div id="list"></div></div>
+    <div id="tab-mail" class="view-content hidden" style="position:relative;">
+        <div id="mail-list"></div>
+        <div style="text-align:center; padding:20px; color:#444; font-size:12px;" id="empty-mail">Hòm thư trống</div>
+        <button onclick="openCompose()" title="Soạn thư ($10)" style="position:fixed;bottom:80px;right:20px;width:52px;height:52px;border-radius:50%;background:var(--blue);color:white;border:none;font-size:26px;font-weight:300;cursor:pointer;box-shadow:0 4px 16px rgba(31,111,235,0.5);z-index:1500;display:none;align-items:center;justify-content:center;line-height:1;" id="fab-compose">+</button>
+    </div>
+    <div id="tab-news" class="view-content hidden"><div id="news-list" style="padding:10px;"></div></div>
+    <div id="tab-portfolio" class="view-content hidden">
+        <div style="padding:15px;">
+            <div style="background:#0a0a0a;border:1px solid #333;border-radius:10px;padding:15px;margin-bottom:15px;">
+                <div style="font-size:11px;color:#888;margin-bottom:5px;">TỔNG TÀI SẢN</div>
+                <div style="font-size:28px;font-weight:bold;color:var(--green);" id="pf-total">$0.00</div>
+                <div style="display:flex;gap:15px;margin-top:10px;font-size:12px;">
+                    <div>
+                        <div style="color:#888;">Tiền mặt</div>
+                        <div style="color:white;font-weight:bold;" id="pf-cash">$0.00</div>
+                    </div>
+                    <div>
+                        <div style="color:#888;">Cổ phiếu</div>
+                        <div style="color:var(--blue);font-weight:bold;" id="pf-stocks">$0.00</div>
+                    </div>
+                </div>
+            </div>
+            <div style="background:#0a0a0a;border:1px solid #333;border-radius:10px;padding:15px;margin-bottom:15px;">
+                <div style="font-size:11px;color:#888;margin-bottom:8px;font-weight:bold;">LÃI/LỖ TỔNG</div>
+                <div style="font-size:24px;font-weight:bold;" id="pf-pnl">$0.00 (0%)</div>
+            </div>
+            <div style="background:#0a0a0a;border:1px solid #333;border-radius:10px;padding:15px;">
+                <div style="font-size:11px;color:#888;margin-bottom:10px;font-weight:bold;">DANH MỤC NẮM GIỮ</div>
+                <div id="pf-holdings"></div>
+            </div>
+        </div>
+    </div>
+    <div id="tab-watchlist" class="view-content hidden">
+        <div style="padding:15px;">
+            <div style="background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:15px;margin-bottom:15px;">
+                <div style="font-size:11px;color:#888;margin-bottom:8px;font-weight:bold;">THÊM VÀO YÊU THÍCH</div>
+                <div style="display:flex;gap:8px;">
+                    <select id="watchlist-add" style="flex:1;">
+                        <option value="VIN">VIN</option>
+                        <option value="FPT">FPT</option>
+                        <option value="HPG">HPG</option>
+                        <option value="DIG">DIG</option>
+                        <option value="VTB">VTB</option>
+                    </select>
+                    <button onclick="addToWatchlist()" style="padding:8px 16px;background:var(--blue);color:white;border:none;border-radius:6px;font-weight:bold;">THÊM</button>
+                </div>
+            </div>
+            <div id="watchlist-items"></div>
+        </div>
+    </div>
+    <div id="tab-rank" class="view-content hidden"><div id="rank-list" style="padding:10px;"></div></div>
+    <div class="status-bar">
+        <div class="ping-indicator"><div class="dot" id="ping-dot"></div> PING: <span id="ping-val">--</span>ms</div>
+        <div id="system-time">00:00:00</div>
+    </div>
+</div>
+
+<div id="toast-container"></div>
+
+<div id="custom-prompt">
+    <div class="modal-box">
+        <div class="modal-title" id="prompt-title">NHẬP DỮ LIỆU</div>
+        <input type="text" id="prompt-input" class="inp-auth" style="margin-bottom:15px;">
+        <div style="display:flex; gap:10px;">
+            <button class="modal-btn" onclick="resolvePrompt(null)">HỦY</button>
+            <button class="modal-btn primary" onclick="resolvePrompt(document.getElementById('prompt-input').value)">OK</button>
+        </div>
+    </div>
+</div>
+
+<div id="mail-detail">
+    <div class="mail-header">
+        <button onclick="closeMail()" style="background:none; border:none; color:white; font-size:20px;">←</button>
+        <div style="font-weight:bold;">Nội dung thư</div>
+        <button onclick="deleteCurrentMail()" style="background:none; border:none; color:var(--red); margin-left:auto;">🗑️</button>
+    </div>
+    <div class="mail-body" id="mail-body-content"></div>
+</div>
+
+<div id="compose-modal" onclick="if(event.target.id==='compose-modal')closeCompose()">
+    <div id="compose-inner">
+        <div style="width:36px;height:4px;background:#333;border-radius:2px;margin:0 auto 16px;"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+            <div style="font-size:16px;font-weight:bold;color:white;">✉️ Soạn thư mới</div>
+            <button onclick="closeCompose()" style="background:#222;border:none;color:#888;width:30px;height:30px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+        <div style="position:relative;margin-bottom:10px;">
+            <label style="font-size:10px;color:#555;font-weight:bold;display:block;margin-bottom:4px;">NGƯỜI NHẬN</label>
+            <input type="text" id="mail-to" placeholder="Gõ tên..." autocomplete="off" oninput="filterMailTo()" onfocus="filterMailTo()" style="margin-bottom:0;background:#1a1a1a;border-color:#333;">
+            <div id="mail-to-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #444;border-top:none;border-radius:0 0 6px 6px;max-height:160px;overflow-y:auto;z-index:200;"></div>
+        </div>
+        <div style="margin-bottom:10px;">
+            <label style="font-size:10px;color:#555;font-weight:bold;display:block;margin-bottom:4px;">TIÊU ĐỀ</label>
+            <input type="text" id="mail-subj" placeholder="Nhập tiêu đề..." style="margin-bottom:0;background:#1a1a1a;border-color:#333;">
+        </div>
+        <div style="margin-bottom:12px;">
+            <label style="font-size:10px;color:#555;font-weight:bold;display:block;margin-bottom:4px;">NỘI DUNG</label>
+            <textarea id="mail-content" placeholder="Nhập nội dung..." style="height:90px;resize:none;background:#1a1a1a;border-color:#333;margin-bottom:0;"></textarea>
+        </div>
+        <div style="background:#0d1a1a;border:1px solid #1a3030;border-radius:10px;padding:12px;margin-bottom:12px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0;">
+                <div>
+                    <div style="font-size:12px;color:#4af;font-weight:bold;">💵 Kèm tiền mặt</div>
+                    <div style="font-size:10px;color:#555;margin-top:2px;">Tối đa $100 · Cooldown 1 tiếng</div>
+                </div>
+                <input type="checkbox" id="attach-money-toggle" onchange="toggleAttachMoney()" style="width:auto;transform:scale(1.3);">
+            </div>
+            <div id="attach-money-panel" style="display:none;margin-top:10px;">
+                <input type="number" id="mail-money-amount" placeholder="$0.00" min="0.01" max="100" step="0.01" oninput="updateAttachMoneyInfo()" style="margin-bottom:4px;background:#111;border-color:#1a3030;font-size:16px;font-weight:bold;text-align:center;">
+                <div id="attach-money-info" style="font-size:10px;color:#555;text-align:center;"></div>
+            </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-size:11px;color:#555;">Phí gửi: $10 · Số dư: <span id="compose-balance" style="color:#4af;">--</span></div>
+        </div>
+        <button onclick="sendP2PMail()" style="width:100%;padding:14px;background:var(--blue);color:white;border:none;border-radius:10px;font-weight:bold;font-size:15px;letter-spacing:0.5px;">GỬI THƯ →</button>
+    </div>
+</div>
+
+<div id="detail-view">
+    <div class="chart-header">
+        <div><div id="d-code" style="font-weight:900; font-size:20px; color:white;">CODE</div><div style="font-size:11px; color:#888;">Sở hữu: <span id="d-owned" style="color:white">0</span></div></div>
+        <div style="text-align:right"><div id="d-price" style="font-size:24px; font-weight:bold;">0.00</div><button onclick="closeDetail()" style="background:none; border:none; color:#666; font-size:12px; margin-top:5px;">▼ ẨN</button></div>
+    </div>
+    <div class="mini-news" id="mini-news-ticker">📰 Đang cập nhật tin tức...</div>
+    <div class="chart-container"><canvas id="chart"></canvas></div>
+    <div class="controls-area">
+        <input type="number" id="trade-amount" class="inp-auth" placeholder="Nhập số lượng (CP)" style="margin-bottom:10px; font-size:18px; font-weight:bold;">
+        <div style="display:flex; gap:10px;">
+            <button id="btn-buy" onclick="trade('buy')" class="btn-auth" style="margin:0; background:#238636; flex:1;">MUA</button>
+            <button id="btn-sell" onclick="trade('sell')" class="btn-auth" style="margin:0; background:#da3633; flex:1;">BÁN</button>
+        </div>
+        <div id="trade-estimate" style="text-align:center; font-size:11px; color:#888; margin-top:5px;">Ước tính: $0.00</div>
+    </div>
+</div>
+
+<div id="admin-view">
+    <div style="padding:12px 15px; background:#1a0000; border-bottom:2px solid #ff3b3b; display:flex; justify-content:space-between; align-items:center;">
+        <div style="color:#ff3b3b; font-weight:900; font-size:14px; letter-spacing:2px;">🛠️ ADMIN PANEL</div>
+        <button onclick="closeAdmin()" style="background:#333;color:white;border:none;padding:6px 12px;border-radius:4px;font-weight:bold;">✕ ĐÓNG</button>
+    </div>
+    
+    <div style="display:flex; background:#111; border-bottom:1px solid #333;">
+        <div class="adm-tab active" id="admt-users" onclick="adminTab('users')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:white;border-bottom:2px solid var(--red);cursor:pointer;">USERS</div>
+        <div class="adm-tab" id="admt-cash" onclick="adminTab('cash')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:#666;border-bottom:2px solid transparent;cursor:pointer;">TIỀN</div>
+        <div class="adm-tab" id="admt-news" onclick="adminTab('news')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:#666;border-bottom:2px solid transparent;cursor:pointer;">TIN TỨC</div>
+        <div class="adm-tab" id="admt-bc" onclick="adminTab('bc')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:#666;border-bottom:2px solid transparent;cursor:pointer;">PHÁT LOA</div>
+        <div class="adm-tab" id="admt-subadmin" onclick="adminTab('subadmin')" style="flex:1;padding:10px;text-align:center;font-size:11px;font-weight:bold;color:#666;border-bottom:2px solid transparent;cursor:pointer;">PHỤ ADMIN</div>
+    </div>
+    <div style="flex:1; overflow-y:auto; padding:15px;">
+
+        
+        <div id="admv-users">
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
+                <button onclick="loadAdminUsers()" style="flex:1;padding:10px;background:#333;color:white;border:none;border-radius:6px;font-weight:bold;">Làm mới</button>
+                <button onclick="resetAllUsers()" style="flex:1;padding:10px;background:#500;color:white;border:none;border-radius:6px;font-weight:bold;">Xóa hết</button>
+            </div>
+            <input type="text" id="admin-search" placeholder="Tìm user..." oninput="filterUsers()" style="margin-bottom:10px;">
+            <div id="admin-user-list" style="background:#0a0a0a;border-radius:8px;overflow:auto;max-height:60vh;"></div>
+        </div>
+
+        
+        <div id="admv-cash" style="display:none;">
+            <div style="background:#0a0a0a;border-radius:8px;padding:15px;margin-bottom:10px;">
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">CHỌN USER</div>
+                <div style="position:relative;margin-bottom:10px;">
+                    <input type="text" id="cash-user" placeholder="Bấm để chọn hoặc gõ tên..." oninput="filterCashUsers()" onfocus="showUserDropdown()" style="margin-bottom:0;" autocomplete="off">
+                    <div id="cash-user-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #444;border-top:none;border-radius:0 0 6px 6px;max-height:180px;overflow-y:auto;z-index:100;"></div>
+                </div>
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">SỐ TIỀN</div>
+                <input type="number" id="cash-amount" placeholder="Nhập số tiền..." style="margin-bottom:10px;">
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">KÈM THÔNG BÁO</div>
+                <div style="display:flex;gap:8px;margin-bottom:8px;">
+                    <button onclick="setCashMsg('none')" id="msgbtn-none" style="flex:1;padding:8px;background:#1f6feb;color:white;border:none;border-radius:6px;font-size:11px;font-weight:bold;">Không TB</button>
+                    <button onclick="setCashMsg('preset')" id="msgbtn-preset" style="flex:1;padding:8px;background:#333;color:white;border:none;border-radius:6px;font-size:11px;font-weight:bold;">Mẫu sẵn</button>
+                    <button onclick="setCashMsg('custom')" id="msgbtn-custom" style="flex:1;padding:8px;background:#333;color:white;border:none;border-radius:6px;font-size:11px;font-weight:bold;">Tùy chỉnh</button>
+                </div>
+                <div id="cash-preset-area" style="display:none;margin-bottom:8px;">
+                    <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">TIÊU ĐỀ</div>
+                    <input type="text" id="cash-preset-title" placeholder="Tiêu đề (để trống = mặc định)..." style="margin-bottom:6px;">
+                    <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">NỘI DUNG MẪU</div>
+                    <select id="cash-preset-select" style="margin-bottom:0;">
+                        <option value="Bạn đã nhận được phần thưởng từ hệ thống.">Phần thưởng hệ thống</option>
+                        <option value="Chúc mừng! Bạn đã trúng thưởng sự kiện.">Trúng thưởng sự kiện</option>
+                        <option value="Bạn bị phạt vi phạm nội quy.">Phạt vi phạm</option>
+                        <option value="Thuế tài sản định kỳ đã được thu.">Thuế định kỳ</option>
+                        <option value="Admin điều chỉnh số dư tài khoản.">Điều chỉnh số dư</option>
+                    </select>
+                </div>
+                <div id="cash-custom-area" style="display:none;margin-bottom:8px;">
+                    <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">TIÊU ĐỀ</div>
+                    <input type="text" id="cash-custom-title" placeholder="Tiêu đề thông báo..." style="margin-bottom:6px;">
+                    <textarea id="cash-custom-msg" placeholder="Nội dung thông báo tùy chọn..." style="height:60px;resize:none;margin-bottom:0;"></textarea>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:5px;margin-bottom:10px;">
+                    <button onclick="doGrantCash(1)" style="flex:1;padding:12px;background:#238636;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">TẶNG TIỀN</button>
+                    <button onclick="doGrantCash(-1)" style="flex:1;padding:12px;background:#da3633;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">THU THUẾ</button>
+                </div>
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">CHỈNH SỐ DƯ TUYỆT ĐỐI</div>
+                <div style="display:flex;gap:8px;margin-bottom:10px;">
+                    <input type="number" id="cash-set-amount" placeholder="Đặt số dư thành..." style="flex:1;margin-bottom:0;">
+                    <button onclick="doSetCash()" style="padding:10px 12px;background:#7a4a00;color:#ffaa00;border:1px solid #7a4a00;border-radius:6px;font-weight:bold;white-space:nowrap;">ĐẶT SỐ DƯ</button>
+                </div>
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">QUẢN LÝ CỔ PHIẾU</div>
+                <div style="display:flex;gap:8px;margin-bottom:8px;">
+                    <select id="cash-stock-code" style="flex:1;margin-bottom:0;">
+                        <option value="VIN">VIN</option>
+                        <option value="FPT">FPT</option>
+                        <option value="HPG">HPG</option>
+                        <option value="DIG">DIG</option>
+                        <option value="VTB">VTB</option>
+                    </select>
+                    <input type="number" id="cash-stock-qty" placeholder="Số CP" style="width:100px;margin-bottom:0;">
+                </div>
+                <div style="display:flex;gap:8px;margin-bottom:4px;">
+                    <button onclick="doGrantStock()" style="flex:1;padding:10px;background:#1a3a4a;color:#4af;border:1px solid #1a3a4a;border-radius:6px;font-weight:bold;">TẶNG CP</button>
+                    <button onclick="doDeleteStock()" style="flex:1;padding:10px;background:#3a0a0a;color:#f66;border:1px solid #500;border-radius:6px;font-weight:bold;">XÓA CP</button>
+                </div>
+            </div>
+        </div>
+
+        
+        <div id="admv-news" style="display:none;">
+            <div style="background:#0a0a0a;border-radius:8px;padding:15px;margin-bottom:10px;">
+
+                
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px;background:#111;border-radius:6px;">
+                    <span style="font-size:11px;color:#888;">Hiện nhãn <span style="color:var(--gold);font-weight:bold;">CUSTOM</span> trên tin</span>
+                    <div onclick="toggleCustomBadge()" id="custom-badge-btn" style="width:40px;height:20px;background:#333;border-radius:10px;cursor:pointer;position:relative;transition:0.2s;">
+                        <div id="custom-badge-dot" style="width:16px;height:16px;background:#666;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s;"></div>
+                    </div>
+                </div>
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:5px;">NỘI DUNG TIN TỨC</div>
+                <div style="position:relative;margin-bottom:8px;">
+                    <textarea id="custom-news-text" placeholder="Nội dung tin tức..." style="height:60px;resize:none;"></textarea>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;">
+                    <button id="ai-news-btn" onclick="generateAINews()" style="padding:10px;background:#0f1a3a;color:#7777ff;border:1px solid #3333aa;border-radius:6px;font-size:12px;font-weight:bold;">✨ AI Tạo tin tức</button>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:#0a0a0a;border:1px solid #333;border-radius:6px;">
+                        <span style="font-size:11px;color:#888;">🚀 AI tự động tăng giá</span>
+                        <div onclick="toggleAIBoom()" id="ai-boom-toggle" style="width:40px;height:20px;background:#333;border-radius:10px;cursor:pointer;position:relative;transition:0.2s;">
+                            <div id="ai-boom-dot" style="width:16px;height:16px;background:#666;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s;"></div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px;background:#0a0a0a;border:1px solid #333;border-radius:6px;">
+                        <span style="font-size:11px;color:#888;">🔴 AI tự động sụt giá</span>
+                        <div onclick="toggleAICrash()" id="ai-crash-toggle" style="width:40px;height:20px;background:#333;border-radius:10px;cursor:pointer;position:relative;transition:0.2s;">
+                            <div id="ai-crash-dot" style="width:16px;height:16px;background:#666;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+                    <div>
+                        <div style="color:#888;font-size:10px;font-weight:bold;margin-bottom:4px;">TÁC ĐỘNG (%)</div>
+                        <div style="font-size:9px;color:#555;margin-bottom:3px;">+ tốt / - xấu</div>
+                        <input type="number" id="news-impact-val" value="0" min="-100" max="100" style="text-align:center;font-size:14px;font-weight:bold;padding:8px;">
+                    </div>
+                    <div>
+                        <div style="color:#888;font-size:10px;font-weight:bold;margin-bottom:4px;">BIẾN ĐỘNG</div>
+                        <div style="font-size:9px;color:#555;margin-bottom:3px;">mức nhiễu giá</div>
+                        <input type="number" id="news-vol-val" value="5" min="0" max="50" style="text-align:center;font-size:14px;font-weight:bold;padding:8px;">
+                    </div>
+                    <div>
+                        <div style="color:#888;font-size:10px;font-weight:bold;margin-bottom:4px;">THỜI GIAN</div>
+                        <div style="font-size:9px;color:#555;margin-bottom:3px;">phút tác động</div>
+                        <input type="number" id="news-dur-val" value="5" min="1" max="60" style="text-align:center;font-size:14px;font-weight:bold;padding:8px;">
+                    </div>
+                </div>
+
+                
+                <div style="display:flex;gap:6px;margin-bottom:10px;">
+                    <button onclick="setNewsSentiment(15,8,10)" style="flex:1;padding:7px;background:#0f3318;color:var(--green);border:1px solid #238636;border-radius:6px;font-size:11px;font-weight:bold;">+15 Tích cực</button>
+                    <button onclick="setNewsSentiment(0,3,5)" style="flex:1;padding:7px;background:#1a1a1a;color:#aaa;border:1px solid #444;border-radius:6px;font-size:11px;font-weight:bold;">0 Trung lập</button>
+                    <button onclick="setNewsSentiment(-15,8,10)" style="flex:1;padding:7px;background:#3a0f0f;color:var(--red);border:1px solid #da3633;border-radius:6px;font-size:11px;font-weight:bold;">-15 Tiêu cực</button>
+                </div>
+
+                
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">DOANH NGHIỆP BỊ ẢNH HƯỞNG</div>
+                
+                <select id="news-sentiment-select" style="display:none;">
+                    <option value="1">Tích cực</option>
+                    <option value="0">Trung lập</option>
+                    <option value="-1">Tiêu cực</option>
+                </select>
+                <div id="news-stock-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+                    <div class="stock-chip" data-code="VN-INDEX" onclick="toggleChip(this)" style="padding:5px 10px;border-radius:20px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VN-INDEX</div>
+                    <div class="stock-chip" data-code="VIN" onclick="toggleChip(this)" style="padding:5px 10px;border-radius:20px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VIN</div>
+                    <div class="stock-chip" data-code="FPT" onclick="toggleChip(this)" style="padding:5px 10px;border-radius:20px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">FPT</div>
+                    <div class="stock-chip" data-code="HPG" onclick="toggleChip(this)" style="padding:5px 10px;border-radius:20px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">HPG</div>
+                    <div class="stock-chip" data-code="DIG" onclick="toggleChip(this)" style="padding:5px 10px;border-radius:20px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">DIG</div>
+                    <div class="stock-chip" data-code="VTB" onclick="toggleChip(this)" style="padding:5px 10px;border-radius:20px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VTB</div>
+                    <div class="stock-chip" data-code="ALL" onclick="toggleChip(this)" style="padding:5px 10px;border-radius:20px;border:1px solid #555;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">TẤT CẢ</div>
+                </div>
+
+                <button onclick="addCustomNews()" style="width:100%;padding:12px;background:#1f6feb;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;margin-bottom:12px;">ĐĂNG TIN TỨC</button>
+
+                <div style="background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:12px;margin-bottom:10px;margin-top:20px;">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+                        <div>
+                            <div style="color:#888;font-size:10px;font-weight:bold;margin-bottom:4px;">ĐỘ MẠNH (%)</div>
+                            <input type="number" id="crash-magnitude" value="30" min="5" max="90" style="text-align:center;font-weight:bold;padding:8px;">
+                        </div>
+                        <div>
+                            <div style="color:#888;font-size:10px;font-weight:bold;margin-bottom:4px;">THỜI GIAN (p)</div>
+                            <input type="number" id="crash-duration" value="5" min="1" max="60" style="text-align:center;font-weight:bold;padding:8px;">
+                        </div>
+                    </div>
+                    <div style="color:#888;font-size:10px;font-weight:bold;margin-bottom:6px;">ÁP DỤNG CHO</div>
+                    <div id="crash-stock-chips" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;">
+                        <div class="crash-chip" data-code="VN-INDEX" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VN-INDEX</div>
+                        <div class="crash-chip" data-code="VIN" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VIN</div>
+                        <div class="crash-chip" data-code="FPT" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">FPT</div>
+                        <div class="crash-chip" data-code="HPG" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">HPG</div>
+                        <div class="crash-chip" data-code="DIG" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">DIG</div>
+                        <div class="crash-chip" data-code="VTB" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #444;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">VTB</div>
+                        <div class="crash-chip" data-code="" onclick="toggleCrashChip(this)" style="padding:4px 9px;border-radius:15px;border:1px solid #555;font-size:11px;font-weight:bold;color:#888;cursor:pointer;background:#111;">TẤT CẢ</div>
+                    </div>
+                    <div id="crash-status" style="font-size:11px;color:#555;margin-bottom:8px;min-height:16px;"></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">
+                        <button onclick="triggerCrash()" style="padding:10px;background:#500;color:#ff6666;border:1px solid #800;border-radius:6px;font-weight:bold;font-size:12px;">⬇️ SỤT GIÁ</button>
+                        <button onclick="triggerBoom()" style="padding:10px;background:#0a2a0a;color:#6f6;border:1px solid #1a6a1a;border-radius:6px;font-weight:bold;font-size:12px;">⬆️ TĂNG GIÁ</button>
+                    </div>
+                    <button onclick="cancelCrash()" style="width:100%;padding:8px;background:#111;color:#555;border:1px solid #333;border-radius:6px;font-weight:bold;font-size:11px;">HỦY EVENT</button>
+                </div>
+
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">TIN TỨC ĐANG HIỂN THỊ</div>
+                <div id="admin-news-list" style="max-height:180px;overflow-y:auto;background:#111;border-radius:6px;padding:8px;"></div>
+                <button onclick="clearAllNews()" style="width:100%;margin-top:8px;padding:8px;background:#500;color:white;border:none;border-radius:6px;font-weight:bold;">Xóa tất cả tin</button>
+            </div>
+        </div>
+
+        
+        <div id="admv-bc" style="display:none;">
+            <div style="background:#0a0a0a;border-radius:8px;padding:15px;margin-bottom:10px;">
+                
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:8px;background:#111;border-radius:6px;">
+                    <span style="font-size:11px;color:#888;">Gửi <span style="color:#aaa;font-weight:bold;">ẩn danh</span> (từ "Hệ thống")</span>
+                    <div onclick="toggleBcAnon()" id="bc-anon-btn" style="width:40px;height:20px;background:#333;border-radius:10px;cursor:pointer;position:relative;transition:0.2s;">
+                        <div id="bc-anon-dot" style="width:16px;height:16px;background:#666;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s;"></div>
+                    </div>
+                </div>
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:8px;">TIÊU ĐỀ</div>
+                <input type="text" id="bc-title" placeholder="Tiêu đề thông báo..." style="margin-bottom:10px;">
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:8px;">NỘI DUNG</div>
+                <textarea id="bc-body" placeholder="Nội dung thông báo toàn server..." style="height:80px;resize:none;margin-bottom:10px;"></textarea>
+                <button onclick="adminBroadcast()" style="width:100%;padding:12px;background:#ff3b3b;color:white;border:none;border-radius:6px;font-weight:bold;font-size:14px;">PHÁT LOA TOÀN SERVER</button>
+            </div>
+        </div>
+
+        <div id="admv-subadmin" style="display:none;">
+            <div style="background:#0a0a0a;border-radius:8px;padding:15px;margin-bottom:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <div style="color:#888;font-size:11px;font-weight:bold;">DANH SÁCH PHỤ ADMIN</div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:11px;color:#888;">Bật hệ thống</span>
+                        <div onclick="toggleSubAdminSystem()" id="sub-system-btn" style="width:40px;height:20px;background:#333;border-radius:10px;cursor:pointer;position:relative;transition:0.2s;">
+                            <div id="sub-system-dot" style="width:16px;height:16px;background:#666;border-radius:50%;position:absolute;top:2px;left:2px;transition:0.2s;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="subadmin-list" style="margin-bottom:10px;min-height:40px;background:#111;border-radius:6px;padding:8px;max-height:220px;overflow-y:auto;"></div>
+                <div style="color:#888;font-size:11px;font-weight:bold;margin-bottom:6px;">THÊM PHỤ ADMIN</div>
+                <div style="display:flex;gap:8px;margin-bottom:12px;">
+                    <div style="flex:1;position:relative;">
+                        <input type="text" id="subadmin-name-inp" placeholder="Tên user..." autocomplete="off"
+                            oninput="filterSubAdminInput()" onfocus="filterSubAdminInput()"
+                            style="margin-bottom:0;width:100%;box-sizing:border-box;">
+                        <div id="subadmin-name-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#1a1a1a;border:1px solid #444;border-top:none;border-radius:0 0 6px 6px;max-height:150px;overflow-y:auto;z-index:200;"></div>
+                    </div>
+                    <button onclick="addSubAdmin()" style="padding:8px 12px;background:#1f6feb;color:white;border:none;border-radius:6px;font-weight:bold;white-space:nowrap;">THÊM</button>
+                </div>
+                <div id="perm-panel" style="display:none;background:#111;border-radius:8px;padding:12px;border:1px solid #333;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                        <div style="font-size:12px;color:#4af;font-weight:bold;">⚙️ Quyền của: <span id="perm-editing-name" style="color:white;"></span></div>
+                        <button onclick="document.getElementById('perm-panel').style.display='none'" style="background:none;border:none;color:#555;font-size:18px;cursor:pointer;">✕</button>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+                        <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                            <span style="font-size:12px;color:#ccc;">👁 Xem danh sách user</span>
+                            <input type="checkbox" id="perm-view-users" onchange="savePerms()" style="width:auto;transform:scale(1.2);">
+                        </label>
+                        <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                            <span style="font-size:12px;color:#ccc;">💰 Tặng / thu tiền</span>
+                            <input type="checkbox" id="perm-cash" onchange="savePerms()" style="width:auto;transform:scale(1.2);">
+                        </label>
+                        <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                            <span style="font-size:12px;color:#ccc;">📰 Thêm tin tức</span>
+                            <input type="checkbox" id="perm-news" onchange="savePerms()" style="width:auto;transform:scale(1.2);">
+                        </label>
+                        <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                            <span style="font-size:12px;color:#ccc;">📢 Phát loa toàn server</span>
+                            <input type="checkbox" id="perm-broadcast" onchange="savePerms()" style="width:auto;transform:scale(1.2);">
+                        </label>
+                        <label style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;">
+                            <span style="font-size:12px;color:#ccc;">🔨 Ban user</span>
+                            <input type="checkbox" id="perm-ban" onchange="savePerms()" style="width:auto;transform:scale(1.2);">
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div id="user-detail-modal" onclick="if(event.target.id==='user-detail-modal') this.style.display='none'" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.88); z-index:9500; align-items:center; justify-content:center;">
+    <div onclick="event.stopPropagation()" style="background:#0a0a0a; border:1px solid #333; border-radius:12px; width:90%; max-width:500px; max-height:80vh; overflow-y:auto; padding:20px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+            <h3 style="margin:0; color:var(--green);">CHI TIẾT USER</h3>
+            <button onclick="document.getElementById('user-detail-modal').style.display='none'" style="background:none; border:none; color:#888; font-size:24px; cursor:pointer;">&times;</button>
+        </div>
+        <div id="user-detail-content"></div>
+    </div>
+</div>
+
+<div id="settings-modal" onclick="if(event.target.id==='settings-modal') this.style.display='none'">
+    <div class="settings-box">
+        <h3>CÀI ĐẶT</h3>
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
+            <span>🎵 Nhạc nền</span>
+            <input type="checkbox" id="toggle-bgm" onchange="toggleBGM()" style="width:auto;">
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;"><span>Biểu đồ</span><select id="chart-type-select" onchange="changeChartType()" style="width:auto;"><option value="candle">Nến</option><option value="line">Đường</option></select></div>
+        <hr style="border-color:#333; margin:15px 0;">
+        <input type="password" id="old-pass" class="inp-auth" placeholder="Mật khẩu cũ" style="margin-bottom:5px;">
+        <input type="password" id="new-pass" class="inp-auth" placeholder="Mật khẩu mới" style="margin-bottom:10px;">
+        <button onclick="changePassword()" style="width:100%; padding:10px; background:#444; color:white; border:none; border-radius:5px; margin-bottom:10px;">Đổi mật khẩu</button>
+        <button onclick="logout()" style="width:100%; padding:10px; background:#da3633; color:white; border:none; border-radius:5px;">Đăng xuất</button>
+    </div>
+</div>
+
+<script>
+    const LANG = {
+        en: { buy: "BUY", sell: "SELL", market: "MARKET", news: "NEWS", mail: "MAIL" },
+        vi: { buy: "MUA", sell: "BÁN", market: "THỊ TRƯỜNG", news: "TIN TỨC", mail: "THƯ" }
+    };
+    function t(k) { return (LANG[currentLang] && LANG[currentLang][k]) || k; }
+    
+    window.addEventListener('error', function(e) {
+        console.error('[GLOBAL ERROR]', e.message, e.filename, e.lineno, e.colno);
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+        console.error('[UNHANDLED PROMISE]', e.reason);
+    });
+
+    const SB_URL = "https://mtdbpmezysuwxbxgxasc.supabase.co";
+    const SB_KEY = "sb_publishable_W-Q-MzuBfxjHsG4ia_x68A_fNF26q32";
+    const _AS = (()=>{ const s="minh@depzai36"; let h=0; for(let i=0;i<s.length;i++){h=((h<<5)-h)+s.charCodeAt(i);h|=0;} return h; })();
+    function _checkPass(p){ let h=0; for(let i=0;i<p.length;i++){h=((h<<5)-h)+p.charCodeAt(i);h|=0;} return h===_AS; }
+    const ADMIN_SECRET = "minh@depzai36";
+
+    async function sb(path, method = "GET", body = null, extra = {}) {
+        const opts = {
+            method,
+            headers: {
+                "apikey": SB_KEY,
+                "Authorization": `Bearer ${SB_KEY}`,
+                "Content-Type": "application/json",
+                "Prefer": "resolution=merge-duplicates,return=minimal",
+                ...extra
+            }
+        };
+        if (body) opts.body = JSON.stringify(body);
+        const res = await fetch(`${SB_URL}/rest/v1/${path}`, opts);
+        if (res.status === 204 || res.headers.get("content-length") === "0") return { ok: res.ok, data: [] };
+        const text = await res.text();
+        try { return { ok: res.ok, status: res.status, data: JSON.parse(text) }; }
+        catch { return { ok: res.ok, status: res.status, data: text }; }
+    }
+
+    const STOCKS = [
+        { code: "VN-INDEX", base: 1200, volatility: 20, speed: 0.5 },
+        { code: "VIN",      base: 45,   volatility: 5,  speed: 1.2 },
+        { code: "FPT",      base: 95,   volatility: 8,  speed: 0.8 },
+        { code: "HPG",      base: 28,   volatility: 4,  speed: 1.5 },
+        { code: "DIG",      base: 18,   volatility: 8,  speed: 2.5 },
+        { code: "VTB",      base: 36,   volatility: 3,  speed: 1.0 },
+    ];
+    function seededRandom(seed) {
+        var t = seed += 0x6D2B79F5;
+        t = Math.imul(t ^ t >>> 15, t | 1);
+        t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    }
+    let crashEvent = null;
+    function getCrashMultiplier(code) {
+        if(!crashEvent || Date.now() > crashEvent.endsAt) { crashEvent=null; return 1; }
+        if(crashEvent.stocks.length===0 || crashEvent.stocks.includes(code)) return crashEvent.magnitude;
+        return 1;
+    }
+
+    function getPriceAtBlock(stock, block) {
+        const rng = seededRandom(block + stock.base);
+        const macro = Math.sin(block / 200 * stock.speed) * stock.volatility * 2;
+        const micro = Math.cos(block / 15  * stock.speed) * stock.volatility;
+        const noise = (rng - 0.5) * (stock.volatility / 2);
+        const base = stock.base + macro + micro + noise;
+        return base * getCrashMultiplier(stock.code);
+    }
+    function getMarketData() {
+        const block = Math.floor(Date.now() / 3000);
+        return STOCKS.map(s => {
+            const close = getPriceAtBlock(s, block);
+            const open  = getPriceAtBlock(s, block - 1);
+            const rng   = seededRandom(block + s.base);
+            return { code: s.code, price: close, candle: { open, close, high: Math.max(open,close)+rng*(s.volatility/10), low: Math.min(open,close)-rng*(s.volatility/10), time: block } };
+        });
+    }
+
+    let me = null, wallet = {cash:250, stocks:{}, inbox:[], lastBC:0};
+    let data = [], candles = {}, sel = null, news = [];
+    let activeTab = 'market';
+    let currentLang = localStorage.getItem('_lang') || 'en';
+    let chartType = localStorage.getItem("chart_type") || "candle";
+    try { document.getElementById("chart-type-select").value = chartType; } catch(e){}
+    let isBgmOn = localStorage.getItem("bgm_state") !== "off";
+    try { document.getElementById("toggle-bgm").checked = isBgmOn; } catch(e){}
+    let currentMailIdx = -1;
+    let lastSyncedAsset = null;
+
+    const bgm = document.getElementById("bgm");
+    let audioCtx = null;
+    let unlocked = false;
+    function _getAudioCtx() {
+        if(!audioCtx) {
+            try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+            catch(e) { audioCtx = null; }
+        }
+        return audioCtx;
+    }
+    function unlockAudio() {
+        const ctx = _getAudioCtx();
+        if(ctx && !unlocked) ctx.resume().then(() => { unlocked=true; if(isBgmOn) bgm.play().catch(()=>{}); });
+    }
+    function toggleBGM() {
+        isBgmOn = document.getElementById("toggle-bgm").checked;
+        localStorage.setItem("bgm_state", isBgmOn?"on":"off");
+        if(isBgmOn) bgm.play().catch(()=>{}); else bgm.pause();
+        _getAudioCtx();
+    }
+    function sfx(t) {
+        const audioCtx=_getAudioCtx(); if(!audioCtx) return;
+        if(audioCtx.state==='suspended') audioCtx.resume();
+        const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.connect(g); g.connect(audioCtx.destination);
+        if(t==='click'){o.frequency.value=600;g.gain.value=0.05;o.start();o.stop(audioCtx.currentTime+0.05);}
+        if(t==='ok'){o.type='square';o.frequency.setValueAtTime(400,audioCtx.currentTime);o.frequency.linearRampToValueAtTime(800,audioCtx.currentTime+0.1);g.gain.value=0.05;o.start();o.stop(audioCtx.currentTime+0.2);}
+        if(t==='err'){o.type='sawtooth';o.frequency.value=150;g.gain.linearRampToValueAtTime(0,audioCtx.currentTime+0.3);o.start();o.stop(audioCtx.currentTime+0.3);}
+        if(t==='mail'){o.frequency.setValueAtTime(800,audioCtx.currentTime);o.frequency.linearRampToValueAtTime(1200,audioCtx.currentTime+0.1);g.gain.value=0.1;o.start();o.stop(audioCtx.currentTime+0.3);}
+    }
+
+    function showToast(title, msg, duration=3000) {
+        const c=document.getElementById("toast-container"), el=document.createElement("div");
+        el.className="toast-box";
+        el.innerHTML=`<div class="toast-content"><div class="toast-icon">🔔</div><div class="toast-text"><div style="color:var(--green);font-size:11px;margin-bottom:2px;">${title}</div><div>${msg}</div></div></div><div class="toast-progress" style="animation-duration:${duration}ms"></div>`;
+        c.appendChild(el); sfx('mail');
+        setTimeout(()=>{el.style.opacity="0";el.style.transform="translateY(20px)";setTimeout(()=>el.remove(),300);},duration);
+    }
+    let promptResolver = null;
+    function askInput(title) {
+        document.getElementById("prompt-title").innerText=title;
+        document.getElementById("prompt-input").value="";
+        document.getElementById("custom-prompt").style.display="flex";
+        document.getElementById("prompt-input").focus();
+        return new Promise(r=>{promptResolver=r;});
+    }
+    function resolvePrompt(val) {
+        document.getElementById("custom-prompt").style.display="none";
+        if(promptResolver) promptResolver(val);
+    }
+    function safeFloat(v) { const n=parseFloat(v); return isNaN(n)?0:n; }
+    function formatAsset(n) {
+        if(isNaN(n)) return "0";
+        const abs = Math.abs(n);
+        const sign = n < 0 ? "-" : "";
+        if(abs >= 1e12) return sign + (abs/1e12).toFixed(1) + "T";
+        if(abs >= 1e9)  return sign + (abs/1e9).toFixed(1)  + "B";
+        if(abs >= 1e6)  return sign + (abs/1e6).toFixed(1)  + "M";
+        if(abs >= 1e3)  return sign + (abs/1e3).toFixed(1)  + "K";
+        return sign + abs.toLocaleString(undefined,{maximumFractionDigits:0});
+    }
+
+    setInterval(()=>{document.getElementById("system-time").innerText=new Date().toLocaleTimeString('vi-VN');},1000);
+
+    if(document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _tryAutoLogin);
+    } else {
+        _tryAutoLogin();
+    }
+    function _tryAutoLogin() {
+        const s=localStorage.getItem("sess");
+        if(!s) return;
+        
+        const banned = JSON.parse(localStorage.getItem('_banned')||'[]');
+        if(banned.includes(s)) {
+            localStorage.removeItem("sess");
+            localStorage.removeItem(`u_${s}`);
+            alert("Tài khoản đã bị ban khỏi hệ thống.");
+            location.reload();
+            return;
+        }
+        
+        if(localStorage.getItem(`u_${s}`)){
+            me=s;
+            wallet=JSON.parse(localStorage.getItem(`u_${s}`));
+            if(!wallet.inbox) wallet.inbox=[];
+            if(!wallet.lastBC) wallet.lastBC=0;
+            if(!wallet.stocks) wallet.stocks={};
+            enter();
+        }
+    }
+
+    async function auth(t) {
+        unlockAudio();
+        const u=document.getElementById("user").value.trim(), p=document.getElementById("pass").value.trim(), msg=document.getElementById("msg");
+        if(!u||!p){sfx('err');msg.innerText="Thiếu thông tin";return;}
+        msg.innerText="Đang xử lý..."; msg.style.color="#888";
+
+        if(t==='reg'){
+            try {
+                const chk = await sb(`users?name=eq.${encodeURIComponent(u)}&select=name`);
+                if((chk.ok && chk.data.length>0) || localStorage.getItem(`u_${u}`)){
+                    sfx('err'); msg.innerText="Tên đã tồn tại"; msg.style.color="var(--red)"; return;
+                }
+                const ins = await sb("users", "POST", {name:u, asset:250, pass:p});
+                if(!ins.ok && ins.status !== 201 && ins.status !== 200){
+                    sfx('err'); msg.innerText="Lỗi tạo tài khoản"; msg.style.color="var(--red)"; return;
+                }
+                const firstMail={id:`sys_${Date.now()}`,from:"Terminal X",title:"🎉 Chào mừng đến Terminal X!",body:`<div style="line-height:1.8;">
+<b style="color:#00ff88;">Xin chào ${u}!</b><br><br>
+Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng khoán ảo thời gian thực.<br><br>
+<b>🚀 Bạn bắt đầu với $250</b> — hãy đầu tư thông minh!<br><br>
+<b>📈 Cách chơi:</b><br>
+• Bấm vào cổ phiếu để xem biểu đồ và giao dịch<br>
+• Mua khi giá đang tăng, bán khi giá cao<br>
+• Chú ý tin tức — chúng tác động đến giá!<br>
+• <span style="color:#ff3b3b;">Không thể mua khi giá đang giảm</span><br><br>
+<b>📰 Tin tức:</b> Theo dõi tab Tin tức để nắm bắt sự kiện thị trường<br>
+<b>🏆 Xếp hạng:</b> Cạnh tranh với người chơi khác<br>
+<b>✉️ Thư:</b> Gửi thư cho người chơi khác ($10 phí)<br><br>
+<i style="color:#888;">Chúc bạn đầu tư thành công! — Terminal X</i>
+</div>`,time:Date.now(),read:false};
+                const newWallet = {pass:p,cash:250,stocks:{},inbox:[firstMail],lastBC:Date.now()};
+                localStorage.setItem(`u_${u}`, JSON.stringify(newWallet));
+                await sb("users","POST",{name:u, asset:250, pass:p});
+                sfx('ok'); msg.innerText="Đăng ký thành công!"; msg.style.color="var(--green)";
+            } catch(e){ sfx('err'); msg.innerText="Lỗi mạng: "+e.message; msg.style.color="var(--red)"; }
+        } else {
+            const banned = JSON.parse(localStorage.getItem('_banned')||'[]');
+            if(banned.includes(u)) {
+                sfx('err'); 
+                msg.innerText="Tài khoản đã bị ban"; 
+                msg.style.color="var(--red)"; 
+                return;
+            }
+            try {
+                const r = await sb(`users?name=eq.${encodeURIComponent(u)}&select=name,pass,asset`);
+                if(!r.ok || !r.data.length){ sfx('err'); msg.innerText="Tài khoản không tồn tại"; msg.style.color="var(--red)"; return; }
+                const srv = r.data[0];
+                if(srv.pass !== p){ sfx('err'); msg.innerText="Sai mật khẩu"; msg.style.color="var(--red)"; return; }
+                let w = localStorage.getItem(`u_${u}`) ? JSON.parse(localStorage.getItem(`u_${u}`)) : null;
+                if(!w) w = {pass:p, cash:safeFloat(srv.asset), stocks:{}, inbox:[{id:`sys_0`,from:"Terminal X",title:"Chào mừng trở lại",body:"Dữ liệu được khôi phục từ server.",time:Date.now(),read:false}], lastBC:Date.now()};
+                w.pass = p;
+                localStorage.setItem(`u_${u}`, JSON.stringify(w));
+                me=u; wallet=w;
+                if(!wallet.inbox) wallet.inbox=[];
+                if(!wallet.lastBC) wallet.lastBC=0;
+                localStorage.setItem("sess", u); enter();
+            } catch(e){ sfx('err'); msg.innerText="Lỗi mạng: "+e.message; msg.style.color="var(--red)"; }
+        }
+    }
+
+    let _appStarted = false;
+    function enter() {
+        sfx('ok');
+        const loginScreen = document.getElementById("login-screen");
+        const app = document.getElementById("app");
+        const uName = document.getElementById("u-name");
+        if(!loginScreen || !app || !uName) {
+            console.error("Critical elements missing, retrying in 100ms");
+            setTimeout(enter, 100);
+            return;
+        }
+        loginScreen.style.display="none";
+        app.style.display="flex";
+        uName.innerText=me;
+
+        setTimeout(async () => {
+            await loadAdminConfig();
+            _verifyAdminAccess();
+            checkDailyBonus();
+        }, 500);
+        if(!_appStarted) {
+            _appStarted = true;
+            setInterval(loop, 1500);
+            setInterval(syncIfChanged, 60000);
+            setInterval(checkBroadcast, 15000);
+            setInterval(checkBankruptcy, 8000);
+            setInterval(checkGift, 20000);
+            setInterval(checkP2PMail, 20000);
+            setInterval(cleanExpiredNews, 10000);
+            setInterval(tick, 6000);
+            setInterval(loadAdminConfig, 30000);
+            setTimeout(()=>{ checkBan(); setInterval(checkBan, 60000); }, 60000);
+            loadNewsDb().then(() => {
+                generateFakeNews();
+                setInterval(generateFakeNews, 12000);
+            });
+        }
+        renderMail();
+        loop();
+        window.dispatchEvent(new Event('resize'));
+        setTimeout(()=>syncNow(), 2000);
+    }
+
+    function loop() {
+        const start = Date.now();
+        if(crashEventGlobal && crashEventGlobal.endsAt > Date.now()) {
+            crashEvent = crashEventGlobal;
+        } else if(crashEventGlobal && crashEventGlobal.endsAt <= Date.now()) {
+            crashEvent = null;
+            crashEventGlobal = null;
+        }
+        try {
+        data = getMarketData();
+        } catch(e){ console.error("getMarketData error:", e); return; }
+        if(!data || !data.length) { console.warn("No market data"); return; }
+        data.forEach(s=>{
+            if(!candles[s.code]) candles[s.code]=[];
+            const l=candles[s.code];
+            if(!l.length||l[l.length-1].time!==s.candle.time){l.push(s.candle);if(l.length>50)l.shift();}
+            else l[l.length-1]=s.candle;
+        });
+        renderList();
+        if(sel){
+            updateD(); draw();
+            const s=data.find(x=>x.code===sel);
+            const buyBtn=document.getElementById('btn-buy');
+            const sellBtn=document.getElementById('btn-sell');
+            if(buyBtn && s){
+                if(s.price < 1){
+                    buyBtn.style.cssText="flex:1;margin:0;background:#2a0000;color:#555;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";
+                    buyBtn.innerText="MUA (ĐÌNH CHỈ)";
+                    if(sellBtn){sellBtn.style.cssText="flex:1;margin:0;background:#2a0000;color:#555;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";sellBtn.innerText="BÁN (ĐÌNH CHỈ)";}
+                } else if(s.price < 2){
+                    buyBtn.style.cssText="flex:1;margin:0;background:#444;color:#666;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";
+                    buyBtn.innerText="MUA (KHÓA)";
+                    if(sellBtn){sellBtn.style.cssText="flex:1;margin:0;background:#da3633;color:white;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";sellBtn.innerText="BÁN";}
+                } else {
+                    buyBtn.style.cssText="flex:1;margin:0;background:#238636;color:white;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";
+                    buyBtn.innerText="MUA";
+                    if(sellBtn){sellBtn.style.cssText="flex:1;margin:0;background:#da3633;color:white;border:none;border-radius:5px;font-weight:bold;font-size:14px;padding:12px;";sellBtn.innerText="BÁN";}
+                }
+                const qty=parseFloat(document.getElementById("trade-amount").value)||0;
+                if(qty>0 && s.price>=1) document.getElementById("trade-estimate").innerText=`Ước tính: $${(qty*s.price).toFixed(2)}`;
+            }
+        }
+        document.getElementById("cash").innerText="$"+safeFloat(wallet.cash).toFixed(2);
+        updatePing(Date.now()-start);
+    }
+    function updatePing(ms){const d=document.getElementById("ping-dot"),t=document.getElementById("ping-val");if(!d||!t)return;t.innerText=ms;d.className=ms<50?"dot online":"dot lag";}
+
+    async function syncIfChanged() {
+        if(!me) return;
+        let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*Math.max(0,s.price);});
+        if(lastSyncedAsset !== null && Math.abs(t - lastSyncedAsset) < 1) return;
+        try {
+            await sb("users", "POST", {name:me, asset:t});
+            lastSyncedAsset = t;
+        } catch(e){}
+    }
+    async function syncNow(silent=false) {
+        if(!me) return;
+        let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*Math.max(0,s.price);});
+        try { await sb("users", "POST", {name:me, asset:t}); lastSyncedAsset=t; } catch(e){}
+    }
+
+    async function checkBan() {
+        try {
+            const r = await sb(`users?name=eq.${encodeURIComponent(me)}&select=name`);
+            if(r.ok && r.data.length===0){
+                showToast("CẢNH BÁO","Tài khoản đã bị BAN.",5000);
+                setTimeout(()=>{localStorage.removeItem(`u_${me}`);localStorage.removeItem("sess");location.reload();},3000);
+            }
+        } catch(e){}
+    }
+
+    async function getRank() {
+        if(activeTab!=='rank') return;
+        const el = document.getElementById("rank-list");
+        el.innerHTML = "<div style='padding:20px;text-align:center;color:#555;'>Đang tải...</div>";
+        try {
+            await syncNow(true);
+            const r = await sb("users?select=name,asset&order=asset.desc&limit=100");
+            const list = r.data || [];
+            if(!list.length){ el.innerHTML="<div style='padding:20px;text-align:center;color:#555;'>Chưa có dữ liệu</div>"; return; }
+            el.innerHTML = list.map((p,i)=>`
+                <div class="rank-item ${p.name===me?'rank-me':''}">
+                    <div style="width:30px;text-align:center;font-weight:bold;color:${i<3?'var(--gold)':'#555'}">${i===0?'👑':i===1?'🥈':i===2?'🥉':i+1}</div>
+                    <div style="flex:1;margin-left:10px;">
+                        <div style="font-weight:bold;color:${p.name===me?'var(--green)':'white'};">${p.name}</div>
+                        <div style="font-size:12px;color:#888;">$${formatAsset(safeFloat(p.asset))}</div>
+                    </div>
+                    ${p.name===me?'<div style="font-size:10px;color:var(--green);padding:2px 6px;border:1px solid var(--green);border-radius:3px;">BẠN</div>':''}
+                </div>`).join('');
+        } catch(e){ el.innerHTML="<div style='padding:20px;text-align:center;color:red;'>Lỗi tải dữ liệu</div>"; }
+    }
+
+    async function checkBroadcast() {
+        try {
+            const r = await sb("broadcast?id=eq.bc_latest&select=*");
+            if(r.ok && r.data.length>0){
+                const m=r.data[0];
+                if(m.time && m.time > wallet.lastBC){
+                    wallet.inbox.unshift({id:m.id,from:m.from||"Admin",title:m.title,body:m.body,time:m.time,read:false});
+                    wallet.lastBC=m.time;
+                    showToast("THÔNG BÁO","Tin nhắn từ hệ thống"); renderMail();
+                    localStorage.setItem(`u_${me}`,JSON.stringify(wallet));
+                }
+            }
+        } catch(e){}
+    }
+
+    async function checkGift() {
+        try {
+            const r = await sb(`gifts?to=eq.${encodeURIComponent(me)}&select=*`);
+            if(r.ok && r.data.length>0){
+                await sb(`gifts?to=eq.${encodeURIComponent(me)}`,"DELETE");
+                let totalCash = 0;
+                let didSetBalance = false;
+                r.data.forEach(g => {
+                    const id = g.id || '';
+                    const amt = safeFloat(g.amount);
+
+                    if(id.startsWith('setbal_')) {
+                        const target = -amt - 1000000000;
+                        if(target >= 0 && target < 10000000) {
+                            wallet.cash = target;
+                            didSetBalance = true;
+                            wallet.inbox.unshift({id:`setcash_${Date.now()}`,from:"Admin",
+                                title:"Điều chỉnh số dư",
+                                body:`Số dư của bạn đã được đặt thành $${target.toLocaleString()}`,
+                                time:Date.now(),read:false});
+                            showToast("ADMIN",`Số dư đặt thành $${target.toLocaleString()}`);
+                        }
+                    } else if(id.startsWith('STK_')) {
+                        const parts = id.split('_');
+                        const code = parts[1];
+                        const qty  = parseFloat(parts[2]);
+                        if(code && qty > 0) {
+                            wallet.stocks[code] = (wallet.stocks[code]||0) + qty;
+                            wallet.inbox.unshift({id:`giftstock_${Date.now()}`,from:"Admin",
+                                title:`Nhận ${qty} CP ${code}`,
+                                body:`Admin đã tặng bạn ${qty} cổ phiếu ${code}!`,
+                                time:Date.now(),read:false});
+                            showToast("CỔ PHIẾU",`+${qty} CP ${code}!`);
+                        }
+                    } else {
+                        totalCash += amt;
+                    }
+                });
+                if(totalCash !== 0 && !didSetBalance){
+                    wallet.cash = safeFloat(wallet.cash) + totalCash;
+                    const type = totalCash>0 ? "QUÀ TẶNG" : "THU THUẾ";
+                    const msgText = totalCash>0
+                        ? `Bạn nhận được: $${totalCash.toLocaleString()}`
+                        : `Bạn bị trừ: $${Math.abs(totalCash).toLocaleString()}`;
+                    wallet.inbox.unshift({id:`gift_${Date.now()}`,from:"System",
+                        title:type, body:msgText, time:Date.now(), read:false});
+                    showToast(type, msgText);
+                } else if(totalCash !== 0 && didSetBalance){
+                    wallet.cash = safeFloat(wallet.cash) + totalCash;
+                }
+                renderMail();
+                localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
+                syncNow();
+            }
+        } catch(e){ console.error('checkGift error:', e); }
+    }
+
+    async function checkP2PMail() {
+        try {
+            const r = await sb(`mails?to=eq.${encodeURIComponent(me)}&select=*&order=time.asc`);
+            if(r.ok && r.data.length>0){
+                r.data.forEach(m=>{ if(!wallet.inbox.some(x=>x.id===m.id)) wallet.inbox.unshift({...m,read:false}); });
+                await sb(`mails?to=eq.${encodeURIComponent(me)}`,"DELETE");
+                localStorage.setItem(`u_${me}`,JSON.stringify(wallet));
+                showToast("MAIL","Bạn có thư mới!"); renderMail();
+            }
+        } catch(e){}
+    }
+    let lastMoneyGiftTime = parseInt(localStorage.getItem('_lastMoneyGift')) || 0;
+    
+    function toggleAttachMoney() {
+        const panel = document.getElementById("attach-money-panel");
+        const checked = document.getElementById("attach-money-toggle").checked;
+        panel.style.display = checked ? 'block' : 'none';
+        if(checked) updateAttachMoneyInfo();
+    }
+    
+    function updateAttachMoneyInfo() {
+        const amt = parseFloat(document.getElementById("mail-money-amount").value) || 0;
+        const info = document.getElementById("attach-money-info");
+        
+        const now = Date.now();
+        const cooldown = 60 * 60 * 1000;
+        const timeSince = now - lastMoneyGiftTime;
+        const remaining = cooldown - timeSince;
+        
+        if(remaining > 0 && lastMoneyGiftTime > 0) {
+            const mins = Math.ceil(remaining / 60000);
+            info.innerHTML = `<span style="color:var(--red);">⏱️ Phải đợi ${mins} phút nữa mới được tặng tiền</span>`;
+            return;
+        }
+        
+        if(amt <= 0) {
+            info.innerText = '';
+            return;
+        }
+        if(amt > 100) {
+            info.innerHTML = `<span style="color:var(--red);">⚠️ Tối đa $100</span>`;
+            return;
+        }
+        if(amt > wallet.cash) {
+            info.innerHTML = `<span style="color:var(--red);">⚠️ Không đủ tiền (có $${wallet.cash.toFixed(0)})</span>`;
+            return;
+        }
+        info.innerHTML = `Gửi $${amt.toFixed(2)} · Còn lại: $${(wallet.cash - amt).toFixed(2)}`;
+        info.style.color = '#888';
+    }
+    
+    
+    async function sendP2PMail() {
+        const to   = document.getElementById("mail-to").value.trim();
+        const sub  = document.getElementById("mail-subj").value.trim();
+        const body = document.getElementById("mail-content").value.trim();
+        
+        const attachMoney = document.getElementById("attach-money-toggle").checked;
+        const moneyAmt = parseFloat(document.getElementById("mail-money-amount").value) || 0;
+        
+        if(!to)  return showToast("LỖI","Chưa nhập người nhận");
+        if(!sub) return showToast("LỖI","Chưa nhập tiêu đề");
+        if(!body) return showToast("LỖI","Chưa nhập nội dung");
+        
+        if(attachMoney) {
+            const now = Date.now();
+            const cooldown = 60 * 60 * 1000;
+            const timeSince = now - lastMoneyGiftTime;
+            if(timeSince < cooldown && lastMoneyGiftTime > 0) {
+                const mins = Math.ceil((cooldown - timeSince) / 60000);
+                return showToast("LỖI",`Phải đợi ${mins} phút nữa mới được tặng tiền`);
+            }
+            if(moneyAmt <= 0) return showToast("LỖI","Số tiền không hợp lệ");
+            if(moneyAmt > 100) return showToast("LỖI","Chỉ được tặng tối đa $100");
+            if(moneyAmt > wallet.cash) return showToast("LỖI","Không đủ tiền");
+        }
+
+        if(to === me) return showToast("LỖI","Không thể gửi cho chính mình");
+        
+        const totalCost = 10 + (attachMoney && moneyAmt > 0 ? moneyAmt : 0);
+        if(safeFloat(wallet.cash) < totalCost) return showToast("LỖI",`Không đủ tiền (cần $${totalCost.toFixed(2)}, có $${safeFloat(wallet.cash).toFixed(2)})`);
+        
+        if(attachMoney && moneyAmt > 0) {
+            wallet.cash = safeFloat(wallet.cash) - moneyAmt;
+            localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
+            lastMoneyGiftTime = Date.now();
+            localStorage.setItem('_lastMoneyGift', lastMoneyGiftTime.toString());
+        }
+
+        const sendBtn = document.querySelector('#compose-modal button[onclick="sendP2PMail()"]');
+        if(sendBtn){ sendBtn.disabled=true; sendBtn.innerText="Đang gửi..."; }
+        try {
+            const chk = await sb(`users?name=eq.${encodeURIComponent(to)}&select=name`);
+            if(!chk.ok || !Array.isArray(chk.data) || !chk.data.length){
+                showToast("LỖI",`Người dùng "${to}" không tồn tại`);
+                if(sendBtn){ sendBtn.disabled=false; sendBtn.innerText="GỬI THƯ"; }
+                return;
+            }
+        } catch(e) {
+            showToast("LỖI","Lỗi mạng khi kiểm tra người nhận");
+            if(sendBtn){ sendBtn.disabled=false; sendBtn.innerText="GỬI THƯ"; }
+            return;
+        }
+
+        const id = `mail_${Date.now()}_${Math.random().toString(36).substr(2,6)}`;
+        
+        let finalBody = body;
+        if(attachMoney && moneyAmt > 0) {
+            finalBody += `\n\n💵 Kèm theo: $${moneyAmt.toFixed(2)}`;
+        }
+        
+        try {
+            const r = await sb("mails","POST",{id, to, from:me, title:sub, body:finalBody, time:Date.now()});
+            if(r.ok || r.status===201 || r.status===200 || r.status===204){
+                wallet.cash = safeFloat(wallet.cash) - 10;
+                localStorage.setItem(`u_${me}`,JSON.stringify(wallet));
+                
+                if(attachMoney && moneyAmt > 0) {
+                    const moneyGiftId = `gift_${to}_${Date.now()}_money`;
+                    await sb("gifts","POST",{id:moneyGiftId, to, amount:moneyAmt});
+                }
+                
+                const extras = [];
+                if(attachMoney && moneyAmt > 0) extras.push(`$${moneyAmt.toFixed(2)}`);
+                const extrasText = extras.length > 0 ? ' + ' + extras.join(' + ') : '';
+                showToast("THÀNH CÔNG",`Đã gửi thư${extrasText} cho ${to}!`);
+                document.getElementById("compose-modal").style.display="none";
+                document.getElementById("mail-to-dropdown").style.display="none";
+                document.getElementById("mail-to").value="";
+                document.getElementById("mail-subj").value="";
+                document.getElementById("mail-content").value="";
+                document.getElementById("attach-money-toggle").checked=false;
+                document.getElementById("attach-money-panel").style.display="none";
+                document.getElementById("mail-money-amount").value="";
+
+                syncNow();
+            } else {
+                showToast("LỖI",`Gửi thất bại (${r.status}) — thử lại`);
+            }
+        } catch(e){
+            showToast("LỖI","Lỗi mạng khi gửi: "+e.message);
+        }
+        if(sendBtn){ sendBtn.disabled=false; sendBtn.innerText="GỬI THƯ"; }
+    }
+
+    function renderMail() {
+        const div=document.getElementById("mail-list"),empty=document.getElementById("empty-mail"),badge=document.getElementById("mail-badge");
+        if(!wallet.inbox.length){div.innerHTML="";empty.style.display="block";badge.style.display="none";return;}
+        empty.style.display="none";
+        const unread=wallet.inbox.filter(m=>!m.read).length;
+        badge.style.display=unread>0?"flex":"none"; badge.innerText=unread;
+        div.innerHTML=wallet.inbox.map((m,i)=>{
+            const hasStock = m.body && m.body.includes('📈 Kèm theo:');
+            const hasMoney = m.body && m.body.includes('💵 Kèm theo:');
+            const icons = [];
+            if(hasMoney) icons.push('<span style="color:#4af;font-size:10px;">💵</span>');
+            if(hasStock) icons.push('<span style="color:var(--green);font-size:10px;">📈</span>');
+            const iconText = icons.length > 0 ? ' ' + icons.join(' ') : '';
+            return `<div class="mail-item ${m.read?'':'unread'}" onclick="openMail(${i})">
+                <div class="mail-icon">${m.from[0].toUpperCase()}</div>
+                <div class="mail-content">
+                    <div class="mail-sender">${m.from}${iconText}</div>
+                    <div class="mail-subject">${m.title}</div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+    function openMail(idx) {
+        currentMailIdx=idx; const m=wallet.inbox[idx]; m.read=true;
+        document.getElementById("mail-body-content").innerHTML=`<h3 style="margin-top:0">${m.title}</h3><div style="font-size:12px;color:#888;margin-bottom:20px">Từ: ${m.from} - ${new Date(m.time).toLocaleString()}</div><div>${m.body}</div>`;
+        document.getElementById("mail-detail").style.display="flex";
+        localStorage.setItem(`u_${me}`,JSON.stringify(wallet)); renderMail();
+    }
+    function closeMail(){document.getElementById("mail-detail").style.display="none";}
+    function deleteCurrentMail(){if(currentMailIdx>-1){wallet.inbox.splice(currentMailIdx,1);localStorage.setItem(`u_${me}`,JSON.stringify(wallet));closeMail();renderMail();}}
+    function openCompose(){
+        document.getElementById("compose-modal").style.display="flex";
+        document.getElementById("compose-balance").innerText = "$"+safeFloat(wallet.cash).toFixed(0);
+        if(!allUsersCache.length) sb("users?select=name,asset&order=asset.desc").then(r=>{ allUsersCache=r.data||[]; });
+        setTimeout(()=>document.getElementById("mail-to").focus(), 100);
+    }
+    function closeCompose(){
+        document.getElementById("compose-modal").style.display="none";
+        document.getElementById("mail-to-dropdown").style.display="none";
+    }
+    function filterMailTo(){
+        const q = document.getElementById("mail-to").value.toLowerCase();
+        const dd = document.getElementById("mail-to-dropdown");
+        if(!allUsersCache.length){
+            sb("users?select=name,asset&order=asset.desc").then(r=>{
+                allUsersCache=r.data||[];
+                filterMailTo();
+            });
+            return;
+        }
+        const filtered = allUsersCache.filter(u => u.name.toLowerCase().includes(q) && u.name !== me);
+        if(!filtered.length){ dd.style.display="none"; return; }
+        dd.style.display="block";
+        dd.innerHTML = filtered.slice(0,8).map(u=>`
+            <div onclick="selectMailTo('${u.name}')"
+                style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #2a2a2a;font-size:13px;"
+                onmouseover="this.style.background='#2a2a2a'" onmouseout="this.style.background='transparent'">
+                <span style="color:white;font-weight:bold;">${u.name}</span>
+                <span style="color:#555;font-size:11px;margin-left:6px;">$${safeFloat(u.asset).toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+            </div>`).join('');
+        setTimeout(()=>{ document.addEventListener('click', closeMailToDD, {once:true}); }, 0);
+    }
+    function closeMailToDD(e){
+        const dd=document.getElementById("mail-to-dropdown");
+        if(dd && !dd.contains(e.target)) dd.style.display="none";
+    }
+    function selectMailTo(name){
+        document.getElementById("mail-to").value=name;
+        document.getElementById("mail-to-dropdown").style.display="none";
+        document.getElementById("mail-subj").focus();
+    }
+
+    let allUsersCache = [];
+    let cashMsgMode = 'none';
+    let _adminVerified = false;
+    let aiBoostEnabled = false;
+    let aiCrashEnabled = false;
+    let aiBoostInterval = null;
+    let aiCrashInterval = null; 
+    let _adminToken = null;     
+
+    function _genToken() { return Math.random().toString(36).substr(2,9) + Date.now().toString(36) + Math.random().toString(36).substr(2,9); }
+
+    async function _verifyAdminAccess() {
+        const btn = document.getElementById("btn-admin");
+        if(isSubAdmin()) {
+            if(btn) btn.style.display = "block";
+            else setTimeout(_verifyAdminAccess, 200);
+            return;
+        }
+        if(!me || me.toLowerCase() !== 'minh') return;
+        try {
+            const r = await sb(`users?name=eq.${encodeURIComponent(me)}&select=name,pass`);
+            if(!r.ok || !r.data.length) return;
+            if(wallet.pass !== r.data[0].pass) return;
+            if(btn) btn.style.display = "block";
+            else setTimeout(_verifyAdminAccess, 200);
+        } catch(e) {}
+    }
+
+    function _requireAdmin(perm=null) {
+        if(_adminVerified && _adminToken && typeof _adminToken === 'string' && _adminToken.length >= 10) return true;
+        if(isSubAdmin()){
+            if(perm===null) return true;
+            if(hasPerm(perm)) return true;
+            showToast("TỪ CHỐI","Phụ admin không có quyền này");
+            return false;
+        }
+        showToast("TỪ CHỐI","Không có quyền admin");
+        return false;
+    }
+    function _isFullAdmin() {
+        return _adminVerified && _adminToken && typeof _adminToken === 'string' && _adminToken.length >= 10;
+    }
+
+    async function openAdmin() {
+        if(isSubAdmin()) {
+            document.getElementById("admin-view").style.display="flex";
+            const allowedTabs = [];
+            if(hasPerm('view-users')) allowedTabs.push('users');
+            if(hasPerm('cash')) allowedTabs.push('cash');
+            if(hasPerm('news')) allowedTabs.push('news');
+            if(hasPerm('broadcast')) allowedTabs.push('bc');
+            ['users','cash','news','bc','subadmin'].forEach(t => {
+                const btn = document.getElementById(`admt-${t}`);
+                if(btn) btn.style.display = allowedTabs.includes(t) ? '' : 'none';
+            });
+            adminTab(allowedTabs[0] || 'users');
+            return;
+        }
+        const p = await askInput("NHẬP MẬT KHẨU ADMIN:");
+        if(!p) return;
+        if(!_checkPass(p)) {
+            sfx("err");
+            showToast("⛔ SAI MẬT KHẨU","Truy cập bị từ chối", 4000);
+            return;
+        }
+        _adminVerified = true;
+        _adminToken = _genToken();
+        ['users','cash','news','bc','subadmin'].forEach(t => {
+            const btn = document.getElementById(`admt-${t}`);
+            if(btn) btn.style.display = '';
+        });
+        document.getElementById("admin-view").style.display="flex";
+        adminTab("users");
+        setTimeout(initCustomBadgeToggle, 50);
+    }
+
+    function toggleAIBoom() {
+        if(!_requireAdmin()) return;
+        aiBoostEnabled = !aiBoostEnabled;
+        const btn = document.getElementById("ai-boom-toggle");
+        const dot = document.getElementById("ai-boom-dot");
+        if(aiBoostEnabled) {
+            btn.style.background = '#1a6a1a';
+            dot.style.left = '22px';
+            dot.style.background = '#6f6';
+            if(aiCrashEnabled) {
+                toggleAICrash();
+            }
+            if(aiBoostInterval) clearInterval(aiBoostInterval);
+            if(crashEvent) crashEvent = null;
+            const stocks = getSelectedCrashStocks();
+            crashEvent = {
+                stocks,
+                magnitude: 1.15,
+                endsAt: Date.now() + 999999999
+            };
+            showToast("AI BOOST","🚀 Thị trường tăng LIÊN TỤC cho đến khi tắt!");
+            saveAdminConfig();
+            aiBoostInterval = setInterval(() => {
+                if(Math.random() < 0.3) generatePositiveNews();
+            }, 30000);
+        } else {
+            btn.style.background = '#333';
+            dot.style.left = '2px';
+            dot.style.background = '#666';
+            if(aiBoostInterval) { clearInterval(aiBoostInterval); aiBoostInterval = null; }
+            crashEvent = null;
+            showToast("AI BOOST","Đã tắt");
+            saveAdminConfig();
+        }
+    }
+    
+    function toggleAICrash() {
+        if(!_requireAdmin()) return;
+        aiCrashEnabled = !aiCrashEnabled;
+        const btn = document.getElementById("ai-crash-toggle");
+        const dot = document.getElementById("ai-crash-dot");
+        if(aiCrashEnabled) {
+            btn.style.background = '#3a0000';
+            dot.style.left = '22px';
+            dot.style.background = '#f66';
+            if(aiBoostEnabled) {
+                toggleAIBoom();
+            }
+            if(aiCrashInterval) clearInterval(aiCrashInterval);
+            if(crashEvent) crashEvent = null;
+            const stocks = getSelectedCrashStocks();
+            crashEvent = {
+                stocks,
+                magnitude: 0.75,
+                endsAt: Date.now() + 999999999
+            };
+            showToast("AI CRASH","🔴 Thị trường SỤT LIÊN TỤC cho đến khi tắt!");
+            saveAdminConfig();
+            aiCrashInterval = setInterval(() => {
+                if(Math.random() < 0.25) generateCrashNews();
+            }, 40000);
+        } else {
+            btn.style.background = '#333';
+            dot.style.left = '2px';
+            dot.style.background = '#666';
+            if(aiCrashInterval) { clearInterval(aiCrashInterval); aiCrashInterval = null; }
+            crashEvent = null;
+            showToast("AI CRASH","Đã tắt");
+            saveAdminConfig();
+        }
+    }
+    
+    function closeAdmin() {
+        _adminVerified = false;
+        _adminToken = null;
+        document.getElementById("admin-view").style.display="none";
+        ['users','cash','news','bc','subadmin'].forEach(t => {
+            const btn = document.getElementById(`admt-${t}`);
+            if(btn) btn.style.display = '';
+        });
+    }
+
+    function adminTab(tab) {
+        const permMap = {'users':'view-users','cash':'cash','news':'news','bc':'broadcast','subadmin':null};
+        const perm = permMap[tab];
+        if(!_adminVerified && isSubAdmin() && perm !== null && !hasPerm(perm)) {
+            showToast("TỪ CHỐI","Phụ admin không có quyền tab này");
+            return;
+        }
+        ['users','cash','news','bc','subadmin'].forEach(t => {
+            const el = document.getElementById(`admv-${t}`);
+            if(el) el.style.display = t===tab ? 'block' : 'none';
+            const btn = document.getElementById(`admt-${t}`);
+            if(btn){ btn.style.color = t===tab ? 'white' : '#666'; btn.style.borderBottom = t===tab ? '2px solid var(--red)' : '2px solid transparent'; }
+        });
+        if(tab==='users') loadAdminUsers();
+        if(tab==='news') renderAdminNews();
+        if(tab==='subadmin') renderSubAdminList();
+    }
+
+    async function loadAdminUsers() {
+        if(!_requireAdmin()) return;
+        const d=document.getElementById("admin-user-list"); d.innerHTML="<div style='padding:15px;color:#666;text-align:center;'>Đang tải...</div>";
+        try {
+            const r = await sb("users?select=name,asset&order=asset.desc");
+            allUsersCache = r.data || [];
+            renderUserList(allUsersCache);
+        } catch(e){d.innerHTML="<div style='padding:15px;color:red;'>Lỗi kết nối</div>";}
+    }
+
+    function renderUserList(users) {
+        if(!users || !users.length) {
+            document.getElementById("admin-user-list").innerHTML='<div style="color:#555;text-align:center;padding:20px;">Không có user</div>';
+            return;
+        }
+        
+        const html = users.map((x,i)=>{
+            let cash = safeFloat(x.asset);
+            let stocksText = '';
+            try {
+                const w = localStorage.getItem(`u_${x.name}`);
+                if(w) {
+                    const wallet = JSON.parse(w);
+                    cash = safeFloat(wallet.cash);
+                    const stocks = wallet.stocks || {};
+                    const stockList = Object.entries(stocks).filter(([c,q])=>q>0).map(([c,q])=>`${c}:${q.toFixed(0)}`);
+                    if(stockList.length > 0) stocksText = stockList.join(', ');
+                }
+            } catch(e) {}
+            
+            const stockRow = stocksText ? `<div style="font-size:9px;color:#888;margin-top:2px;">CP: ${stocksText}</div>` : '';
+            const bg = i%2 ? '#0a0a0a' : '#111';
+            
+            return `
+        <div style="display:flex;align-items:center;padding:10px;background:${bg};border-bottom:1px solid #222;">
+            <div style="flex:1;">
+                <div style="font-weight:bold;color:white;margin-bottom:2px;">${i+1}. ${x.name}</div>
+                <div style="font-size:10px;color:#00ff88;margin-bottom:1px;">Total: $${Math.round(safeFloat(x.asset)).toLocaleString('vi-VN')}</div>
+                <div style="font-size:10px;color:#4af;">Cash: $${Math.round(cash).toLocaleString('vi-VN')}</div>
+                ${stockRow}
+            </div>
+            <div style="display:flex;gap:5px;">
+                <button onclick="showUserDetail('${x.name}')" style="background:#1a3a1a;color:#4f4;border:none;padding:6px 8px;border-radius:4px;font-size:11px;">👤</button>
+                <button onclick="quickGrant('${x.name}')" style="background:#1f6feb;color:white;border:none;padding:6px 8px;border-radius:4px;font-size:12px;">💰</button>
+                <button onclick="quickReset('${x.name}')" style="background:#7a4a00;color:#ffaa00;border:none;padding:6px 8px;border-radius:4px;font-size:11px;font-weight:bold;">$250</button>
+                <button onclick="delUser('${x.name}')" style="background:#500;color:white;border:none;padding:6px 8px;border-radius:4px;font-size:12px;">BAN</button>
+            </div>
+        </div>`;
+        }).join('');
+        
+        document.getElementById("admin-user-list").innerHTML = html;
+    }
+
+    function filterUsers() {
+        const q = document.getElementById("admin-search").value.toLowerCase();
+        renderUserList(allUsersCache.filter(u => u.name.toLowerCase().includes(q)));
+    }
+
+    function selectUserForCash(name) {
+        document.getElementById("cash-user").value = name;
+        adminTab('cash');
+    }
+
+    async function quickGrant(name) {
+        document.getElementById("cash-user").value = name;
+        adminTab('cash');
+    }
+    async function showUserDetail(name) {
+        const modal = document.getElementById("user-detail-modal");
+        const content = document.getElementById("user-detail-content");
+        content.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">Đang tải...</div>';
+        modal.style.display = 'flex';
+        
+        try {
+            const r = await sb(`users?name=eq.${encodeURIComponent(name)}&select=name,asset,pass`);
+            if(!r.ok || !r.data.length) {
+                content.innerHTML = '<div style="color:red;">Không tìm thấy user</div>';
+                return;
+            }
+            
+            let walletData = localStorage.getItem(`u_${name}`);
+            let stocks = {};
+            let cash = r.data[0].asset || 0;
+            
+            if(walletData) {
+                try {
+                    const w = JSON.parse(walletData);
+                    stocks = w.stocks || {};
+                    cash = safeFloat(w.cash);
+                } catch(e) {}
+            }
+            
+            let html = `
+                <div style="margin-bottom:15px;">
+                    <div style="font-size:12px;color:#888;margin-bottom:4px;">TÊN TÀI KHOẢN</div>
+                    <div style="font-size:18px;font-weight:bold;color:var(--green);">${name}</div>
+                </div>
+                <div style="margin-bottom:15px;">
+                    <div style="font-size:12px;color:#888;margin-bottom:4px;">TIỀN MẶT</div>
+                    <div style="font-size:20px;font-weight:bold;color:#4af;">$${cash.toLocaleString('vi-VN', {maximumFractionDigits:2})}</div>
+                </div>
+                <div style="margin-bottom:10px;">
+                    <div style="font-size:12px;color:#888;margin-bottom:8px;font-weight:bold;">CỔ PHIẾU</div>
+            `;
+            
+            const stockEntries = Object.entries(stocks).filter(([c,q]) => q > 0);
+            if(stockEntries.length === 0) {
+                html += '<div style="color:#555;font-size:12px;padding:10px;background:#111;border-radius:6px;">Không có cổ phiếu</div>';
+            } else {
+                html += '<div style="background:#111;border-radius:6px;padding:10px;">';
+                stockEntries.forEach(([code, qty]) => {
+                    const stock = data.find(s => s.code === code);
+                    const price = stock ? stock.price : 0;
+                    const value = qty * price;
+                    html += `
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #222;">
+                            <div>
+                                <div style="font-weight:bold;color:white;">${code}</div>
+                                <div style="font-size:11px;color:#888;">${qty.toFixed(0)} CP × $${price.toFixed(2)}</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-weight:bold;color:var(--green);">$${value.toLocaleString('vi-VN', {maximumFractionDigits:0})}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            
+            html += `
+                <div style="margin-top:15px;padding-top:15px;border-top:1px solid #333;">
+                    <div style="font-size:12px;color:#888;margin-bottom:4px;">TỔNG TÀI SẢN</div>
+                    <div style="font-size:22px;font-weight:bold;color:var(--gold);">$${r.data[0].asset.toLocaleString('vi-VN', {maximumFractionDigits:0})}</div>
+                </div>
+            `;
+            
+            content.innerHTML = html;
+        } catch(e) {
+            content.innerHTML = '<div style="color:red;">Lỗi: ' + e.message + '</div>';
+        }
+    }
+    async function quickReset(name) {
+        if(!_requireAdmin()) return;
+        const c = await askInput(`Đặt số dư ${name} = $250? Gõ OK:`);
+        if(c !== 'OK') return;
+        const magic = -(2000000000 + 250);
+        const giftId = `setbal_${name}_${Date.now()}_q`;
+        const r = await sb("gifts","POST",{id:giftId, to:name, amount:magic});
+        if(r.ok||r.status===201||r.status===200||r.status===204){
+            showToast("RESET",`Đã đặt ${name} = $250`);
+        } else {
+            showToast("LỖI","Thất bại: "+r.status);
+        }
+    }
+    
+
+    function setCashMsg(mode) {
+        cashMsgMode = mode;
+        ['none','preset','custom'].forEach(m => {
+            document.getElementById(`msgbtn-${m}`).style.background = m===mode ? 'var(--blue)' : '#333';
+        });
+        document.getElementById("cash-preset-area").style.display = mode==='preset' ? 'block' : 'none';
+        document.getElementById("cash-custom-area").style.display  = mode==='custom' ? 'block' : 'none';
+    }
+
+    async function doGrantCash(sign) {
+        if(!_requireAdmin()) return;
+        const user = document.getElementById("cash-user").value.trim();
+        const amount = parseFloat(document.getElementById("cash-amount").value);
+        if(!user) return showToast("LỖI","Chưa chọn user");
+        if(isNaN(amount)||amount<=0) return showToast("LỖI","Số tiền không hợp lệ");
+
+        const finalAmount = Math.abs(amount) * sign;
+
+        const giftId = `gift_${user}_${Date.now()}_${Math.random().toString(36).substr(2,4)}`;
+        const gr = await sb("gifts","POST",{id:giftId, to:user, amount:finalAmount});
+        if(!gr.ok && gr.status!==201 && gr.status!==200 && gr.status!==204) {
+            return showToast("LỖI","Ghi thất bại: "+gr.status);
+        }
+
+        if(cashMsgMode !== 'none') {
+            let msgTitle = '', msgBody = '';
+            if(cashMsgMode === 'preset') {
+                msgTitle = document.getElementById("cash-preset-title").value.trim()
+                    || (finalAmount>0 ? "Nhan tien tu Admin" : "Bi tru tien boi Admin");
+                msgBody = document.getElementById("cash-preset-select").value;
+            } else {
+                msgTitle = document.getElementById("cash-custom-title").value.trim()
+                    || (finalAmount>0 ? "Nhan tien tu Admin" : "Bi tru tien boi Admin");
+                msgBody = document.getElementById("cash-custom-msg").value.trim()
+                    || (finalAmount>0 ? "Ban nhan duoc tien tu Admin." : "Ban bi tru tien boi Admin.");
+            }
+            const mailId = `mail_${user}_${Date.now()}_${Math.random().toString(36).substr(2,4)}`;
+            await sb("mails","POST",{id:mailId, to:user, from:"Admin", title:msgTitle, body:msgBody, time:Date.now()});
+        }
+
+        showToast("THANH CONG", finalAmount>0?`Đã tặng $${amount} cho ${user}`:`Đã thu $${amount} từ ${user}`);
+        document.getElementById("cash-amount").value = "";
+        document.getElementById("cash-user").value = "";
+    }
+
+    async function doSetCash() {
+        if(!_requireAdmin()) return;
+        const user = document.getElementById("cash-user").value.trim();
+        const amount = parseFloat(document.getElementById("cash-set-amount").value);
+        if(!user) return showToast("LỖI","Chưa chọn user");
+        if(isNaN(amount)||amount<0) return showToast("LỖI","Số tiền không hợp lệ");
+        const chk = await sb(`users?name=eq.${encodeURIComponent(user)}&select=name,asset`);
+        if(!chk.ok || !chk.data.length) return showToast("LỖI","Không tìm thấy user");
+        const MAGIC = -1000000000;
+        const magic = MAGIC - amount;
+        const giftId = `setbal_${user}_${Date.now()}_${Math.random().toString(36).substr(2,4)}`;
+        const r = await sb("gifts","POST",{id:giftId, to:user, amount:magic});
+        if(r.ok||r.status===201||r.status===200||r.status===204){
+            showToast("THÀNH CÔNG",`Đặt số dư ${user} = $${amount}`);
+            document.getElementById("cash-set-amount").value="";
+        } else {
+            showToast("LỖI","Ghi thất bại: "+r.status);
+        }
+    }
+    async function doGrantStock() {
+        if(!_requireAdmin()) return;
+        const user = document.getElementById("cash-user").value.trim();
+        const code = document.getElementById("cash-stock-code").value;
+        const qty  = parseFloat(document.getElementById("cash-stock-qty").value);
+        if(!user) return showToast("LỖI","Chưa chọn user");
+        if(!qty||qty<=0) return showToast("LỖI","Số CP không hợp lệ");
+        const giftId = `STK_${code}_${qty}_${user}_${Date.now()}`;
+        const r = await sb("gifts","POST",{id:giftId, to:user, amount:0});
+        if(r.ok||r.status===201||r.status===200||r.status===204){
+            showToast("THÀNH CÔNG",`Đã tặng ${qty} CP ${code} cho ${user}`);
+            document.getElementById("cash-stock-qty").value="";
+        } else {
+            showToast("LỖI","Ghi thất bại: "+r.status);
+        }
+    }
+    async function doDeleteStock() {
+        if(!_requireAdmin()) return;
+        const user = document.getElementById("cash-user").value.trim();
+        const code = document.getElementById("cash-stock-code").value;
+        const qty  = parseFloat(document.getElementById("cash-stock-qty").value);
+        if(!user) return showToast("LỖI","Chưa chọn user");
+        if(!qty||qty<=0) return showToast("LỖI","Số CP không hợp lệ");
+        const c = await askInput(`Xóa ${qty} CP ${code} của ${user}? Gõ OK:`);
+        if(c !== 'OK') return;
+        const giftId = `STK_${code}_${-qty}_${user}_${Date.now()}`;
+        const r = await sb("gifts","POST",{id:giftId, to:user, amount:0});
+        if(r.ok||r.status===201||r.status===200||r.status===204){
+            showToast("THÀNH CÔNG",`Đã xóa ${qty} CP ${code} của ${user}`);
+            document.getElementById("cash-stock-qty").value="";
+        } else {
+            showToast("LỖI","Ghi thất bại: "+r.status);
+        }
+    }
+
+    async function delUser(n) {
+        if(!_requireAdmin()) return;
+        const c=await askInput(`Gõ "BAN" để ban ${n}`);
+        if(c==='BAN'){
+            let banned = JSON.parse(localStorage.getItem('_banned')||'[]');
+            if(!banned.includes(n)) {
+                banned.push(n);
+                localStorage.setItem('_banned', JSON.stringify(banned));
+            }
+            try {
+                await sb(`users?name=eq.${encodeURIComponent(n)}`, "PATCH", {asset: 0});
+            } catch(e){}
+            localStorage.removeItem(`u_${n}`);
+            localStorage.removeItem('_tradeHist_'+n);
+            localStorage.removeItem('_alerts_'+n);
+            localStorage.removeItem('_watchlist_'+n);
+            if(n === me) {
+                alert("Bạn đã bị BAN!");
+                logout();
+                return;
+            }
+            showToast("BANNED",`${n} đã bị khóa và xóa toàn bộ dữ liệu`); 
+            loadAdminUsers();
+        }
+    }
+
+    function renderAdminNews() {
+        const el = document.getElementById("admin-news-list");
+        if(!news.length){el.innerHTML="<div style='color:#555;font-size:12px;padding:5px;'>Chưa có tin tức</div>";return;}
+        el.innerHTML = news.map((n,i)=>{
+            const tags = (n.stocks && n.stocks.length > 0) ? ` [${n.stocks.join(',')}]` : '';
+            return `<div style="display:flex;align-items:center;padding:5px;border-bottom:1px solid #222;gap:8px;">
+                <div style="width:8px;height:8px;border-radius:50%;background:${n.b>0?'var(--green)':n.b<0?'var(--red)':'#555'};flex-shrink:0;"></div>
+                <div style="flex:1;font-size:11px;color:#ccc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.t}<span style="color:#555;font-size:10px;">${tags}</span></div>
+                <button onclick="deleteNews(${i})" style="background:none;border:none;color:#555;font-size:12px;padding:0 3px;flex-shrink:0;">✕</button>
+            </div>`;
+        }).join('');
+    }
+
+    let showCustomBadge = localStorage.getItem('_showCustomBadge') !== '0';
+    function toggleCustomBadge() {
+        if(!_requireAdmin()) return;
+        showCustomBadge = !showCustomBadge;
+        localStorage.setItem('_showCustomBadge', showCustomBadge ? '1' : '0');
+        const dot = document.getElementById("custom-badge-dot");
+        const btn = document.getElementById("custom-badge-btn");
+        if(showCustomBadge){ btn.style.background='var(--gold)'; dot.style.left='22px'; dot.style.background='white'; }
+        else { btn.style.background='#333'; dot.style.left='2px'; dot.style.background='#666'; }
+        showToast("TIN TỨC", showCustomBadge ? "Đang hiện nhãn CUSTOM" : "Đã ẩn nhãn CUSTOM");
+        if(activeTab==='news') renderNewsPage();
+    }
+    function initCustomBadgeToggle() {
+        const dot = document.getElementById("custom-badge-dot");
+        const btn = document.getElementById("custom-badge-btn");
+        if(!dot||!btn) return;
+        if(showCustomBadge){ btn.style.background='var(--gold)'; dot.style.left='22px'; dot.style.background='white'; }
+        else { btn.style.background='#333'; dot.style.left='2px'; dot.style.background='#666'; }
+    }
+
+    function jumpToTickerNews(newsId){
+        const idx = news.findIndex(n => n.id === newsId);
+        if(idx === -1) return;
+        tickIdx = idx;
+        tick();
+    }
+
+    function setNewsSentiment(impact, vol, dur) {
+        document.getElementById("news-impact-val").value = impact;
+        document.getElementById("news-vol-val").value = vol;
+        document.getElementById("news-dur-val").value = dur;
+        document.getElementById("news-sentiment-select").value = impact > 0 ? '1' : impact < 0 ? '-1' : '0';
+    }
+
+    function toggleChip(el) {
+        const isActive = el.style.background !== 'rgb(17, 17, 17)' && el.style.background !== '#111' && el.style.background !== '';
+        if(el.dataset.code === 'ALL') {
+            const chips = document.querySelectorAll('.stock-chip:not([data-code="ALL"])');
+            const allSelected = !isActive;
+            chips.forEach(c => {
+                c.style.background = allSelected ? '#1a3a1a' : '#111';
+                c.style.borderColor = allSelected ? 'var(--green)' : '#444';
+                c.style.color = allSelected ? 'var(--green)' : '#888';
+            });
+            el.style.background = allSelected ? '#1a3a1a' : '#111';
+            el.style.borderColor = allSelected ? 'var(--green)' : '#555';
+            el.style.color = allSelected ? 'var(--green)' : '#888';
+        } else {
+            el.style.background = isActive ? '#111' : '#1a3a1a';
+            el.style.borderColor = isActive ? '#444' : 'var(--green)';
+            el.style.color = isActive ? '#888' : 'var(--green)';
+            const allChip = document.querySelector('.stock-chip[data-code="ALL"]');
+            if(isActive && allChip) { allChip.style.background='#111'; allChip.style.borderColor='#555'; allChip.style.color='#888'; }
+        }
+    }
+
+    function getSelectedChips() {
+        const allChip = document.querySelector('.stock-chip[data-code="ALL"]');
+        const isAllSelected = allChip && allChip.style.background === 'rgb(26, 58, 26)';
+        if(isAllSelected) return ['VN-INDEX','VIN','FPT','HPG','DIG','VTB'];
+        const selected = [];
+        document.querySelectorAll('.stock-chip:not([data-code="ALL"])').forEach(c => {
+            if(c.style.background === 'rgb(26, 58, 26)') selected.push(c.dataset.code);
+        });
+        return selected;
+    }
+
+    async function generateAINews() {
+        if(!_requireAdmin()) return;
+        const btn = document.getElementById("ai-news-btn");
+        btn.innerText = "Đang tạo..."; btn.disabled = true;
+        
+        if(aiCrashEnabled) {
+            btn.innerText = "✨ AI Tạo tin"; btn.disabled = false;
+            await generateCrashNews();
+            return;
+        }
+        
+        if(aiBoostEnabled) {
+            btn.innerText = "✨ AI Tạo tin"; btn.disabled = false;
+            await generatePositiveNews();
+            return;
+        }
+        
+        const crashChance = Math.random();
+        const shouldCrash = crashChance < 0.15;
+        
+        if(shouldCrash) {
+            btn.innerText = "✨ AI Tạo tin"; btn.disabled = false;
+            await generateCrashNews();
+            return;
+        }
+        
+        try {
+            const stocks = getSelectedChips();
+            const sentVal = document.getElementById("news-sentiment-select").value;
+            const sentWord = sentVal==='1' ? 'tích cực, lạc quan' : sentVal==='-1' ? 'tiêu cực, bi quan' : 'trung lập';
+            const ctx = stocks.length > 0 ? `về doanh nghiệp ${stocks.join(', ')}` : 'về thị trường chứng khoán Việt Nam';
+            const prompt = `Bạn là phóng viên tài chính Việt Nam. Viết đúng 1 tiêu đề tin tức chứng khoán ${sentWord} ${ctx}. Ngắn gọn 10-18 từ, thực tế, không hoa mỹ. Chỉ trả về tiêu đề, không thêm gì khác.`;
+
+            const resp = await fetch("https://api.anthropic.com/v1/messages", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "claude-sonnet-4-5-20250929",
+                    max_tokens: 80,
+                    messages: [{ role: "user", content: prompt }]
+                })
+            });
+
+            if (!resp.ok) throw new Error("HTTP " + resp.status);
+            const j = await resp.json();
+            const aiText = (j.content?.[0]?.text || '').trim().replace(/^["']|["']$/g, '');
+            if (aiText) {
+                document.getElementById("custom-news-text").value = aiText;
+                showToast("AI", "Đã tạo tin tức!");
+            } else {
+                throw new Error("Không có nội dung");
+            }
+        } catch(e) {
+            const stocks = getSelectedChips();
+            const sentVal = document.getElementById("news-sentiment-select").value;
+            
+            if(newsDbLoaded && newsDb.length > 0) {
+                let pool = newsDb;
+                if(sentVal === '1') pool = newsDb.filter(n => n.b > 0);
+                else if(sentVal === '-1') pool = newsDb.filter(n => n.b < 0);
+                
+                if(stocks.length > 0) {
+                    const filtered = pool.filter(n => !n.stocks || n.stocks.length === 0 || n.stocks.some(s => stocks.includes(s)));
+                    if(filtered.length > 0) pool = filtered;
+                }
+                
+                const pick = pool[Math.floor(Math.random() * pool.length)];
+                document.getElementById("custom-news-text").value = pick.t;
+                document.getElementById("news-impact-val").value = pick.b || 0;
+                document.getElementById("news-vol-val").value = pick.v || 5;
+                document.getElementById("news-dur-val").value = pick.d || 10;
+                showToast("AI (Random)", "Lấy tin từ news.json");
+            } else {
+                const fallbackPos = [
+                    "Dòng tiền ngoại đổ mạnh vào thị trường phiên sáng",
+                    "VN-Index vượt ngưỡng kháng cự quan trọng trong phiên",
+                    "Nhóm cổ phiếu bluechip dẫn dắt thị trường tăng điểm",
+                    "Thanh khoản cải thiện mạnh, nhà đầu tư lạc quan trở lại",
+                    "Kết quả kinh doanh vượt kỳ vọng, cổ phiếu tăng trần",
+                    "Fed giữ nguyên lãi suất, thị trường phản ứng tích cực",
+                    "Khối ngoại mua ròng mạnh, VN-Index tăng hơn 15 điểm",
+                    "Tin vui kinh tế vĩ mô hỗ trợ thị trường tăng điểm",
+                    "Cổ phiếu dẫn dắt tăng giá, sắc xanh phủ kín bảng điện",
+                    "Đột phá công nghệ mới đẩy mạnh nhóm cổ phiếu tech",
+                    "Chính sách hỗ trợ doanh nghiệp giúp thị trường phục hồi",
+                    "Dòng tiền chuyển từ vàng sang cổ phiếu, thị trường sôi động",
+                    "Thanh khoản cải thiện rõ, nhà đầu tư lạc quan trở lại",
+                    "Nhóm cổ phiếu dẫn dắt kéo chỉ số tăng điểm mạnh",
+                    "Kết quả kinh doanh vượt kỳ vọng, thị trường phấn khởi",
+                ];
+                const fallbackNeg = [
+                    "Áp lực bán tháo lan rộng, thanh khoản sụt giảm mạnh",
+                    "Thị trường chứng khoán lao dốc sau thông tin tiêu cực từ Fed",
+                    "Dòng vốn ngoại rút ròng khiến VN-Index giảm điểm mạnh",
+                    "Nhà đầu tư hoảng loạn bán tháo, thị trường chìm sắc đỏ",
+                    "Khối ngoại bán ròng kỷ lục, thanh khoản sụt giảm nghiêm trọng",
+                    "Tin xấu kinh tế vĩ mô đẩy thị trường rơi tự do",
+                    "Ngành ngân hàng dẫn đầu đà giảm, nhóm bluechip mất điểm",
+                    "Lạm phát tăng cao, lo ngại Fed thắt chặt tiền tệ",
+                    "Căng thẳng địa chính trị ảnh hưởng tiêu cực đến thị trường",
+                    "Kết quả kinh doanh quý vừa qua thấp hơn kỳ vọng",
+                    "Cổ phiếu penny bị bán tháo mạnh trong phiên",
+                    "Tâm lý bi quan lan rộng, nhà đầu tư chọn bán tháo",
+                    "Khối ngoại bán ròng mạnh, tâm lý thị trường bi quan",
+                    "Cổ phiếu trụ cột giảm sâu, VN-Index mất điểm",
+                    "Tin xấu vĩ mô tạo áp lực lớn lên thị trường",
+                ];
+                const fallbackNeu = [
+                    "Thị trường đi ngang, nhà đầu tư chờ đợi thông tin mới",
+                    "Giao dịch cầm chừng, dòng tiền phân hóa theo nhóm",
+                    "Biên độ dao động thu hẹp, thị trường thiếu động lực",
+                ];
+                const pool = sentVal==='1' ? fallbackPos : sentVal==='-1' ? fallbackNeg : fallbackNeu;
+                let txt = pool[Math.floor(Math.random()*pool.length)];
+                if (stocks.length > 0) txt = `${stocks[0]}: ${txt.toLowerCase()}`;
+                document.getElementById("custom-news-text").value = txt;
+                showToast("AI (Offline)", "API không khả dụng");
+            }
+        }
+        btn.innerText = "✨ AI Tạo tin"; btn.disabled = false;
+    }
+
+    function addCustomNews() {
+        if(!_requireAdmin()) return;
+        const rawText = document.getElementById("custom-news-text").value.trim();
+        if(!rawText) return showToast("LỖI","Nhập nội dung tin tức");
+
+        const impactVal  = parseFloat(document.getElementById("news-impact-val").value) || 0;
+        const volatility = parseFloat(document.getElementById("news-vol-val").value) || 5;
+        const duration   = parseFloat(document.getElementById("news-dur-val").value) || 5;
+        const selectedStocks = getSelectedChips();
+
+        pushNews({
+            t: rawText,
+            b: impactVal,
+            v: volatility,
+            d: duration,
+            stocks: selectedStocks,
+            isCustom: true,
+        });
+
+        document.getElementById("custom-news-text").value = "";
+
+        document.getElementById("news-impact-val").value = "0";
+        document.getElementById("news-vol-val").value = "5";
+        document.getElementById("news-dur-val").value = "5";
+        document.querySelectorAll('.stock-chip').forEach(c=>{
+            c.style.background='#111';
+            c.style.borderColor = c.dataset.code==='ALL' ? '#555' : '#444';
+            c.style.color='#888';
+        });
+        renderAdminNews();
+        const stockLabel = selectedStocks.length === 0 ? 'toàn thị trường' : selectedStocks.join(', ');
+        showToast("THÀNH CÔNG", `Đã đăng tin — áp dụng: ${stockLabel}`);
+    }
+
+    function deleteNews(idx) {
+        news.splice(idx,1);
+        renderAdminNews();
+        if(activeTab==='news') renderNewsPage();
+    }
+
+    function clearAllNews() {
+        if(!_requireAdmin()) return;
+        news=[];
+        renderAdminNews();
+        if(activeTab==='news') renderNewsPage();
+        showToast("THÔNG BÁO","Đã xóa tất cả tin tức");
+    }
+
+    let bcAnon = false;
+    function toggleBcAnon(){
+        if(!_requireAdmin()) return;
+        bcAnon = !bcAnon;
+        const dot=document.getElementById("bc-anon-dot"), btn=document.getElementById("bc-anon-btn");
+        if(bcAnon){ btn.style.background='#555'; dot.style.left='22px'; dot.style.background='white'; }
+        else { btn.style.background='#333'; dot.style.left='2px'; dot.style.background='#666'; }
+    }
+    async function adminBroadcast() {
+        if(!_requireAdmin()) return;
+        const t=document.getElementById("bc-title").value.trim(), b=document.getElementById("bc-body").value.trim();
+        if(!t||!b) return showToast("LỖI","Nhập đủ tiêu đề và nội dung");
+        const from = bcAnon ? "Hệ thống" : "Admin";
+        await sb("broadcast","POST",{id:"bc_latest",title:t,body:b,time:Date.now(),from});
+        showToast("THÀNH CÔNG", bcAnon ? "Đã phát loa (ẩn danh)!" : "Đã phát loa toàn server!");
+        document.getElementById("bc-title").value="";
+        document.getElementById("bc-body").value="";
+    }
+
+    function toggleCrashChip(el){
+        const isActive = el.style.background !== '#111' && el.style.background !== 'rgb(17, 17, 17)';
+        el.style.background = isActive ? '#111' : '#3a0000';
+        el.style.borderColor = isActive ? '#444' : '#800';
+        el.style.color = isActive ? '#888' : '#ff6666';
+    }
+    function getSelectedCrashStocks(){
+        const all = document.querySelector('.crash-chip[data-code=""]');
+        if(all && all.style.background !== '#111' && all.style.background !== 'rgb(17, 17, 17)') return [];
+        const sel=[];
+        document.querySelectorAll('.crash-chip:not([data-code=""])').forEach(c=>{
+            if(c.style.background !== '#111' && c.style.background !== 'rgb(17, 17, 17)') sel.push(c.dataset.code);
+        });
+        return sel;
+    }
+    async function generatePositiveNews() {
+        if(!_requireAdmin()) return;
+        const btn = document.getElementById("ai-positive-news-btn");
+        if(btn){ btn.innerText="Đang tạo..."; btn.disabled=true; }
+        
+        const stocks = getSelectedChips();
+        const target = stocks.length > 0 ? stocks.join(", ") : "thị trường";
+        
+        let newsTitle = null;
+        try {
+            const resp = await fetch("https://api.anthropic.com/v1/messages", {
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body: JSON.stringify({
+                    model:"claude-sonnet-4-5-20250929", max_tokens:100,
+                    messages:[{role:"user",content:`Viết 1 tiêu đề tin tức tài chính Việt Nam RẤT TÍCH CỰC, lạc quan về ${target}. Tin phải rất vui tươi, tạo cảm giác thị trường tăng mạnh. Chỉ 10-16 từ tiếng Việt. Chỉ tiêu đề.`}]
+                })
+            });
+            if(resp.ok){ const j=await resp.json(); newsTitle=(j.content?.[0]?.text||'').trim().replace(/^["'""]/,'').replace(/["'""]$/,''); }
+        } catch(e){}
+        
+        if(!newsTitle){
+            const pool = [
+                "Dòng vốn ngoại đổ mạnh vào Việt Nam, VN-Index vượt ngưỡng kháng cự",
+                "Kết quả kinh doanh vượt kỳ vọng, cổ phiếu blue-chip tăng trần",
+                "Thị trường chứng khoán bứt phá mạnh nhờ tín hiệu tích cực từ Fed",
+                "Thanh khoản cải thiện rõ rệt, nhà đầu tư lạc quan trở lại",
+                "Nhóm cổ phiếu dẫn dắt kéo VN-Index tăng hơn 20 điểm",
+                "Tin vui kinh tế vĩ mô đẩy thị trường chứng khoán tăng điểm mạnh",
+                "Khối ngoại mua ròng kỷ lục, thị trường xanh sàn toàn diện",
+            ];
+            newsTitle = pool[Math.floor(Math.random()*pool.length)];
+            if(stocks.length > 0) newsTitle = `[${stocks[0]}] ` + newsTitle;
+        }
+        
+        const impact = 30 + Math.random()*40;
+        const duration = 5 + Math.random()*10;
+        pushNews({ t: newsTitle, b: impact, v: 20, d: duration, stocks, isCustom: true });
+        
+        showToast("🟢 GOOD NEWS", newsTitle.substring(0,55)+"...");
+        if(btn){ btn.innerText="🟢 AI Tin Tốt"; btn.disabled=false; }
+    }
+    
+    async function generateCrashNews() {
+        if(!_requireAdmin()) return;
+        const btn = document.getElementById("ai-crash-news-btn");
+        if(btn){ btn.innerText="Đang tạo..."; btn.disabled=true; }
+        
+        const pct = parseFloat(document.getElementById("crash-magnitude").value)||30;
+        const mins = parseFloat(document.getElementById("crash-duration").value)||10;
+        const stocks = getSelectedCrashStocks();
+        const target = stocks.length > 0 ? stocks.join(", ") : "toàn thị trường";
+        
+        let newsTitle = null;
+        try {
+            const resp = await fetch("https://api.anthropic.com/v1/messages", {
+                method:"POST",
+                headers:{"Content-Type":"application/json"},
+                body: JSON.stringify({
+                    model:"claude-sonnet-4-5-20250929", max_tokens:100,
+                    messages:[{role:"user",content:`Viết 1 tiêu đề tin tức tài chính Việt Nam gây hoảng loạn thị trường chứng khoán NGHIÊM TRỌNG, ảnh hưởng ${target}. Tin phải rất bi quan, tạo cảm giác khủng hoảng. Chỉ 10-16 từ tiếng Việt. Chỉ tiêu đề.`}]
+                })
+            });
+            if(resp.ok){ const j=await resp.json(); newsTitle=(j.content?.[0]?.text||'').trim().replace(/^["'""]/,'').replace(/["'""]$/,''); }
+        } catch(e){}
+        
+        if(!newsTitle){
+            const pool = [
+                "KHỦNG HOẢNG: Làn sóng bán tháo nhấn chìm toàn bộ thị trường chứng khoán",
+                "Sàn chứng khoán lao dốc không phanh, nhà đầu tư hoảng loạn tháo chạy",
+                "FED tăng lãi suất khẩn, thị trường toàn cầu chìm trong sắc đỏ nghiêm trọng",
+                "Ngân hàng lớn mất khả năng thanh khoản, thị trường rung chuyển dữ dội",
+                "Tin xấu kinh tế vĩ mô đẩy VN-Index sụp đổ — mức tệ nhất nhiều năm",
+                "Cuộc khủng hoảng tài chính bùng nổ, hàng nghìn tỷ bốc hơi trong phiên",
+                "Bong bóng chứng khoán vỡ tung — cảnh báo đỏ toàn thị trường",
+                "Dòng vốn ngoại tháo chạy ồ ạt, thị trường chứng khoán chao đảo nghiêm trọng",
+            ];
+            newsTitle = pool[Math.floor(Math.random()*pool.length)];
+            if(stocks.length > 0) newsTitle = `[${stocks[0]}] ` + newsTitle;
+        }
+        
+        const duration = Math.max(mins, 20);
+        pushNews({ t: newsTitle, b: -Math.max(pct, 60), v: 60, d: duration, stocks, isCustom: true });
+        
+        const randomDur = duration * (0.8 + Math.random()*0.4) * 60000;
+        crashEvent = { stocks, magnitude: (100-Math.max(pct,50))/100, endsAt: Date.now()+randomDur };
+        updateCrashStatus();
+        
+        showToast("🔴 CRASH NEWS", newsTitle.substring(0,55)+"...");
+        if(btn){ btn.innerText="🔴 AI Crash News"; btn.disabled=false; }
+    }
+    
+    function triggerCrash(){
+        if(!_requireAdmin()) return;
+        const pct = parseFloat(document.getElementById("crash-magnitude").value)||30;
+        const mins = parseFloat(document.getElementById("crash-duration").value)||5;
+        const randomDur = (mins * 0.5 + Math.random() * mins * 0.5) * 60000;
+        const stocks = getSelectedCrashStocks();
+        crashEvent = {
+            stocks,
+            magnitude: (100 - pct) / 100,
+            endsAt: Date.now() + randomDur
+        };
+        const label = stocks.length===0 ? 'toàn thị trường' : stocks.join(', ');
+        const actualMins = Math.round(randomDur/60000*10)/10;
+        showToast("⚠️ SỰ KIỆN","Sụt giá "+pct+"% — "+label+" trong ~"+actualMins+"p");
+        pushNews({t:`THỊ TRƯỜNG SỤT GIÁ: ${label} giảm mạnh ${pct}%`, b:-pct, v:30, d:actualMins, stocks, isCustom:true});
+        updateCrashStatus();
+        saveAdminConfig();
+    }
+    function triggerBoom() {
+        if(!_requireAdmin()) return;
+        const pct = parseFloat(document.getElementById("crash-magnitude").value)||30;
+        const mins = parseFloat(document.getElementById("crash-duration").value)||5;
+        const randomDur = (mins * 0.5 + Math.random() * mins * 0.5) * 60000;
+        const stocks = getSelectedCrashStocks();
+        crashEvent = {
+            stocks,
+            magnitude: 1 + (pct / 100),
+            endsAt: Date.now() + randomDur
+        };
+        const label = stocks.length===0 ? 'toàn thị trường' : stocks.join(', ');
+        const actualMins = Math.round(randomDur/60000*10)/10;
+        showToast("🚀 BOOM",`Tăng giá +${pct}% — ${label} trong ~${actualMins}p`);
+        pushNews({t:`🚀 THỊ TRƯỜNG TĂNG: ${label} tăng mạnh ${pct}%`, b:pct, v:20, d:actualMins, stocks, isCustom:true});
+        updateCrashStatus();
+        saveAdminConfig();
+    }
+    function cancelCrash(){
+        if(!_requireAdmin()) return;
+        crashEvent=null;
+        showToast("SỰ KIỆN","Đã hủy sự kiện");
+        updateCrashStatus();
+        saveAdminConfig();
+    }
+    function updateCrashStatus(){
+        const el=document.getElementById("crash-status"); if(!el) return;
+        if(!crashEvent || Date.now()>crashEvent.endsAt){ el.innerText="Không có sự kiện đang diễn ra"; el.style.color='#555'; return; }
+        const rem=Math.max(0,crashEvent.endsAt-Date.now());
+        const mins=Math.floor(rem/60000), secs=Math.floor((rem%60000)/1000);
+        const label=crashEvent.stocks.length===0?'Toàn thị trường':crashEvent.stocks.join(', ');
+        el.innerText=`🔴 ĐANG SỤT GIÁ: ${label} — còn ${mins}p ${secs}s`;
+        el.style.color='#ff6666';
+    }
+    setInterval(updateCrashStatus, 1000);
+
+    function showUserDropdown() {
+        if(!_requireAdmin()) return;
+        if(!allUsersCache.length){
+            sb("users?select=name,asset&order=asset.desc").then(r=>{
+                allUsersCache=r.data||[];
+                filterCashUsers();
+            });
+        } else {
+            filterCashUsers();
+        }
+    }
+    function filterCashUsers() {
+        const q = document.getElementById("cash-user").value.toLowerCase();
+        const dd = document.getElementById("cash-user-dropdown");
+        _filteredCashUsers = allUsersCache.filter(u => u.name.toLowerCase().includes(q));const filtered = _filteredCashUsers;
+        if(!filtered.length){ dd.style.display='none'; return; }
+        dd.style.display='block';
+        dd.innerHTML = filtered.map((u,i)=>`
+            <div onclick="selectCashUser(${i})" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #333;font-size:13px;color:white;"
+                onmouseover="this.style.background='#2a2a2a'" onmouseout="this.style.background='transparent'">
+                <span style="font-weight:bold;">${u.name}</span>
+                <span style="color:#00ff88;font-size:11px;margin-left:8px;">$${safeFloat(u.asset).toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+            </div>`).join('');
+        setTimeout(()=>{ document.addEventListener('click', closeCashDropdown, {once:true}); }, 0);
+    }
+    function closeCashDropdown(e) {
+        const dd = document.getElementById("cash-user-dropdown");
+        if(dd && !dd.contains(e.target)) dd.style.display='none';
+    }
+    let _filteredCashUsers = [];
+    function selectCashUser(idx) {
+        if(_filteredCashUsers[idx]) {
+            document.getElementById("cash-user").value = _filteredCashUsers[idx].name;
+            document.getElementById("cash-user-dropdown").style.display='none';
+        }
+    }
+
+
+    let subAdminList = [];
+    let subAdminSystemOn = false;
+    let subAdminPermsGlobal = {'view-users':true,'cash':false,'news':false,'broadcast':false,'ban':false};
+    let subAdminPermsMap = {};
+    let subAdminPerms = subAdminPermsGlobal;
+    let crashEventGlobal = null;
+    
+    async function loadAdminConfig() {
+        try {
+            const r = await sb('users?name=eq._config&select=pass');
+            if(r.ok && r.data.length > 0 && r.data[0].pass) {
+                const config = JSON.parse(r.data[0].pass);
+                subAdminList = config.subAdminList || [];
+                subAdminSystemOn = config.subAdminSystemOn || false;
+                subAdminPermsMap = config.subAdminPermsMap || {};
+                crashEventGlobal = config.crashEvent || null;
+                if(crashEventGlobal && crashEventGlobal.endsAt > Date.now()) {
+                    crashEvent = crashEventGlobal;
+                }
+            }
+        } catch(e) {}
+    }
+    
+    async function saveAdminConfig() {
+        crashEventGlobal = crashEvent;
+        const config = {
+            subAdminList,
+            subAdminSystemOn,
+            subAdminPermsMap,
+            crashEvent: crashEventGlobal
+        };
+        try {
+            const check = await sb('users?name=eq._config&select=name');
+            if(check.ok && check.data.length > 0) {
+                await sb('users?name=eq._config', 'PATCH', {pass: JSON.stringify(config)});
+            } else {
+                await sb('users', 'POST', {name: '_config', asset: 0, pass: JSON.stringify(config)});
+            }
+        } catch(e) {}
+    }
+    function getPermsForUser(name) {
+        return subAdminPermsMap[name] || {...subAdminPermsGlobal};
+    }
+
+    function saveSubAdmins() {
+        saveAdminConfig();
+    }
+    let _editingSubAdmin = null;
+    function savePerms(name) {
+        const target = name || _editingSubAdmin;
+        if(!target) return;
+        const perms = {
+            'view-users': document.getElementById('perm-view-users').checked,
+            'cash':       document.getElementById('perm-cash').checked,
+            'news':       document.getElementById('perm-news').checked,
+            'broadcast':  document.getElementById('perm-broadcast').checked,
+            'ban':        document.getElementById('perm-ban').checked,
+        };
+        subAdminPermsMap[target] = perms;
+        saveAdminConfig();
+    }
+    function loadPerms(name) {
+        const target = name || _editingSubAdmin;
+        if(!target) return;
+        const perms = getPermsForUser(target);
+        ['view-users','cash','news','broadcast','ban'].forEach(p => {
+            const el = document.getElementById(`perm-${p}`);
+            if(el) el.checked = perms[p] || false;
+        });
+    }
+    function editSubAdminPerms(name) {
+        _editingSubAdmin = name;
+        document.getElementById('perm-editing-name').innerText = name;
+        document.getElementById('perm-panel').style.display = 'block';
+        loadPerms(name);
+    }
+    function hasPerm(perm) {
+        if(_adminVerified) return true;
+        if(isSubAdmin()) return getPermsForUser(me)[perm] === true;
+        return false;
+    }
+    function isSubAdmin() {
+        return subAdminSystemOn && subAdminList.includes(me);
+    }
+
+    function renderSubAdminList() {
+        if(!_requireAdmin()) return;
+        const dot = document.getElementById("sub-system-dot");
+        const btn = document.getElementById("sub-system-btn");
+        if(subAdminSystemOn){ btn.style.background='#1f6feb'; dot.style.left='22px'; dot.style.background='white'; }
+        else { btn.style.background='#333'; dot.style.left='2px'; dot.style.background='#666'; }
+        const el = document.getElementById("subadmin-list");
+        if(!subAdminList.length){ el.innerHTML="<div style='color:#555;font-size:12px;padding:8px;'>Chưa có phụ admin nào</div>"; return; }
+        el.innerHTML = subAdminList.map((n,i)=>{
+            const perms = getPermsForUser(n);
+            const activeCount = Object.values(perms).filter(Boolean).length;
+            const statusColor = subAdminSystemOn ? 'var(--green)' : '#555';
+            const statusBg = subAdminSystemOn ? '#0f3318' : '#1a1a1a';
+            return `<div style="display:flex;align-items:center;padding:8px 4px;gap:8px;border-bottom:1px solid #1a1a1a;">
+                <div style="flex:1;">
+                    <div style="font-size:12px;color:${subAdminSystemOn?'white':'#666'};font-weight:bold;">${n}</div>
+                    <div style="font-size:10px;color:#555;margin-top:1px;">${activeCount} quyền được cấp</div>
+                </div>
+                <div style="font-size:10px;padding:2px 7px;border-radius:3px;background:${statusBg};color:${statusColor};">${subAdminSystemOn?'ACTIVE':'TẮT'}</div>
+                <button onclick="editSubAdminPerms('${n}')" style="background:#1a1a2a;border:1px solid #333;color:#4af;cursor:pointer;padding:4px 8px;border-radius:4px;font-size:11px;">⚙️</button>
+                <button onclick="removeSubAdmin(${i})" style="background:none;border:none;color:#555;cursor:pointer;font-size:16px;padding:0 4px;">×</button>
+            </div>`;
+        }).join('');
+    }
+
+    function toggleSubAdminSystem() {
+        if(!_requireAdmin()) return;
+        subAdminSystemOn = !subAdminSystemOn;
+        saveSubAdmins();
+        renderSubAdminList();
+        showToast("PHỤ ADMIN", subAdminSystemOn ? "Hệ thống phụ admin: BẬT" : "Hệ thống phụ admin: TẮT");
+    }
+
+    function filterSubAdminInput() {
+        if(!_requireAdmin()) return;
+        const q = (document.getElementById("subadmin-name-inp").value||'').toLowerCase();
+        const dd = document.getElementById("subadmin-name-dropdown");
+        if(!allUsersCache.length){
+            sb("users?select=name,asset&order=asset.desc").then(r=>{
+                allUsersCache=r.data||[];
+                filterSubAdminInput();
+            });
+            return;
+        }
+        const filtered = allUsersCache.filter(u =>
+            u.name.toLowerCase().includes(q) &&
+            u.name !== 'minh' &&
+            !subAdminList.includes(u.name)
+        );
+        if(!filtered.length){ dd.style.display='none'; return; }
+        dd.style.display='block';
+        dd.innerHTML = filtered.slice(0,8).map(u=>`
+            <div onclick="selectSubAdminUser('${u.name}')"
+                style="padding:7px 12px;cursor:pointer;border-bottom:1px solid #2a2a2a;font-size:12px;"
+                onmouseover="this.style.background='#2a2a2a'" onmouseout="this.style.background='transparent'">
+                <span style="color:white;font-weight:bold;">${u.name}</span>
+                <span style="color:#555;font-size:10px;margin-left:6px;">$${safeFloat(u.asset).toLocaleString(undefined,{maximumFractionDigits:0})}</span>
+            </div>`).join('');
+        setTimeout(()=>{ document.addEventListener('click', ()=>dd.style.display='none', {once:true}); }, 0);
+    }
+    function selectSubAdminUser(name){
+        document.getElementById("subadmin-name-inp").value=name;
+        document.getElementById("subadmin-name-dropdown").style.display='none';
+    }
+
+    function addSubAdmin() {
+        if(!_requireAdmin()) return;
+        const name = document.getElementById("subadmin-name-inp").value.trim();
+        if(!name) return showToast("LỖI","Nhập tên user");
+        if(name === 'minh') return showToast("LỖI","Admin chính không cần thêm");
+        if(subAdminList.includes(name)) return showToast("LỖI","Đã có trong danh sách");
+        subAdminList.push(name);
+        saveSubAdmins();
+        document.getElementById("subadmin-name-inp").value="";
+        renderSubAdminList();
+        showToast("THANH CONG",`Da them ${name} lam phu admin`);
+    }
+
+    function removeSubAdmin(idx) {
+        if(!_requireAdmin()) return;
+        const name = subAdminList[idx];
+        subAdminList.splice(idx,1);
+        saveSubAdmins();
+        renderSubAdminList();
+        showToast("THONG BAO",`Da xoa ${name}`);
+    }
+
+    async function resetAllUsers() {
+        if(!_requireAdmin()) return;
+        const c=await askInput(`Gõ "XOAHET" để xóa TOÀN BỘ:`);
+        if(c==='XOAHET'){
+            await sb("users?name=neq.____x____","DELETE");
+            await sb("mails?id=neq.____x____","DELETE");
+            await sb("gifts?id=neq.____x____","DELETE");
+            await sb("broadcast?id=neq.____x____","DELETE");
+            showToast("THÔNG BÁO","Đã xóa toàn bộ"); loadAdminUsers();
+        }
+    }
+
+    function checkBankruptcy() {
+        if(!data.length) return;
+        let t=wallet.cash; data.forEach(s=>{if(wallet.stocks[s.code]) t+=wallet.stocks[s.code]*Math.max(0,s.price);});
+        if(t<10&&!wallet.inbox.some(m=>m.title==="CẢNH BÁO PHÁ SẢN"&&(Date.now()-m.time<60000))){
+            wallet.inbox.unshift({id:`sys_${Date.now()}`,from:"Terminal X",title:"CẢNH BÁO PHÁ SẢN",body:`Tài sản dưới $10.<br><button onclick="resetAccount()">RESET ($250)</button>`,time:Date.now(),read:false});
+            renderMail();
+        }
+    }
+    window.resetAccount = async function() {
+        const c=await askInput("Gõ 'RESET' để xác nhận:");
+        if(c==='RESET'){wallet.cash=250;wallet.stocks={};wallet.inbox=[];localStorage.setItem(`u_${me}`,JSON.stringify(wallet));closeMail();renderMail();syncNow();}
+    }
+    async function forgotPass(){const c=await askInput("Gõ 'DEL' để xóa dữ liệu:");if(c==='DEL'){localStorage.clear();location.reload();}}
+    async function changePassword() {
+        const o=document.getElementById("old-pass").value, n=document.getElementById("new-pass").value;
+        if(!o||!n) return;
+        if(o!==wallet.pass) return showToast("LỖI","Mật khẩu cũ sai");
+        wallet.pass=n;
+        await sb("users","POST",{name:me,pass:n});
+        localStorage.setItem(`u_${me}`,JSON.stringify(wallet));
+        showToast("THÀNH CÔNG","Đã đổi mật khẩu!"); logout();
+    }
+
+    try{
+        const tradeAmountEl = document.getElementById("trade-amount");
+        if(!tradeAmountEl) throw new Error("trade-amount not found");
+        tradeAmountEl.addEventListener("input",function(){
+        const qty=parseFloat(this.value);
+        if(sel&&data.length){const s=data.find(x=>x.code===sel);document.getElementById("trade-estimate").innerText=`Ước tính: $${isNaN(qty*s.price)?'0.00':(qty*s.price).toFixed(2)}`;}
+    });}catch(e){}
+    async function trade(t) {
+        let qty=parseFloat(document.getElementById("trade-amount").value);
+        if(!qty||qty<=0){const inp=await askInput("Nhập số lượng:");qty=parseFloat(inp);}
+        if(!qty||qty<=0) return showToast("LỖI","Số lượng không hợp lệ");
+        const s=data.find(x=>x.code===sel);
+        if(!s) return showToast("LỖI","Không tìm thấy cổ phiếu");
+
+        if(s.price < 1) return showToast("⛔ THỊ TRƯỜNG ĐÓNG CỬA",`${sel} đang dưới $1 (hiện $${s.price.toFixed(2)}), giao dịch bị đình chỉ!`);
+
+        const price = s.price;
+        const cost  = qty * price;
+        if(isNaN(cost) || cost <= 0) return showToast("LỖI","Lỗi tính toán");
+
+        if(t==='buy'){
+            if(price < 2) return showToast("KHÔNG THỂ MUA",`Giá ${sel} = $${price.toFixed(2)} < $2, lệnh mua bị từ chối`);
+            if(cost > safeFloat(wallet.cash)) return showToast("LỖI","Thiếu tiền");
+            wallet.cash = safeFloat(wallet.cash) - cost;
+            wallet.stocks[sel] = (wallet.stocks[sel]||0) + qty;
+        } else {
+            const owned = safeFloat(wallet.stocks[sel]);
+            if(qty > owned) return showToast("LỖI",`Chỉ có ${owned.toFixed(0)} CP`);
+            wallet.stocks[sel] = owned - qty;
+            wallet.cash = safeFloat(wallet.cash) + cost;
+        }
+        sfx('ok'); localStorage.setItem(`u_${me}`,JSON.stringify(wallet)); syncNow();
+    }
+
+    function renderList() {
+        const div=document.getElementById("list");
+        if(!div) return;
+        const rebuild = div.childElementCount!==data.length;
+        if(rebuild){
+            div.innerHTML=data.map(s=>{
+                const bankrupt = s.price < 2;
+                const bankruptBadge = bankrupt
+                    ? `<div class="bankrupt-badge" style="font-size:9px;font-weight:bold;color:#ff4444;background:#2a0000;border:1px solid #500;border-radius:3px;padding:1px 5px;margin-top:2px;display:inline-block;animation:pulse 1s infinite;">⚠ ĐANG PHÁ SẢN</div>`
+                    : '';
+                const owned = (wallet.stocks[s.code]||0).toFixed(0);
+                const priceColor = bankrupt ? '#ff4444' : (s.candle.close>=s.candle.open ? 'var(--green)' : 'var(--red)');
+                const borderColor = bankrupt ? '#500' : 'var(--border)';
+                return `<div class="stock-item" onclick="openDetail('${s.code}')" id="st-${s.code}" style="border-color:${borderColor}${bankrupt?';background:#110000':''}">
+                    <div>
+                        <div class="code-text" style="font-weight:900;font-size:16px;color:${bankrupt?'#ff6666':'white'}">${s.code}</div>
+                        <div style="font-size:11px;color:#888">${owned} CP</div>
+                        ${bankruptBadge}
+                    </div>
+                    <div style="text-align:right">
+                        <div class="price-val" style="font-size:16px;font-weight:bold;color:${priceColor}">${s.price.toFixed(2)}</div>
+                        ${bankrupt ? '<div class="suspend-text" style="font-size:9px;color:#ff4444">Giao dịch bị đình chỉ</div>' : ''}
+                    </div>
+                </div>`;
+            }).join('');
+        } else {
+            data.forEach(s=>{
+                const el=document.getElementById(`st-${s.code}`);
+                if(!el) return;
+                const bankrupt = s.price < 2;
+                const up = s.candle.close>=s.candle.open;
+                
+                const p=el.querySelector(".price-val");
+                if(p){
+                    p.innerText=s.price.toFixed(2);
+                    p.style.color=bankrupt?'#ff4444':(up?"var(--green)":"var(--red)");
+                }
+                
+                const codeText = el.querySelector(".code-text");
+                if(codeText) codeText.style.color = bankrupt ? '#ff6666' : 'white';
+                
+                el.style.borderColor = bankrupt?'#500':'var(--border)';
+                el.style.background = bankrupt?'#110000':'#1a1a1a';
+                
+                const badge = el.querySelector('.bankrupt-badge');
+                const susp = el.querySelector('.suspend-text');
+                
+                if(bankrupt) {
+                    if(!badge) {
+                        const codeEl = el.querySelector('.code-text');
+                        if(codeEl) codeEl.insertAdjacentHTML('afterend', '<div class="bankrupt-badge" style="font-size:9px;font-weight:bold;color:#ff4444;background:#2a0000;border:1px solid #500;border-radius:3px;padding:1px 5px;margin-top:2px;display:inline-block;animation:pulse 1s infinite;">⚠ ĐANG PHÁ SẢN</div>');
+                    }
+                    if(!susp) {
+                        const priceArea = el.querySelector('div:last-child');
+                        if(priceArea) {
+                            priceArea.insertAdjacentHTML('beforeend', '<div class="suspend-text" style="font-size:9px;color:#ff4444;">Giao dịch bị đình chỉ</div>');
+                        }
+                    }
+                } else {
+                    if(badge) badge.remove();
+                    if(susp) susp.remove();
+                }
+            });
+        }
+    }
+    let newsDb = [];       
+    let activeNewsEvents = [];
+    let newsDbLoaded = false;
+
+    async function loadNewsDb() {
+        try {
+            const r = await fetch("https://raw.githubusercontent.com/minhReal/CSimu/refs/heads/main/news.json?"+Date.now());
+            newsDb = await r.json();
+            newsDbLoaded = true;
+        } catch(e) { newsDb = []; newsDbLoaded = false; }
+    }
+
+    function weightedRandom(items) {
+        const total = items.reduce((s,x) => s + (x.r||10), 0);
+        let rand = Math.random() * total;
+        for(const item of items) { rand -= (item.r||10); if(rand <= 0) return item; }
+        return items[items.length-1];
+    }
+
+    function generateFakeNews() {
+        if(!newsDbLoaded || !newsDb.length) return;
+        const pick = weightedRandom(newsDb);
+        pushNews(pick);
+    }
+
+    function pushNews(item) {
+        const now = Date.now();
+        const n = {
+            id: now + '_' + Math.random().toString(36).substr(2,4),
+            t: item.t,
+            b: item.b || 0,        
+            v: item.v || 5,        
+            d: item.d || 10,       
+            stocks: item.stocks || [],
+            time: new Date().toLocaleTimeString(),
+            expiresAt: now + (item.d || 10) * 60 * 1000,
+            isCustom: item.isCustom || false,
+            aiGen: item.aiGen || false,
+        };
+        if(n.b !== 0 || n.v !== 5) {
+            activeNewsEvents.unshift(n);
+            if(activeNewsEvents.length > 10) activeNewsEvents.pop();
+        }
+        news.unshift(n);
+        if(news.length > 30) news.pop();
+        tickIdx = 0;
+        if(activeTab==='news'){
+            renderNewsPage();
+            setTimeout(()=>highlightTickerNews(n.id), 30);
+        }
+        tick();
+    }
+
+    function cleanExpiredNews() {
+        const now = Date.now();
+        activeNewsEvents = activeNewsEvents.filter(n => n.expiresAt > now);
+        if(activeTab==='news'){
+            renderNewsPage();
+            setTimeout(()=>{ if(currentTickNewsId) highlightTickerNews(currentTickNewsId); }, 30);
+        }
+    }
+    function renderNewsPage(){
+        const now = Date.now();
+        document.getElementById("news-list").innerHTML = news.map(n => {
+            const impact = n.b || 0;
+            const impactColor = impact > 0 ? 'var(--green)' : impact < 0 ? 'var(--red)' : '#666';
+            const impactLabel = impact > 10 ? 'RẤT TÍCH CỰC' : impact > 0 ? 'TÍCH CỰC' : impact < -10 ? 'RẤT TIÊU CỰC' : impact < 0 ? 'TIÊU CỰC' : 'THỊ TRƯỜNG';
+            const impactSign = impact > 0 ? '+' : '';
+            let timerHTML = '';
+            if(n.expiresAt) {
+                const remaining = Math.max(0, n.expiresAt - now);
+                if(remaining > 0) {
+                    const mins = Math.floor(remaining / 60000);
+                    const secs = Math.floor((remaining % 60000) / 1000);
+                    const pct = remaining / (n.d * 60000) * 100;
+                    timerHTML = `
+                        <div style="margin-top:6px;">
+                            <div style="display:flex;justify-content:space-between;font-size:9px;color:#666;margin-bottom:3px;">
+                                <span>Còn tác động: ${mins}p ${secs}s</span>
+                                <span style="color:${impactColor};">Biến động: ${impactSign}${impact}%</span>
+                            </div>
+                            <div style="height:3px;background:#222;border-radius:2px;">
+                                <div style="height:100%;width:${pct}%;background:${impactColor};border-radius:2px;transition:width 1s;"></div>
+                            </div>
+                        </div>`;
+                } else {
+                    timerHTML = `<div style="font-size:9px;color:#444;margin-top:4px;">Đã hết tác động</div>`;
+                }
+            }
+            const stockTags = (n.stocks && n.stocks.length > 0)
+                ? n.stocks.map(s => `<span style="font-size:9px;background:#1a2a1a;color:var(--green);padding:1px 5px;border-radius:3px;margin-right:3px;border:1px solid #2a4a2a;">${s}</span>`).join('')
+                : '';
+            const badges = [
+                n.aiGen ? `<span style="font-size:8px;background:#1a1a3a;color:#7777ff;padding:1px 4px;border-radius:2px;">AI</span>` : '',
+                (n.isCustom && showCustomBadge) ? `<span style="font-size:8px;background:#2a1a00;color:var(--gold);padding:1px 4px;border-radius:2px;">CUSTOM</span>` : '',
+            ].filter(Boolean).join(' ');
+            return `<div class="news-card" data-id="${n.id||''}" style="border-left-color:${impactColor};border-left-width:3px;cursor:pointer;" onclick="jumpToTickerNews('${n.id||''}')">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <div style="display:flex;align-items:center;gap:5px;">
+                        <span class="news-time">${n.time}</span>
+                        ${badges}
+                    </div>
+                    <div style="font-size:9px;color:${impactColor};font-weight:bold;padding:1px 6px;border:1px solid ${impactColor};border-radius:3px;">${impactLabel}</div>
+                </div>
+                ${stockTags ? `<div style="margin-bottom:5px;">${stockTags}</div>` : ''}
+                <div style="color:#eee;font-weight:bold;line-height:1.4;">${n.t}</div>
+                ${n.body ? `<div style="color:#999;font-size:11px;margin-top:4px;line-height:1.4;">${n.body}</div>` : ''}
+                ${timerHTML}
+            </div>`;
+        }).join('') || '<div style="text-align:center;color:#444;padding:30px;font-size:13px;">Chưa có tin tức</div>';
+    }
+    let tickIdx = 0;
+    let currentTickNewsId = null;
+
+    function tick(){
+        if(!news.length) return;
+        tickIdx = tickIdx % news.length;
+        const n = news[tickIdx];
+        currentTickNewsId = n.id;
+
+        const el = document.getElementById("mini-news-ticker");
+        if(el){
+            el.innerText = n.t;
+            el.className = `mini-news ${n.b>0?'pos':n.b<0?'neg':''}`;
+        }
+
+        if(activeTab==='news') highlightTickerNews(n.id);
+
+        tickIdx++;
+    }
+
+    function highlightTickerNews(newsId){
+        document.querySelectorAll('.news-card').forEach(c => {
+            c.style.outline = 'none';
+            c.style.boxShadow = 'none';
+        });
+        const card = document.querySelector(`.news-card[data-id="${newsId}"]`);
+        if(card){
+            card.style.outline = '1px solid #555';
+            card.style.boxShadow = '0 0 8px rgba(255,255,255,0.05)';
+            card.scrollIntoView({behavior:'smooth', block:'nearest'});
+        }
+    }
+    function openDetail(c){sfx('click');sel=c;document.getElementById("detail-view").classList.add("active");initChart();updateD();tick();}
+    function closeDetail(){sfx('click');sel=null;document.getElementById("detail-view").classList.remove("active");}
+    function updateD(){
+        const s=data.find(x=>x.code===sel); if(!s) return;
+        const bankrupt = s.price < 2;
+        const up = candles[sel]?.at(-1)?.close >= candles[sel]?.at(-1)?.open;
+        document.getElementById("d-code").innerText = s.code;
+        document.getElementById("d-price").innerText = s.price.toFixed(2);
+        document.getElementById("d-price").style.color = bankrupt ? '#ff4444' : (up ? "var(--green)" : "var(--red)");
+        document.getElementById("d-owned").innerText = (wallet.stocks[sel]||0).toFixed(0);
+        let banner = document.getElementById("bankrupt-banner");
+        if(!banner){
+            banner = document.createElement("div");
+            banner.id = "bankrupt-banner";
+            banner.style.cssText = "display:none;background:#2a0000;border-bottom:1px solid #800;color:#ff4444;text-align:center;padding:8px;font-size:11px;font-weight:bold;letter-spacing:1px;animation:pulse 1.2s infinite;";
+            const dv = document.getElementById("detail-view");
+            if(dv) dv.insertBefore(banner, dv.firstChild);
+        }
+        banner.style.display = bankrupt ? "block" : "none";
+        if(bankrupt) banner.innerText = `⚠ ${sel}: ĐANG PHÁ SẢN — $${s.price.toFixed(2)} — GIAO DỊCH BỊ ĐÌNH CHỈ ⚠`;
+    }
+    window.addEventListener('resize',()=>{if(sel){initChart();draw();}});
+    let ctx;
+    function initChart(){const c=document.getElementById("chart");const rect=c.parentElement.getBoundingClientRect();const dpr=window.devicePixelRatio||1;c.width=rect.width*dpr;c.height=rect.height*dpr;ctx=c.getContext("2d");ctx.scale(dpr,dpr);}
+    function calculateSmartGrid(min,max){
+        const range=Math.abs(max-min)||1;
+        const roughStep=range/5;
+        const magnitude=Math.pow(10,Math.floor(Math.log10(Math.abs(roughStep)||1)));
+        const normalizedStep=roughStep/magnitude;
+        return(normalizedStep<1.5?1:normalizedStep<3?2:normalizedStep<7?5:10)*magnitude;
+    }
+    function draw(){
+        if(!sel||!candles[sel]) return; const d=candles[sel]; if(!d.length) return;
+        const rect=document.getElementById("chart").parentElement.getBoundingClientRect();
+        const W=rect.width,H=rect.height; ctx.clearRect(0,0,W,H);
+        let min=Infinity,max=-Infinity; d.forEach(x=>{if(x.low<min)min=x.low;if(x.high>max)max=x.high;});
+        if(min === Infinity || max === -Infinity || min === max) { min = 0; max = 100; }
+        const padding=(max-min)*0.1; min-=padding; max+=padding;
+        const step=calculateSmartGrid(min,max); const startY=Math.ceil(min/step)*step; const py=20;
+        const gy=v=>H-py-((v-min)/(max-min))*(H-py*2);
+        ctx.font="10px monospace"; ctx.textAlign="right"; ctx.lineWidth=1;
+        for(let v=startY;v<=max;v+=step){
+            const y=gy(v);
+            if(Math.abs(v)<step*0.01){ ctx.strokeStyle="#555"; ctx.lineWidth=1.5; }
+            else { ctx.strokeStyle="#1a1a1a"; ctx.lineWidth=1; }
+            ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();
+            ctx.lineWidth=1;
+            ctx.fillStyle = v<0 ? "#ff6666" : v===0 ? "#888" : "#555";
+            ctx.fillText(v.toFixed(step<1?2:0),W-5,y-2);
+        }
+        if(min<0 && max>0){
+            const zy=gy(0);
+            ctx.strokeStyle="#444"; ctx.lineWidth=1; ctx.setLineDash([4,4]);
+            ctx.beginPath();ctx.moveTo(0,zy);ctx.lineTo(W,zy);ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle="#666"; ctx.fillText("0",W-5,zy-2);
+        }
+        const numCandles = Math.min(d.length, 60);
+        let cw = numCandles > 0 ? (W-30)/numCandles : 10;
+        if(cw < 3) cw = 3;
+        if(cw > 15) cw = 15;
+        if(chartType==='candle'){d.forEach((c,i)=>{const x=i*cw+10,col=c.close>=c.open?"#00ff88":"#ff3b3b";ctx.strokeStyle=col;ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(x+cw/2,gy(c.high));ctx.lineTo(x+cw/2,gy(c.low));ctx.stroke();const h=Math.abs(gy(c.open)-gy(c.close))||1;ctx.fillRect(x+1,Math.min(gy(c.open),gy(c.close)),cw-2,h);});}
+        else{ctx.lineWidth=2;for(let i=0;i<d.length-1;i++){const x1=i*cw+10+cw/2,y1=gy(d[i].close),x2=(i+1)*cw+10+cw/2,y2=gy(d[i+1].close);ctx.beginPath();ctx.strokeStyle=d[i+1].close>=d[i].close?"#00ff88":"#ff3b3b";ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}}
+        const ly=gy(d[d.length-1].close); ctx.strokeStyle="rgba(255,255,255,0.4)"; ctx.setLineDash([2,2]); ctx.beginPath(); ctx.moveTo(0,ly); ctx.lineTo(W,ly); ctx.stroke(); ctx.setLineDash([]);
+        const lastClose=d[d.length-1].close; const lastColor=lastClose>=d[d.length-1].open?"#00ff88":"#ff3b3b";
+        const lastTxt=lastClose.toFixed(2); const lblW=Math.max(35,lastTxt.length*6+8);
+        ctx.fillStyle=lastColor; ctx.fillRect(W-lblW,ly-8,lblW,16); ctx.fillStyle="black"; ctx.fillText(lastTxt,W-2,ly+3);
+    }
+
+    function tab(id){
+        document.querySelectorAll('.view-content').forEach(e=>e.classList.add('hidden'));
+        document.querySelectorAll('.tab-btn').forEach(e=>e.classList.remove('active'));
+        document.getElementById(`tab-${id}`).classList.remove('hidden');
+        event.target.classList.add('active');
+        sfx('click');
+        activeTab=id;
+        const fab = document.getElementById("fab-compose");
+        if(fab) fab.style.display = id==='mail' ? 'flex' : 'none';
+        if(id==='watchlist') { loadWatchlist(); renderWatchlist(); }
+        if(id==='rank') getRank();
+        if(id==='news'){
+            renderNewsPage();
+            setTimeout(()=>{ if(currentTickNewsId) highlightTickerNews(currentTickNewsId); }, 50);
+        }
+    }
+    function claimDaily() {
+        const now = Date.now();
+        const oneDay = 24 * 60 * 60 * 1000;
+        const timeSince = now - lastDailyTime;
+        
+        if(timeSince < oneDay) {
+            const hoursLeft = Math.ceil((oneDay - timeSince) / (60 * 60 * 1000));
+            showToast("DAILY BONUS",`Quay lại sau ${hoursLeft} giờ nữa!`);
+            return;
+        }
+        
+        if(timeSince < oneDay * 2) {
+            dailyStreak++;
+        } else {
+            dailyStreak = 1;
+        }
+        
+        const baseReward = 50;
+        const streakBonus = (dailyStreak - 1) * 10;
+        const totalReward = baseReward + streakBonus;
+        
+        wallet.cash += totalReward;
+        lastDailyTime = now;
+        localStorage.setItem(`u_${me}`, JSON.stringify(wallet));
+        localStorage.setItem('_dailyStreak_'+me, dailyStreak.toString());
+        localStorage.setItem('_lastDaily_'+me, now.toString());
+        
+        showToast("🎁 DAILY BONUS",`+$${totalReward} | Streak: ${dailyStreak} ngày`,4000);
+        sfx('ok');
+        syncNow();
+        
+        document.getElementById("btn-daily").style.display = "none";
+    }
+    
+    function checkDailyBonus() {
+        const now = Date.now();
+        const oneDay = 24 * 60 * 60 * 1000;
+        const timeSince = now - lastDailyTime;
+        const btn = document.getElementById("btn-daily");
+        if(btn && timeSince >= oneDay) {
+            btn.style.display = "block";
+        }
+    }
+    
+    let watchlist = [];
+    function loadWatchlist() {
+        watchlist = JSON.parse(localStorage.getItem('_watchlist_'+me)||'[]');
+        if(watchlist.length === 0) watchlist = ['VIN','FPT'];
+    }
+    
+    function addToWatchlist() {
+        const code = document.getElementById("watchlist-add").value;
+        if(!watchlist.includes(code)) {
+            watchlist.push(code);
+            localStorage.setItem('_watchlist_'+me, JSON.stringify(watchlist));
+            renderWatchlist();
+            showToast("YÊU THÍCH",`Đã thêm ${code}`);
+        } else {
+            showToast("THÔNG BÁO",`${code} đã có trong danh sách`);
+        }
+    }
+    
+    function removeFromWatchlist(code) {
+        watchlist = watchlist.filter(c => c !== code);
+        localStorage.setItem('_watchlist_'+me, JSON.stringify(watchlist));
+        renderWatchlist();
+        showToast("YÊU THÍCH",`Đã xóa ${code}`);
+    }
+    
+    function renderWatchlist() {
+        const el = document.getElementById("watchlist-items");
+        if(!el) return;
+        if(watchlist.length === 0) {
+            el.innerHTML = '<div style="text-align:center;color:#555;padding:20px;">Chưa có cổ phiếu yêu thích</div>';
+            return;
+        }
+        el.innerHTML = watchlist.map(code => {
+            const s = data.find(x => x.code === code);
+            if(!s) return '';
+            const up = s.candle.close >= s.candle.open;
+            const priceColor = up ? 'var(--green)' : 'var(--red)';
+            return `<div style="background:#0a0a0a;border:1px solid #333;border-radius:8px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+                <div onclick="openDetail('${code}')" style="flex:1;cursor:pointer;">
+                    <div style="font-weight:bold;font-size:16px;color:white;">${code}</div>
+                    <div style="font-size:20px;font-weight:bold;color:${priceColor};margin-top:4px;">$${s.price.toFixed(2)}</div>
+                </div>
+                <button onclick="removeFromWatchlist('${code}')" style="background:#500;color:white;border:none;padding:8px 12px;border-radius:6px;font-size:11px;">XÓA</button>
+            </div>`;
+        }).join('');
+    }
+    
+    function logout(){localStorage.removeItem("sess");location.reload();}
+
+    function changeChartType(){chartType=document.getElementById("chart-type-select").value;localStorage.setItem("chart_type",chartType);if(sel)draw();}
+    function openSettings(){document.getElementById("settings-modal").style.display='flex';}
+
+    ['unlockAudio','auth','trade','openAdmin','closeAdmin','adminTab','doGrantCash',
+     'doSetCash','doGrantStock','sendP2PMail','openMail','closeMail','openSettings',
+     'logout','forgotPass','changePassword','toggleBGM','changeChartType','openDetail',
+     'closeDetail','filterMailTo','selectMailTo','closeCompose','resolvePrompt',
+     'generateAINews','deleteNews','clearAllNews','setNewsSentiment','toggleCustomBadge',
+     'adminBroadcast','toggleBcAnon','triggerCrash','cancelCrash','toggleCrashChip',
+     'toggleSubAdminSystem','addSubAdmin','removeSubAdmin','savePerms','renderSubAdminList',
+     'filterSubAdminInput','selectSubAdminUser','loadAdminUsers','delUser','quickGrant',
+     'quickReset','showUserDropdown','filterCashUsers','selectCashUser','setCashMsg',
+     'jumpToTickerNews','resetAccount','getRank','adminPushNews','highlightTickerNews'
+    ].forEach(name=>{
+        try{ if(typeof eval(name)==='function') window[name]=eval(name); }catch(e){}
+    });
+</script>
+</body>
+</html>
