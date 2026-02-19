@@ -818,7 +818,11 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         app.style.display="flex";
         uName.innerText=me;
 
-        setTimeout(_verifyAdminAccess, 500);
+        setTimeout(async () => {
+            await loadAdminConfig();
+            _verifyAdminAccess();
+            checkDailyBonus();
+        }, 500);
         if(!_appStarted) {
             _appStarted = true;
             setInterval(loop, 1500);
@@ -829,6 +833,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             setInterval(checkP2PMail, 20000);
             setInterval(cleanExpiredNews, 10000);
             setInterval(tick, 6000);
+            setInterval(loadAdminConfig, 30000);
             setTimeout(()=>{ checkBan(); setInterval(checkBan, 60000); }, 60000);
             loadNewsDb().then(() => {
                 generateFakeNews();
@@ -843,6 +848,12 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
 
     function loop() {
         const start = Date.now();
+        if(crashEventGlobal && crashEventGlobal.endsAt > Date.now()) {
+            crashEvent = crashEventGlobal;
+        } else if(crashEventGlobal && crashEventGlobal.endsAt <= Date.now()) {
+            crashEvent = null;
+            crashEventGlobal = null;
+        }
         try {
         data = getMarketData();
         } catch(e){ console.error("getMarketData error:", e); return; }
@@ -1314,6 +1325,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                 endsAt: Date.now() + 999999999
             };
             showToast("AI BOOST","🚀 Thị trường tăng LIÊN TỤC cho đến khi tắt!");
+            saveAdminConfig();
             aiBoostInterval = setInterval(() => {
                 if(Math.random() < 0.3) generatePositiveNews();
             }, 30000);
@@ -1324,6 +1336,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             if(aiBoostInterval) { clearInterval(aiBoostInterval); aiBoostInterval = null; }
             crashEvent = null;
             showToast("AI BOOST","Đã tắt");
+            saveAdminConfig();
         }
     }
     
@@ -1348,6 +1361,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
                 endsAt: Date.now() + 999999999
             };
             showToast("AI CRASH","🔴 Thị trường SỤT LIÊN TỤC cho đến khi tắt!");
+            saveAdminConfig();
             aiCrashInterval = setInterval(() => {
                 if(Math.random() < 0.25) generateCrashNews();
             }, 40000);
@@ -1358,6 +1372,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             if(aiCrashInterval) { clearInterval(aiCrashInterval); aiCrashInterval = null; }
             crashEvent = null;
             showToast("AI CRASH","Đã tắt");
+            saveAdminConfig();
         }
     }
     
@@ -2062,6 +2077,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         showToast("⚠️ SỰ KIỆN","Sụt giá "+pct+"% — "+label+" trong ~"+actualMins+"p");
         pushNews({t:`THỊ TRƯỜNG SỤT GIÁ: ${label} giảm mạnh ${pct}%`, b:-pct, v:30, d:actualMins, stocks, isCustom:true});
         updateCrashStatus();
+        saveAdminConfig();
     }
     function triggerBoom() {
         if(!_requireAdmin()) return;
@@ -2079,12 +2095,14 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         showToast("🚀 BOOM",`Tăng giá +${pct}% — ${label} trong ~${actualMins}p`);
         pushNews({t:`🚀 THỊ TRƯỜNG TĂNG: ${label} tăng mạnh ${pct}%`, b:pct, v:20, d:actualMins, stocks, isCustom:true});
         updateCrashStatus();
+        saveAdminConfig();
     }
     function cancelCrash(){
         if(!_requireAdmin()) return;
         crashEvent=null;
         showToast("SỰ KIỆN","Đã hủy sự kiện");
         updateCrashStatus();
+        saveAdminConfig();
     }
     function updateCrashStatus(){
         const el=document.getElementById("crash-status"); if(!el) return;
@@ -2134,18 +2152,53 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         }
     }
 
-    let subAdminList = JSON.parse(localStorage.getItem('_subAdmins')||'[]');
-    let subAdminSystemOn = localStorage.getItem('_subAdminSys') === '1';
+
+    let subAdminList = [];
+    let subAdminSystemOn = false;
     let subAdminPermsGlobal = {'view-users':true,'cash':false,'news':false,'broadcast':false,'ban':false};
-    let subAdminPermsMap = JSON.parse(localStorage.getItem('_subAdminPermsMap')||'{}'  );
+    let subAdminPermsMap = {};
     let subAdminPerms = subAdminPermsGlobal;
+    let crashEventGlobal = null;
+    
+    async function loadAdminConfig() {
+        try {
+            const r = await sb('users?name=eq._config&select=pass');
+            if(r.ok && r.data.length > 0 && r.data[0].pass) {
+                const config = JSON.parse(r.data[0].pass);
+                subAdminList = config.subAdminList || [];
+                subAdminSystemOn = config.subAdminSystemOn || false;
+                subAdminPermsMap = config.subAdminPermsMap || {};
+                crashEventGlobal = config.crashEvent || null;
+                if(crashEventGlobal && crashEventGlobal.endsAt > Date.now()) {
+                    crashEvent = crashEventGlobal;
+                }
+            }
+        } catch(e) {}
+    }
+    
+    async function saveAdminConfig() {
+        crashEventGlobal = crashEvent;
+        const config = {
+            subAdminList,
+            subAdminSystemOn,
+            subAdminPermsMap,
+            crashEvent: crashEventGlobal
+        };
+        try {
+            const check = await sb('users?name=eq._config&select=name');
+            if(check.ok && check.data.length > 0) {
+                await sb('users?name=eq._config', 'PATCH', {pass: JSON.stringify(config)});
+            } else {
+                await sb('users', 'POST', {name: '_config', asset: 0, pass: JSON.stringify(config)});
+            }
+        } catch(e) {}
+    }
     function getPermsForUser(name) {
         return subAdminPermsMap[name] || {...subAdminPermsGlobal};
     }
 
     function saveSubAdmins() {
-        localStorage.setItem('_subAdmins', JSON.stringify(subAdminList));
-        localStorage.setItem('_subAdminSys', subAdminSystemOn ? '1' : '0');
+        saveAdminConfig();
     }
     let _editingSubAdmin = null;
     function savePerms(name) {
@@ -2159,7 +2212,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             'ban':        document.getElementById('perm-ban').checked,
         };
         subAdminPermsMap[target] = perms;
-        localStorage.setItem('_subAdminPermsMap', JSON.stringify(subAdminPermsMap));
+        saveAdminConfig();
     }
     function loadPerms(name) {
         const target = name || _editingSubAdmin;
