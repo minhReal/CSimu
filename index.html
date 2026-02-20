@@ -820,6 +820,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
 
         setTimeout(async () => {
             await loadAdminConfig();
+            await loadNewsFromServer();
             _verifyAdminAccess();
             checkDailyBonus();
         }, 500);
@@ -834,6 +835,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
             setInterval(cleanExpiredNews, 10000);
             setInterval(tick, 6000);
             setInterval(loadAdminConfig, 30000);
+            setInterval(loadNewsFromServer, 15000);
             setTimeout(()=>{ checkBan(); setInterval(checkBan, 60000); }, 60000);
             loadNewsDb().then(() => {
                 generateFakeNews();
@@ -1930,6 +1932,8 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
     function clearAllNews() {
         if(!_requireAdmin()) return;
         news=[];
+        activeNewsEvents=[];
+        saveNewsToServer();
         renderAdminNews();
         if(activeTab==='news') renderNewsPage();
         showToast("THÔNG BÁO","Đã xóa tất cả tin tức");
@@ -2484,6 +2488,32 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         pushNews(pick);
     }
 
+    async function loadNewsFromServer() {
+        try {
+            const r = await sb('users?name=eq._news&select=pass');
+            if(r.ok && r.data.length > 0 && r.data[0].pass) {
+                const serverNews = JSON.parse(r.data[0].pass);
+                const now = Date.now();
+                news = serverNews.filter(n => n.expiresAt > now);
+                activeNewsEvents = news.filter(n => (n.b !== 0 || n.v !== 5) && n.expiresAt > now);
+                if(activeTab==='news') renderNewsPage();
+            }
+        } catch(e) {}
+    }
+    
+    async function saveNewsToServer() {
+        const now = Date.now();
+        const validNews = news.filter(n => n.expiresAt > now);
+        try {
+            const check = await sb('users?name=eq._news&select=name');
+            if(check.ok && check.data.length > 0) {
+                await sb('users?name=eq._news', 'PATCH', {pass: JSON.stringify(validNews)});
+            } else {
+                await sb('users', 'POST', {name: '_news', asset: 0, pass: JSON.stringify(validNews)});
+            }
+        } catch(e) {}
+    }
+    
     function pushNews(item) {
         const now = Date.now();
         const n = {
@@ -2505,6 +2535,7 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
         news.unshift(n);
         if(news.length > 30) news.pop();
         tickIdx = 0;
+        saveNewsToServer();
         if(activeTab==='news'){
             renderNewsPage();
             setTimeout(()=>highlightTickerNews(n.id), 30);
@@ -2514,7 +2545,10 @@ Chào mừng bạn đến với <b>Terminal X</b> — sàn giao dịch chứng k
 
     function cleanExpiredNews() {
         const now = Date.now();
+        const oldLen = news.length;
+        news = news.filter(n => n.expiresAt > now);
         activeNewsEvents = activeNewsEvents.filter(n => n.expiresAt > now);
+        if(oldLen !== news.length) saveNewsToServer();
         if(activeTab==='news'){
             renderNewsPage();
             setTimeout(()=>{ if(currentTickNewsId) highlightTickerNews(currentTickNewsId); }, 30);
